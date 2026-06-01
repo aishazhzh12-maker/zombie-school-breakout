@@ -1,7 +1,9 @@
 export type Puzzle = {
   question: string;
-  options: string[];
-  answer: number;
+  options?: string[];          // если есть — вариант выбора
+  answer: number | string;     // index для options; строка для input/code
+  input?: "number" | "text" | "code"; // тип ввода если нет options
+  codeLength?: number;         // для input=code: длина кода
   hint?: string;
 };
 
@@ -47,6 +49,15 @@ export const combatPuzzles: Puzzle[] = [
   { question: "Что можно увидеть с закрытыми глазами?", options: ["Свет", "Сон", "Цвет", "Ничего"], answer: 1, hint: "Случается ночью." },
   { question: "Если вчера была среда, какой день будет послезавтра?", options: ["Пятница", "Суббота", "Воскресенье", "Понедельник"], answer: 1, hint: "Сегодня — четверг." },
   { question: "На столе 4 кружки, по 2 в каждом ряду и в каждом столбце. Как?", options: ["Невозможно", "В форме квадрата", "В форме треугольника", "В одну линию"], answer: 1, hint: "Квадрат 2×2." },
+  // ===== Математические задачи (ввод числа) =====
+  { question: "Реши: 17 × 6 = ?", input: "number", answer: "102", hint: "17×6 = 17×5 + 17." },
+  { question: "В рюкзаке 3 тетради по 48 страниц. Всего страниц?", input: "number", answer: "144", hint: "3 × 48." },
+  { question: "Лана пробежала 250 м за 50 секунд. Скорость в м/с?", input: "number", answer: "5", hint: "путь / время." },
+  { question: "Корень из 169 = ?", input: "number", answer: "13", hint: "13² = 169." },
+  { question: "Сколько секунд в 2 часах 15 минутах?", input: "number", answer: "8100", hint: "2·3600 + 15·60." },
+  { question: "Уравнение: 3x + 7 = 28. Чему равен x?", input: "number", answer: "7", hint: "3x = 21." },
+  { question: "Половина от четверти от 800?", input: "number", answer: "100", hint: "800/4 = 200, /2 = 100." },
+  { question: "Сколько простых чисел от 1 до 20?", input: "number", answer: "8", hint: "2,3,5,7,11,13,17,19." },
 ];
 
 export type Level = {
@@ -80,9 +91,9 @@ export const levels: Level[] = [
     classroomsToCheck: 3,
     zombiesToDefeat: 3,
     bgGradient: "linear-gradient(180deg, #1f1a28 0%, #100c16 60%, #161018 100%)",
-    exitTitle: "Шкафчики выживших",
-    exitStory: "Три записки. Только одна правда.",
-    exitPuzzle: { question: "A:«Ключ здесь». B:«Здесь не ключ». C:«Ключ не в A». Одна правда. Где ключ?", options: ["A", "B", "C", "Нигде"], answer: 1, hint: "Если A правда, то C тоже — противоречие." },
+    exitTitle: "Кодовый замок",
+    exitStory: "На стене кровью: «Дата захвата школы». Лана помнит дату из объявления — 1207. Замок старый, чугунный.",
+    exitPuzzle: { question: "Введи 4-значный код. На стене написано: «1·2·0·7 наоборот».", input: "code", codeLength: 4, answer: "7021", hint: "Переверни цифры 1207." },
   },
   {
     id: "cafeteria",
@@ -93,7 +104,7 @@ export const levels: Level[] = [
     bgGradient: "linear-gradient(180deg, #1f2a2f 0%, #0e1418 60%, #181214 100%)",
     exitTitle: "Весы поварёнка",
     exitStory: "У кассы — записка.",
-    exitPuzzle: { question: "8 яблок, одно легче. За сколько взвешиваний найдёшь его на чашечных весах?", options: ["1", "2", "3", "4"], answer: 1, hint: "Делим 3-3-2." },
+    exitPuzzle: { question: "8 яблок одинаковы на вид, одно легче. За МИНИМАЛЬНОЕ число взвешиваний на чашечных весах его найдёшь. Введи число.", input: "number", answer: "2", hint: "Дели 3-3-2." },
   },
   {
     id: "library",
