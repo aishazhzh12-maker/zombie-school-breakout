@@ -1,227 +1,324 @@
-import { useEffect, useRef, useState } from "react";
-import { levels, bossExtraPuzzles, type Puzzle, type Level } from "./data";
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
-  drawLana,
-  drawZombie,
-  drawBoss,
-  drawClassmate,
-  drawOrb,
-  drawCorridor,
-  drawDoor,
-} from "./sprites";
+  levels,
+  supplyPool,
+  combatPuzzles,
+  bossExtraPuzzles,
+  classroomNames,
+  type Puzzle,
+  type Supply,
+} from "./data";
+import { Button } from "@/components/ui/button";
+import { Heart, Zap, Trophy, Skull, DoorClosed, Search, Brain, Backpack } from "lucide-react";
 
-type Screen = "intro" | "play" | "puzzle" | "win" | "dead";
-type Zombie = { x: number; y: number; hp: number; vx: number; hitFlash: number };
-type Orb = { x: number; y: number; type: "heal" | "power"; vy: number; t: number };
-type Particle = { x: number; y: number; vx: number; vy: number; life: number; color: string };
-type Floater = { x: number; y: number; text: string; life: number; color: string };
+type Screen = "intro" | "play" | "win" | "dead";
+type Modal =
+  | { kind: "none" }
+  | { kind: "search"; doorId: number; supply: Supply }
+  | { kind: "combat"; zombieId: number; puzzle: Puzzle }
+  | { kind: "exit"; bossStep?: number };
 
-const W = 800;
-const H = 450;
-const FLOOR_Y = H - 80;
-const LANA_W = 36;
-const LANA_H = 48;
-const SPEED = 2.5;
-const CORRIDOR_LEN = 2400;
+type Door = { id: number; x: number; name: string; opened: boolean };
+type Zombie = { id: number; x: number; defeated: boolean };
+
+const WORLD_WIDTH = 2400; // px
+const VIEWPORT_WIDTH = 900; // logical px for scene
+const LANA_SPEED = 4; // px per frame
+const INTERACT_RANGE = 70;
+
+// ---------- SVG SPRITES ----------
+
+function LanaSprite({ walking, facingLeft, hurt }: { walking: boolean; facingLeft: boolean; hurt: boolean }) {
+  return (
+    <div
+      className={`${walking ? "lana-walk" : "lana-idle"} ${hurt ? "shake" : ""}`}
+      style={{ transform: facingLeft ? "scaleX(-1)" : undefined, transformOrigin: "center bottom" }}
+    >
+      <svg width="80" height="140" viewBox="0 0 80 140" style={{ filter: hurt ? "hue-rotate(-20deg) brightness(1.3)" : "drop-shadow(0 8px 12px rgba(0,0,0,0.6))" }}>
+        {/* shadow */}
+        <ellipse cx="40" cy="138" rx="22" ry="3" fill="rgba(0,0,0,0.5)" />
+        {/* legs */}
+        <rect x="28" y="92" width="10" height="42" rx="3" fill="#1a1d3a" />
+        <rect x="42" y="92" width="10" height="42" rx="3" fill="#22264a" />
+        {/* shoes */}
+        <ellipse cx="33" cy="134" rx="9" ry="4" fill="#0a0a0a" />
+        <ellipse cx="47" cy="134" rx="9" ry="4" fill="#0a0a0a" />
+        {/* skirt */}
+        <path d="M22 78 L58 78 L62 100 L18 100 Z" fill="#3a2030" />
+        <path d="M22 78 L58 78 L60 88 L20 88 Z" fill="#4a2840" />
+        {/* body / shirt */}
+        <path d="M22 42 Q22 38 26 38 L54 38 Q58 38 58 42 L58 82 L22 82 Z" fill="#e8e3d5" />
+        {/* tie */}
+        <path d="M37 42 L43 42 L42 58 L40 64 L38 58 Z" fill="#8a1f1f" />
+        {/* backpack strap */}
+        <rect x="20" y="44" width="4" height="36" rx="2" fill="#2a2a3a" />
+        <rect x="56" y="44" width="4" height="36" rx="2" fill="#2a2a3a" />
+        {/* arms */}
+        <rect x="14" y="44" width="10" height="34" rx="5" fill="#e6b89c" />
+        <rect x="56" y="44" width="10" height="34" rx="5" fill="#e6b89c" />
+        {/* neck */}
+        <rect x="34" y="32" width="12" height="10" fill="#e6b89c" />
+        {/* head */}
+        <ellipse cx="40" cy="22" rx="14" ry="16" fill="#e6b89c" />
+        {/* hair back */}
+        <path d="M26 18 Q26 4 40 4 Q54 4 54 18 L54 28 L48 26 L48 16 L32 16 L32 26 L26 28 Z" fill="#2a1810" />
+        {/* hair side */}
+        <path d="M26 18 Q26 28 30 32 L30 24 Q26 22 26 18 Z" fill="#2a1810" />
+        <path d="M54 18 Q54 28 50 32 L50 24 Q54 22 54 18 Z" fill="#2a1810" />
+        {/* ponytail */}
+        <path d="M52 18 Q60 22 62 32 Q63 42 58 46 Q56 38 54 30 Z" fill="#2a1810" />
+        {/* face: eyes */}
+        <ellipse cx="35" cy="22" rx="1.5" ry="2" fill="#0a0a0a" />
+        <ellipse cx="45" cy="22" rx="1.5" ry="2" fill="#0a0a0a" />
+        {/* brows */}
+        <rect x="32" y="18" width="6" height="1.2" fill="#1a0a08" />
+        <rect x="42" y="18" width="6" height="1.2" fill="#1a0a08" />
+        {/* mouth */}
+        <path d="M36 28 Q40 30 44 28" stroke="#7a2a2a" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+        {/* cheek scratch */}
+        <path d="M46 24 L48 27" stroke="#8a1f1f" strokeWidth="0.8" />
+      </svg>
+    </div>
+  );
+}
+
+function ZombieSprite({ defeated }: { defeated: boolean }) {
+  return (
+    <div className={defeated ? "" : "zombie-walk"} style={{ opacity: defeated ? 0 : 1, transition: "opacity 0.5s, transform 0.5s", transform: defeated ? "translateY(40px) rotate(90deg)" : undefined }}>
+      <svg width="80" height="140" viewBox="0 0 80 140" style={{ filter: "drop-shadow(0 6px 10px rgba(80,20,20,0.6))" }}>
+        <ellipse cx="40" cy="138" rx="22" ry="3" fill="rgba(0,0,0,0.5)" />
+        {/* legs torn */}
+        <path d="M28 92 L36 92 L34 134 L26 134 Z" fill="#1a1410" />
+        <path d="M44 92 L52 92 L54 134 L46 134 Z" fill="#1a1410" />
+        {/* body torn shirt */}
+        <path d="M20 42 L60 42 L62 90 L18 90 Z" fill="#5a6a4a" />
+        <path d="M30 60 L36 70 L32 78 Z" fill="#2a1a18" />
+        <path d="M48 50 L54 60 L50 68 Z" fill="#2a1a18" />
+        {/* arms outstretched */}
+        <rect x="6" y="46" width="14" height="10" rx="4" fill="#7a8a6a" />
+        <rect x="60" y="46" width="14" height="10" rx="4" fill="#7a8a6a" />
+        {/* claws */}
+        <path d="M4 50 L0 48 L4 52 L0 54 Z" fill="#1a1a1a" />
+        <path d="M76 50 L80 48 L76 52 L80 54 Z" fill="#1a1a1a" />
+        {/* neck */}
+        <rect x="34" y="32" width="12" height="10" fill="#7a8a6a" />
+        {/* head */}
+        <ellipse cx="40" cy="22" rx="14" ry="16" fill="#7a8a6a" />
+        {/* hair sparse */}
+        <path d="M28 12 Q40 4 52 12 L50 18 L46 14 L40 16 L34 14 L30 18 Z" fill="#1a1a14" />
+        {/* glowing eyes */}
+        <circle cx="34" cy="22" r="3" fill="#ff2020" />
+        <circle cx="46" cy="22" r="3" fill="#ff2020" />
+        <circle cx="34" cy="22" r="1.5" fill="#ffe0e0" />
+        <circle cx="46" cy="22" r="1.5" fill="#ffe0e0" />
+        {/* mouth gaping */}
+        <ellipse cx="40" cy="30" rx="6" ry="3" fill="#1a0808" />
+        <path d="M36 28 L37 32 M40 28 L40 32 M44 28 L43 32" stroke="#e8d8d0" strokeWidth="0.8" />
+        {/* blood drip */}
+        <path d="M40 32 Q39 36 41 38" stroke="#8a1010" strokeWidth="1.2" fill="none" />
+        {/* tears in shirt */}
+        <path d="M28 70 L34 80 L30 82 Z" fill="#1a1a1a" />
+      </svg>
+    </div>
+  );
+}
+
+function BossSprite() {
+  return (
+    <div className="zombie-walk" style={{ transform: "scale(1.5)" }}>
+      <svg width="110" height="180" viewBox="0 0 110 180" style={{ filter: "drop-shadow(0 10px 14px rgba(120,20,20,0.7))" }}>
+        <ellipse cx="55" cy="178" rx="32" ry="4" fill="rgba(0,0,0,0.6)" />
+        {/* legs in suit pants */}
+        <rect x="38" y="120" width="14" height="54" fill="#0a0a14" />
+        <rect x="58" y="120" width="14" height="54" fill="#0a0a14" />
+        {/* shoes */}
+        <ellipse cx="45" cy="174" rx="11" ry="4" fill="#1a1a1a" />
+        <ellipse cx="65" cy="174" rx="11" ry="4" fill="#1a1a1a" />
+        {/* suit jacket */}
+        <path d="M22 56 L88 56 L92 120 L18 120 Z" fill="#161624" />
+        <path d="M22 56 L40 56 L38 110 L18 120 Z" fill="#0e0e1a" />
+        <path d="M88 56 L70 56 L72 110 L92 120 Z" fill="#0e0e1a" />
+        {/* shirt */}
+        <path d="M40 56 L70 56 L68 100 L42 100 Z" fill="#e0d8c8" />
+        {/* tie blood-stained */}
+        <path d="M50 56 L60 56 L58 96 L55 102 L52 96 Z" fill="#6a0a0a" />
+        <path d="M52 78 Q55 82 58 78" stroke="#3a0404" strokeWidth="1.5" fill="none" />
+        {/* arms */}
+        <rect x="6" y="60" width="18" height="60" rx="6" fill="#161624" />
+        <rect x="86" y="60" width="18" height="60" rx="6" fill="#161624" />
+        {/* hands */}
+        <circle cx="15" cy="124" r="9" fill="#7a8a6a" />
+        <circle cx="95" cy="124" r="9" fill="#7a8a6a" />
+        {/* head */}
+        <ellipse cx="55" cy="30" rx="20" ry="22" fill="#7a8a6a" />
+        {/* bald top */}
+        <path d="M40 20 Q55 8 70 20 L70 28 Q55 26 40 28 Z" fill="#6a7a5a" />
+        {/* glowing eyes */}
+        <circle cx="47" cy="30" r="4" fill="#ff1010" />
+        <circle cx="63" cy="30" r="4" fill="#ff1010" />
+        <circle cx="47" cy="30" r="2" fill="#ffffff" />
+        <circle cx="63" cy="30" r="2" fill="#ffffff" />
+        {/* glasses */}
+        <circle cx="47" cy="30" r="6" fill="none" stroke="#1a1a1a" strokeWidth="1.5" />
+        <circle cx="63" cy="30" r="6" fill="none" stroke="#1a1a1a" strokeWidth="1.5" />
+        <line x1="53" y1="30" x2="57" y2="30" stroke="#1a1a1a" strokeWidth="1.5" />
+        {/* mouth */}
+        <ellipse cx="55" cy="44" rx="9" ry="4" fill="#1a0808" />
+        <path d="M48 42 L49 47 M52 42 L52 47 M55 42 L55 47 M58 42 L58 47 M62 42 L61 47" stroke="#e8d8d0" strokeWidth="0.8" />
+        {/* blood drip */}
+        <path d="M55 48 Q53 54 56 58 Q58 62 55 64" stroke="#8a1010" strokeWidth="1.5" fill="none" />
+      </svg>
+    </div>
+  );
+}
+
+// Door SVG inset into the wall
+function ClassroomDoor({ name, inRange, opened }: { name: string; inRange: boolean; opened: boolean }) {
+  return (
+    <div className="relative flex flex-col items-center" style={{ width: 90 }}>
+      <div
+        className={`relative transition-all ${inRange ? "glow-toxic" : ""}`}
+        style={{
+          width: 80,
+          height: 150,
+          background: opened
+            ? "linear-gradient(180deg, #0a0a0a 0%, #1a0808 100%)"
+            : "linear-gradient(180deg, #5a3a20 0%, #3a2410 100%)",
+          border: "3px solid #1a0a04",
+          borderRadius: "6px 6px 0 0",
+          boxShadow: inRange ? undefined : "inset 0 0 20px rgba(0,0,0,0.6)",
+        }}
+      >
+        {/* Door panels */}
+        {!opened && (
+          <>
+            <div style={{ position: "absolute", top: 12, left: 8, right: 8, height: 50, background: "rgba(0,0,0,0.3)", border: "1px solid #2a1408", borderRadius: 4 }} />
+            <div style={{ position: "absolute", top: 70, left: 8, right: 8, height: 50, background: "rgba(0,0,0,0.3)", border: "1px solid #2a1408", borderRadius: 4 }} />
+            <div style={{ position: "absolute", right: 8, top: 90, width: 6, height: 6, background: "#ffd040", borderRadius: "50%" }} />
+          </>
+        )}
+        {opened && (
+          <div style={{ position: "absolute", inset: 4, background: "radial-gradient(ellipse at center bottom, rgba(168,255,112,0.15), transparent)" }} />
+        )}
+      </div>
+      {/* name plate */}
+      <div className="absolute -top-7 bg-black/80 border border-[var(--toxic)]/40 px-2 py-0.5 text-[10px] text-[var(--toxic)] whitespace-nowrap rounded">
+        {name}
+      </div>
+      {inRange && !opened && (
+        <div className="absolute -bottom-10 bg-[var(--toxic)] text-black px-3 py-1 text-xs font-bold rounded whitespace-nowrap animate-pulse">
+          [E] Войти
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------- MAIN COMPONENT ----------
 
 export default function EscapeGame() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [screen, setScreen] = useState<Screen>("intro");
   const [levelIdx, setLevelIdx] = useState(0);
-  const [bossStep, setBossStep] = useState(0);
-  const [wrongFlash, setWrongFlash] = useState(false);
+  const [lanaX, setLanaX] = useState(120);
+  const [facingLeft, setFacingLeft] = useState(false);
+  const [walking, setWalking] = useState(false);
+  const [hurt, setHurt] = useState(false);
+  const [hp, setHp] = useState(100);
+  const [maxHp, setMaxHp] = useState(100);
+  const [strength, setStrength] = useState(1);
+  const [score, setScore] = useState(0);
+  const [supplies, setSupplies] = useState<string[]>([]);
+  const [zombiesDefeated, setZombiesDefeated] = useState(0);
+  const [classroomsChecked, setClassroomsChecked] = useState(0);
+  const [doors, setDoors] = useState<Door[]>([]);
+  const [zombies, setZombies] = useState<Zombie[]>([]);
+  const [modal, setModal] = useState<Modal>({ kind: "none" });
+  const [floaters, setFloaters] = useState<{ id: number; text: string; color: string; x: number }[]>([]);
   const [showHint, setShowHint] = useState(false);
+  const [wrongFlash, setWrongFlash] = useState(false);
 
-  // HUD reactive copies
-  const [hudHp, setHudHp] = useState(100);
-  const [hudMaxHp, setHudMaxHp] = useState(100);
-  const [hudStr, setHudStr] = useState(1);
-  const [hudScore, setHudScore] = useState(0);
-  const [hudRescued, setHudRescued] = useState(0);
-  const [hudKills, setHudKills] = useState(0);
-  const [hudBossHp, setHudBossHp] = useState(0);
+  const keys = useRef<Record<string, boolean>>({});
+  const triggeredZombies = useRef<Set<number>>(new Set());
+  const floaterId = useRef(0);
 
-  // Mutable game state
-  const state = useRef({
-    lanaX: 100,
-    lanaY: FLOOR_Y - LANA_H,
-    facingLeft: false,
-    state: "idle" as "idle" | "walk" | "attack",
-    attackTimer: 0,
-    invuln: 0,
-    hp: 100,
-    maxHp: 100,
-    strength: 1,
-    score: 0,
-    rescued: 0,
-    kills: 0,
-    killsNeeded: 0,
-    levelIdx: 0,
-    scroll: 0,
-    zombies: [] as Zombie[],
-    orbs: [] as Orb[],
-    particles: [] as Particle[],
-    floaters: [] as Floater[],
-    classmate: null as { x: number; y: number; rescued: boolean; line: string; name: string } | null,
-    doorX: CORRIDOR_LEN - 100,
-    doorActive: false,
-    keys: {} as Record<string, boolean>,
-    boss: null as { x: number; y: number; hp: number; maxHp: number; hitFlash: number; phase: number } | null,
-    spawnTimer: 0,
-    nextSpawnAt: 0,
-    levelTime: 0,
-    introBanner: 120,
-  });
+  const lv = levels[levelIdx];
 
-  function startLevel(idx: number) {
-    const lv = levels[idx];
-    const s = state.current;
-    s.levelIdx = idx;
-    s.lanaX = 100;
-    s.scroll = 0;
-    s.zombies = [];
-    s.orbs = [];
-    s.particles = [];
-    s.floaters = [];
-    s.kills = 0;
-    s.killsNeeded = lv.zombiesToKill;
-    s.doorActive = lv.zombiesToKill === 0;
-    s.spawnTimer = 0;
-    s.nextSpawnAt = 60;
-    s.levelTime = 0;
-    s.introBanner = 150;
-    s.state = "idle";
-    s.attackTimer = 0;
-    if (lv.id === "gym") {
-      s.boss = { x: CORRIDOR_LEN - 250, y: FLOOR_Y - 96, hp: 100, maxHp: 100, hitFlash: 0, phase: 0 };
-      s.doorActive = false;
+  // Build level
+  const buildLevel = useCallback((idx: number) => {
+    const lvl = levels[idx];
+    const isBoss = lvl.id === "gym";
+    const newDoors: Door[] = [];
+    const newZombies: Zombie[] = [];
+
+    if (!isBoss) {
+      // spread doors across world
+      const usableStart = 250;
+      const usableEnd = WORLD_WIDTH - 250;
+      const span = usableEnd - usableStart;
+      const total = lvl.classroomsToCheck;
+      for (let i = 0; i < total; i++) {
+        const x = usableStart + (span / (total + 1)) * (i + 1);
+        newDoors.push({
+          id: i,
+          x,
+          name: classroomNames[(idx * 3 + i) % classroomNames.length],
+          opened: false,
+        });
+      }
+      // zombies between/after doors
+      for (let i = 0; i < lvl.zombiesToDefeat; i++) {
+        const x = usableStart + (span / (lvl.zombiesToDefeat + 1)) * (i + 1) + 80;
+        newZombies.push({ id: i, x, defeated: false });
+      }
     } else {
-      s.boss = null;
+      // boss only — single zombie at end
+      newZombies.push({ id: 0, x: WORLD_WIDTH - 350, defeated: false });
     }
-    if (lv.hasClassmate && lv.classmateName) {
-      s.classmate = {
-        x: 600 + Math.random() * 800,
-        y: FLOOR_Y - LANA_H,
-        rescued: false,
-        line: lv.classmateLine || "",
-        name: lv.classmateName,
-      };
-    } else {
-      s.classmate = null;
-    }
-    setHudHp(s.hp);
-    setHudMaxHp(s.maxHp);
-    setHudStr(s.strength);
-    setHudKills(0);
-    setHudBossHp(s.boss?.hp ?? 0);
-  }
 
-  function reset() {
-    const s = state.current;
-    s.hp = 100;
-    s.maxHp = 100;
-    s.strength = 1;
-    s.score = 0;
-    s.rescued = 0;
-    setHudHp(100);
-    setHudMaxHp(100);
-    setHudStr(1);
-    setHudScore(0);
-    setHudRescued(0);
+    setDoors(newDoors);
+    setZombies(newZombies);
+    setClassroomsChecked(0);
+    setZombiesDefeated(0);
+    setLanaX(120);
+    setFacingLeft(false);
+    triggeredZombies.current.clear();
+  }, []);
+
+  const startGame = () => {
+    setHp(100);
+    setMaxHp(100);
+    setStrength(1);
+    setScore(0);
+    setSupplies([]);
     setLevelIdx(0);
-    setBossStep(0);
-    startLevel(0);
+    buildLevel(0);
     setScreen("play");
-  }
+  };
 
   // Input
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      state.current.keys[e.key.toLowerCase()] = true;
-      if (e.key === " " || e.key === "ArrowUp") e.preventDefault();
-      // Attack
-      if ((e.key === " " || e.key.toLowerCase() === "j") && state.current.attackTimer <= 0) {
-        state.current.state = "attack";
-        state.current.attackTimer = 18;
-        const s = state.current;
-        // Hitbox
-        const reach = 50;
-        const hx = s.facingLeft ? s.lanaX - reach : s.lanaX + LANA_W;
-        // hit zombies
-        s.zombies.forEach((z) => {
-          const zScreen = z.x - s.scroll;
-          if (zScreen + 30 > hx && zScreen < hx + reach + 20 && Math.abs(z.y - s.lanaY) < 40) {
-            z.hp -= s.strength;
-            z.hitFlash = 8;
-            // knockback
-            z.vx += s.facingLeft ? -1 : 1;
-            for (let i = 0; i < 5; i++) {
-              s.particles.push({
-                x: zScreen + 15,
-                y: z.y + 20,
-                vx: (Math.random() - 0.5) * 4,
-                vy: -Math.random() * 3,
-                life: 30,
-                color: "#c83030",
-              });
-            }
-            if (z.hp <= 0) {
-              s.kills++;
-              s.score += 10;
-              setHudKills(s.kills);
-              setHudScore(s.score);
-              // drop orb
-              if (Math.random() < 0.7) {
-                const type: "heal" | "power" = Math.random() < 0.5 ? "heal" : "power";
-                s.orbs.push({ x: z.x + 15, y: z.y + 20, type, vy: -3, t: 0 });
-              }
-            }
-          }
-        });
-        s.zombies = s.zombies.filter((z) => z.hp > 0);
-        // hit boss
-        if (s.boss) {
-          const bScreen = s.boss.x - s.scroll;
-          if (bScreen + 60 > hx && bScreen < hx + reach + 40) {
-            s.boss.hp -= s.strength;
-            s.boss.hitFlash = 8;
-            setHudBossHp(s.boss.hp);
-            for (let i = 0; i < 8; i++) {
-              s.particles.push({
-                x: bScreen + 40,
-                y: s.boss.y + 40,
-                vx: (Math.random() - 0.5) * 5,
-                vy: -Math.random() * 4,
-                life: 35,
-                color: "#80ff60",
-              });
-            }
-            // boss phases trigger puzzles
-            const threshold = s.boss.maxHp - (s.boss.phase + 1) * 33;
-            if (s.boss.hp <= threshold && s.boss.phase < 3) {
-              s.boss.phase++;
-              setBossStep(s.boss.phase - 1);
-              setShowHint(false);
-              setScreen("puzzle");
-            }
-          }
+      const k = e.key.toLowerCase();
+      keys.current[k] = true;
+      if (["arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
+      if (modal.kind !== "none") return;
+      if (k === "e" || k === "enter") {
+        // door interact
+        const near = doors.find((d) => !d.opened && Math.abs(d.x - lanaX) < INTERACT_RANGE);
+        if (near) {
+          const supply = supplyPool[Math.floor(Math.random() * supplyPool.length)];
+          setModal({ kind: "search", doorId: near.id, supply });
+          return;
         }
-      }
-      // Interact with door
-      if (e.key.toLowerCase() === "e" || e.key === "Enter") {
-        const s = state.current;
-        if (s.doorActive) {
-          const dx = s.doorX - s.scroll;
-          if (Math.abs(s.lanaX - dx) < 80) {
-            setShowHint(false);
-            setScreen("puzzle");
-          }
+        // exit interact
+        if (canReachExit() && lanaX > WORLD_WIDTH - 200) {
+          setShowHint(false);
+          setModal({ kind: "exit", bossStep: lv.id === "gym" ? 0 : undefined });
         }
       }
     };
     const up = (e: KeyboardEvent) => {
-      state.current.keys[e.key.toLowerCase()] = false;
+      keys.current[e.key.toLowerCase()] = false;
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
@@ -229,555 +326,545 @@ export default function EscapeGame() {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doors, lanaX, modal, lv]);
+
+  function canReachExit() {
+    if (lv.id === "gym") return zombies.every((z) => z.defeated);
+    return zombiesDefeated >= lv.zombiesToDefeat && classroomsChecked >= lv.classroomsToCheck;
+  }
 
   // Game loop
   useEffect(() => {
     if (screen !== "play") return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
     let raf = 0;
-    let last = performance.now();
-
-    const tick = (now: number) => {
-      const dt = Math.min(40, now - last);
-      last = now;
-      update(dt);
-      render(ctx);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen, levelIdx]);
-
-  function update(_dt: number) {
-    const s = state.current;
-    const lv = levels[s.levelIdx];
-    s.levelTime++;
-    if (s.introBanner > 0) s.introBanner--;
-
-    // Move
-    let moving = false;
-    if (s.keys["a"] || s.keys["arrowleft"]) {
-      // scroll left or move
-      if (s.scroll > 0) s.scroll -= SPEED;
-      else if (s.lanaX > 20) s.lanaX -= SPEED;
-      s.facingLeft = true;
-      moving = true;
-    }
-    if (s.keys["d"] || s.keys["arrowright"]) {
-      // if lana past mid, scroll instead
-      if (s.lanaX < W / 2 - 40 && s.scroll < CORRIDOR_LEN - W) {
-        s.lanaX += SPEED;
-      } else if (s.scroll < CORRIDOR_LEN - W) {
-        s.scroll += SPEED;
-      } else if (s.lanaX < W - LANA_W - 20) {
-        s.lanaX += SPEED;
-      }
-      s.facingLeft = false;
-      moving = true;
-    }
-
-    if (s.attackTimer > 0) {
-      s.attackTimer--;
-      s.state = "attack";
-    } else {
-      s.state = moving ? "walk" : "idle";
-    }
-    if (s.invuln > 0) s.invuln--;
-
-    // Spawn zombies
-    if (!s.boss && s.kills < s.killsNeeded) {
-      s.spawnTimer++;
-      if (s.spawnTimer > s.nextSpawnAt && s.zombies.length < 4) {
-        s.spawnTimer = 0;
-        s.nextSpawnAt = 90 + Math.random() * 90;
-        const fromRight = Math.random() < 0.7;
-        const wx = fromRight ? s.scroll + W + 30 : s.scroll - 30;
-        s.zombies.push({
-          x: wx,
-          y: FLOOR_Y - LANA_H,
-          hp: 2 + Math.floor(s.levelIdx / 2),
-          vx: 0,
-          hitFlash: 0,
-        });
-      }
-    }
-
-    // Door active check
-    if (!s.boss && s.kills >= s.killsNeeded) s.doorActive = true;
-
-    // Update zombies
-    const lanaWorldX = s.lanaX + s.scroll;
-    s.zombies.forEach((z) => {
-      const dir = z.x < lanaWorldX ? 1 : -1;
-      z.x += dir * 0.9 + z.vx;
-      z.vx *= 0.85;
-      if (z.hitFlash > 0) z.hitFlash--;
-      // damage lana
-      const zScreen = z.x - s.scroll;
-      if (
-        Math.abs(zScreen - s.lanaX) < 25 &&
-        Math.abs(z.y - s.lanaY) < 30 &&
-        s.invuln <= 0
-      ) {
-        s.hp -= 8;
-        s.invuln = 40;
-        setHudHp(Math.max(0, s.hp));
-        s.floaters.push({ x: s.lanaX + 10, y: s.lanaY, text: "-8", life: 40, color: "#ff4060" });
-        if (s.hp <= 0) {
-          setScreen("dead");
-        }
-      }
-    });
-
-    // Update boss
-    if (s.boss) {
-      if (s.boss.hitFlash > 0) s.boss.hitFlash--;
-      const dir = s.boss.x < lanaWorldX ? 1 : -1;
-      s.boss.x += dir * 0.5;
-      const bScreen = s.boss.x - s.scroll;
-      if (Math.abs(bScreen - s.lanaX) < 60 && s.invuln <= 0) {
-        s.hp -= 14;
-        s.invuln = 50;
-        setHudHp(Math.max(0, s.hp));
-        s.floaters.push({ x: s.lanaX + 10, y: s.lanaY, text: "-14", life: 40, color: "#ff4060" });
-        if (s.hp <= 0) setScreen("dead");
-      }
-    }
-
-    // Update orbs
-    s.orbs.forEach((o) => {
-      o.t++;
-      o.y += o.vy;
-      o.vy += 0.15;
-      if (o.y > FLOOR_Y - 10) {
-        o.y = FLOOR_Y - 10;
-        o.vy = 0;
-      }
-      const oScreen = o.x - s.scroll;
-      if (Math.abs(oScreen - (s.lanaX + 15)) < 25 && Math.abs(o.y - s.lanaY - 24) < 30) {
-        if (o.type === "heal") {
-          s.hp = Math.min(s.maxHp, s.hp + 20);
-          setHudHp(s.hp);
-          s.floaters.push({ x: s.lanaX + 10, y: s.lanaY, text: "+20 HP", life: 50, color: "#ff80a0" });
+    const step = () => {
+      if (modal.kind === "none") {
+        let dx = 0;
+        if (keys.current["a"] || keys.current["arrowleft"]) dx -= LANA_SPEED;
+        if (keys.current["d"] || keys.current["arrowright"]) dx += LANA_SPEED;
+        if (dx !== 0) {
+          setWalking(true);
+          if (dx < 0) setFacingLeft(true);
+          if (dx > 0) setFacingLeft(false);
+          setLanaX((x) => {
+            const nx = Math.max(60, Math.min(WORLD_WIDTH - 60, x + dx));
+            // check zombie collision
+            zombies.forEach((z) => {
+              if (!z.defeated && !triggeredZombies.current.has(z.id) && Math.abs(z.x - nx) < 90) {
+                triggeredZombies.current.add(z.id);
+                const puzzle = combatPuzzles[Math.floor(Math.random() * combatPuzzles.length)];
+                setModal({ kind: "combat", zombieId: z.id, puzzle });
+              }
+            });
+            return nx;
+          });
         } else {
-          s.strength += 1;
-          s.maxHp += 10;
-          s.hp = Math.min(s.maxHp, s.hp + 5);
-          setHudStr(s.strength);
-          setHudMaxHp(s.maxHp);
-          setHudHp(s.hp);
-          s.floaters.push({ x: s.lanaX + 10, y: s.lanaY, text: "+СИЛА", life: 50, color: "#80ff60" });
+          setWalking(false);
         }
-        o.t = -999; // mark for removal
       }
-    });
-    s.orbs = s.orbs.filter((o) => o.t > -100);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [screen, modal, zombies]);
 
-    // Classmate
-    if (s.classmate && !s.classmate.rescued) {
-      const cScreen = s.classmate.x - s.scroll;
-      if (Math.abs(cScreen - s.lanaX) < 30) {
-        s.classmate.rescued = true;
-        s.rescued++;
-        s.score += 50;
-        s.maxHp += 20;
-        s.hp = Math.min(s.maxHp, s.hp + 30);
-        s.strength += 1;
-        setHudRescued(s.rescued);
-        setHudScore(s.score);
-        setHudMaxHp(s.maxHp);
-        setHudHp(s.hp);
-        setHudStr(s.strength);
-        s.floaters.push({
-          x: s.lanaX,
-          y: s.lanaY - 10,
-          text: lv.classmateName + ": +БОНУС!",
-          life: 90,
-          color: "#ffd040",
-        });
-      }
-    }
-
-    // Particles
-    s.particles.forEach((p) => {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.2;
-      p.life--;
-    });
-    s.particles = s.particles.filter((p) => p.life > 0);
-
-    s.floaters.forEach((f) => {
-      f.y -= 0.7;
-      f.life--;
-    });
-    s.floaters = s.floaters.filter((f) => f.life > 0);
+  // Floaters cleanup
+  function addFloater(text: string, color: string) {
+    const id = ++floaterId.current;
+    setFloaters((f) => [...f, { id, text, color, x: 0 }]);
+    setTimeout(() => setFloaters((f) => f.filter((x) => x.id !== id)), 1200);
   }
 
-  function render(ctx: CanvasRenderingContext2D) {
-    const s = state.current;
-    const lv = levels[s.levelIdx];
-    const variant =
-      lv.id === "library"
-        ? "library"
-        : lv.id === "cafeteria"
-          ? "cafeteria"
-          : lv.id === "gym"
-            ? "gym"
-            : "school";
-
-    ctx.imageSmoothingEnabled = false;
-    drawCorridor(ctx, W, H, s.scroll, variant);
-
-    // Door
-    const doorScreen = s.doorX - s.scroll;
-    if (doorScreen > -80 && doorScreen < W + 80 && !s.boss) {
-      drawDoor(ctx, doorScreen, FLOOR_Y - 120, s.doorActive);
-      if (s.doorActive && Math.abs(s.lanaX - doorScreen) < 80) {
-        ctx.fillStyle = "#ffd040";
-        ctx.font = "bold 10px 'Press Start 2P', monospace";
-        ctx.fillText("[E] ОТКРЫТЬ", doorScreen - 20, FLOOR_Y - 130);
+  function takeDamage(amount: number) {
+    setHp((h) => {
+      const nh = Math.max(0, h - amount);
+      if (nh <= 0) {
+        setScreen("dead");
       }
-    }
-
-    // Classmate
-    if (s.classmate && !s.classmate.rescued) {
-      const cScreen = s.classmate.x - s.scroll;
-      if (cScreen > -50 && cScreen < W + 50) {
-        drawClassmate(ctx, cScreen, s.classmate.y, 3);
-        // bubble
-        ctx.fillStyle = "#ffd040";
-        ctx.font = "8px 'Press Start 2P', monospace";
-        ctx.fillText("ПОМОГИ!", cScreen - 10, s.classmate.y - 8);
-        // exclamation
-        if (Math.floor(s.levelTime / 30) % 2 === 0) {
-          ctx.fillStyle = "#ff4040";
-          ctx.fillRect(cScreen + 14, s.classmate.y - 24, 4, 10);
-          ctx.fillRect(cScreen + 14, s.classmate.y - 12, 4, 3);
-        }
-      }
-    }
-
-    // Zombies
-    s.zombies.forEach((z) => {
-      const zx = z.x - s.scroll;
-      if (zx < -40 || zx > W + 40) return;
-      const flip = z.x > s.lanaX + s.scroll;
-      if (z.hitFlash > 0) {
-        ctx.globalAlpha = 0.5;
-      }
-      drawZombie(ctx, zx, z.y, flip, 3);
-      ctx.globalAlpha = 1;
-      // hp pip
-      ctx.fillStyle = "#1a1a1a";
-      ctx.fillRect(zx + 6, z.y - 6, 24, 3);
-      ctx.fillStyle = "#c83030";
-      ctx.fillRect(zx + 6, z.y - 6, Math.max(0, (z.hp / (2 + Math.floor(s.levelIdx / 2))) * 24), 3);
+      return nh;
     });
+    setHurt(true);
+    setTimeout(() => setHurt(false), 500);
+    addFloater(`−${amount} HP`, "#ff4060");
+  }
 
-    // Boss
-    if (s.boss) {
-      const bx = s.boss.x - s.scroll;
-      if (s.boss.hitFlash > 0) ctx.globalAlpha = 0.5;
-      drawBoss(ctx, bx, s.boss.y - 50, 4);
-      ctx.globalAlpha = 1;
+  function applySupply(s: Supply) {
+    if (s.hpGain) {
+      setHp((h) => Math.min(maxHp + (s.maxHpGain || 0), h + (s.hpGain || 0)));
     }
+    if (s.maxHpGain) setMaxHp((m) => m + (s.maxHpGain || 0));
+    if (s.strengthGain) setStrength((st) => st + (s.strengthGain || 0));
+    if (s.scoreGain) setScore((sc) => sc + (s.scoreGain || 0));
+    setSupplies((arr) => [...arr, s.emoji]);
+    if (s.hpGain) addFloater(`+${s.hpGain} HP`, "#80ff80");
+    if (s.strengthGain) addFloater(`+СИЛА`, "#ffd040");
+  }
 
-    // Orbs
-    s.orbs.forEach((o) => {
-      const ox = o.x - s.scroll;
-      if (ox < -10 || ox > W + 10) return;
-      drawOrb(ctx, ox, o.y, o.type, o.t * 10);
-    });
+  // ---------- MODAL HANDLERS ----------
 
-    // Lana
-    if (s.invuln > 0 && Math.floor(s.invuln / 4) % 2 === 0) {
-      ctx.globalAlpha = 0.4;
-    }
-    drawLana(ctx, s.lanaX, s.lanaY, s.state, s.facingLeft, 3);
-    ctx.globalAlpha = 1;
+  function handleSearchClose() {
+    if (modal.kind !== "search") return;
+    applySupply(modal.supply);
+    setDoors((ds) => ds.map((d) => (d.id === modal.doorId ? { ...d, opened: true } : d)));
+    setClassroomsChecked((c) => c + 1);
+    setModal({ kind: "none" });
+  }
 
-    // Particles
-    s.particles.forEach((p) => {
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x, p.y, 3, 3);
-    });
-
-    // Floaters
-    s.floaters.forEach((f) => {
-      ctx.fillStyle = f.color;
-      ctx.font = "bold 9px 'Press Start 2P', monospace";
-      ctx.globalAlpha = Math.min(1, f.life / 30);
-      ctx.fillText(f.text, f.x, f.y);
-      ctx.globalAlpha = 1;
-    });
-
-    // Vignette
-    const vg = ctx.createRadialGradient(W / 2, H / 2, 100, W / 2, H / 2, 500);
-    vg.addColorStop(0, "rgba(0,0,0,0)");
-    vg.addColorStop(1, "rgba(0,0,0,0.6)");
-    ctx.fillStyle = vg;
-    ctx.fillRect(0, 0, W, H);
-
-    // Intro banner
-    if (s.introBanner > 0) {
-      const a = s.introBanner > 30 ? 1 : s.introBanner / 30;
-      ctx.globalAlpha = a * 0.85;
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(0, H / 2 - 50, W, 100);
-      ctx.globalAlpha = a;
-      ctx.fillStyle = "#a8ff70";
-      ctx.font = "bold 16px 'Press Start 2P', monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(`УРОВЕНЬ ${s.levelIdx + 1}`, W / 2, H / 2 - 15);
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "10px 'Press Start 2P', monospace";
-      ctx.fillText(lv.location, W / 2, H / 2 + 8);
-      ctx.fillStyle = "#a0a0a0";
-      ctx.font = "8px monospace";
-      ctx.fillText(lv.intro, W / 2, H / 2 + 28);
-      ctx.textAlign = "left";
-      ctx.globalAlpha = 1;
-    }
-
-    // Red flash on damage
-    if (s.invuln > 30) {
-      ctx.fillStyle = `rgba(255,40,40,${(s.invuln - 30) / 40})`;
-      ctx.fillRect(0, 0, W, H);
+  function handleCombatAnswer(i: number) {
+    if (modal.kind !== "combat") return;
+    if (i === modal.puzzle.answer) {
+      // defeat zombie
+      setZombies((zs) => zs.map((z) => (z.id === modal.zombieId ? { ...z, defeated: true } : z)));
+      setZombiesDefeated((n) => n + 1);
+      setScore((s) => s + 25 * strength);
+      addFloater(`+${25 * strength} ОЧКОВ`, "#80ff80");
+      setModal({ kind: "none" });
+    } else {
+      setWrongFlash(true);
+      setTimeout(() => setWrongFlash(false), 500);
+      const dmg = Math.max(5, 20 - strength * 2);
+      takeDamage(dmg);
+      // close after damage - second chance? we'll close so they can try later by re-walking? No: keep modal but allow retry
+      // Better: keep zombie blocking, close modal, let player retry by stepping back and forward.
+      triggeredZombies.current.delete(modal.zombieId);
+      setModal({ kind: "none" });
     }
   }
 
-  // ---------------- SCREENS ----------------
+  function handleExitAnswer(i: number) {
+    if (modal.kind !== "exit") return;
+    const isBoss = lv.id === "gym";
+    const step = modal.bossStep || 0;
+    const puzzle: Puzzle = isBoss && step > 0 ? bossExtraPuzzles[step - 1] : lv.exitPuzzle;
+    if (i === puzzle.answer) {
+      if (isBoss) {
+        if (step < bossExtraPuzzles.length) {
+          setScore((s) => s + 200);
+          setModal({ kind: "exit", bossStep: step + 1 });
+          setShowHint(false);
+        } else {
+          setScore((s) => s + 500);
+          setModal({ kind: "none" });
+          setScreen("win");
+        }
+      } else {
+        setScore((s) => s + 150);
+        const next = levelIdx + 1;
+        if (next >= levels.length) {
+          setScreen("win");
+        } else {
+          setLevelIdx(next);
+          buildLevel(next);
+        }
+        setModal({ kind: "none" });
+      }
+    } else {
+      setWrongFlash(true);
+      setTimeout(() => setWrongFlash(false), 500);
+      takeDamage(20);
+    }
+  }
+
+  // ---------- RENDER ----------
 
   if (screen === "intro") {
     return (
-      <Shell>
-        <div className="text-center max-w-3xl mx-auto space-y-6">
-          <div className="text-[var(--toxic)] text-xs flicker">▌ INSERT COIN ▐</div>
-          <h1 className="pixel-text text-3xl md:text-5xl text-[var(--toxic)]" style={{ textShadow: "4px 4px 0 var(--blood)" }}>
-            СБЕГИ ИЗ<br />ШКОЛЫ
+      <main className="min-h-screen flex items-center justify-center p-4" style={{ background: "radial-gradient(ellipse at center, #1a2a22 0%, #0a0e0c 80%)" }}>
+        <div className="max-w-2xl text-center space-y-6">
+          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[var(--toxic)] flicker">
+            <Skull className="w-4 h-4" /> День X · 14:30
+          </div>
+          <h1 className="font-display text-6xl md:text-8xl text-[var(--toxic)] leading-none" style={{ textShadow: "4px 4px 0 var(--blood), 0 0 40px rgba(168,255,112,0.4)" }}>
+            СБЕГИ ИЗ ШКОЛЫ
           </h1>
-          <div className="text-[var(--toxic)] text-xs">★ ZOMBIE ARCADE EDITION ★</div>
-          <div className="bg-card/80 border-2 border-[var(--toxic)]/40 p-5 text-left text-[10px] md:text-xs leading-relaxed space-y-2">
-            <p>МЕНЯ ЗОВУТ <span className="text-[var(--toxic)]">ЛАНА</span>.</p>
-            <p>ШКОЛУ ЗАХВАТИЛИ ЗОМБИ. УЧИТЕЛЯ. ДРУЗЬЯ. ДИРЕКТОР.</p>
-            <p>МНЕ НУЖНО ПРОЙТИ 5 КОРИДОРОВ И СБЕЖАТЬ.</p>
-            <p className="text-[var(--toxic)]">— БЕЙ ЗОМБИ И СОБИРАЙ ОЧКИ СИЛЫ</p>
-            <p className="text-[var(--toxic)]">— СПАСАЙ ОДНОКЛАССНИКОВ — ОНИ ДАЮТ БОНУСЫ</p>
-            <p className="text-[var(--toxic)]">— ОТКРЫВАЙ ДВЕРИ, РЕШАЯ ЛОГИКУ</p>
-            <p className="text-[var(--blood)]">— ПОБЕДИ ДИРЕКТОРА В ФИНАЛЕ</p>
+          <p className="text-lg text-foreground/90 leading-relaxed">
+            Меня зовут <span className="text-[var(--toxic)] font-bold">Лана</span>. Школу захватили зомби.
+            Учителя. Друзья. Директор. Чтобы выжить — нужно искать припасы по классам,
+            а чтобы пройти мимо зомби — <span className="text-[var(--toxic)]">отвечать на вопросы быстрее, чем они укусят</span>.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <Info icon="🚪" label="Обыскивай классы" />
+            <Info icon="🥪" label="Собирай припасы" />
+            <Info icon="🧟" label="Побеждай логикой" />
+            <Info icon="👑" label="Одолей директора" />
           </div>
-          <div className="bg-background/80 border border-border p-3 text-[10px] grid grid-cols-2 gap-y-1 max-w-md mx-auto">
-            <span className="text-[var(--toxic)]">A / D / ← →</span><span>идти</span>
-            <span className="text-[var(--toxic)]">ПРОБЕЛ / J</span><span>удар</span>
-            <span className="text-[var(--toxic)]">E / ENTER</span><span>дверь</span>
+          <div className="bg-card/80 border border-border rounded-xl p-4 text-xs text-muted-foreground inline-block">
+            <span className="text-[var(--toxic)]">A / D</span> или <span className="text-[var(--toxic)]">← →</span> — движение &nbsp;·&nbsp; <span className="text-[var(--toxic)]">E</span> — взаимодействие
           </div>
-          <Button
-            onClick={reset}
-            className="pixel-text text-sm bg-[var(--blood)] hover:bg-[var(--blood)]/80 text-white border-2 border-[var(--toxic)] px-8 py-6 rounded-none"
-          >
-            ▶ НАЧАТЬ
-          </Button>
+          <div>
+            <Button size="lg" onClick={startGame} className="bg-[var(--blood)] hover:bg-[var(--blood)]/80 text-white text-lg px-10 py-7 rounded-xl shadow-[0_0_30px_rgba(168,255,112,0.3)]">
+              Начать побег
+            </Button>
+          </div>
         </div>
-      </Shell>
+      </main>
     );
   }
 
   if (screen === "win") {
     return (
-      <Shell>
-        <div className="text-center space-y-5 max-w-xl mx-auto">
-          <div className="pixel-text text-2xl md:text-4xl text-[var(--toxic)] flicker">★ ПОБЕДА ★</div>
-          <h1 className="pixel-text text-xl md:text-3xl">ЛАНА ВЫЖИЛА</h1>
-          <div className="bg-card border-2 border-[var(--toxic)]/40 p-5 text-left text-[11px] space-y-2">
-            <Row label="ОЧКИ" value={hudScore.toString().padStart(6, "0")} />
-            <Row label="УБИТО ЗОМБИ" value={hudKills.toString()} />
-            <Row label="СПАСЕНО ДРУЗЕЙ" value={hudRescued.toString()} />
-            <Row label="СИЛА" value={"★".repeat(Math.min(10, hudStr))} />
-            <Row label="ДИРЕКТОР" value="ПОВЕРЖЕН" />
+      <main className="min-h-screen flex items-center justify-center p-4" style={{ background: "radial-gradient(ellipse at center, #1f3a22 0%, #0a0e0c 80%)" }}>
+        <div className="max-w-md text-center space-y-5">
+          <Trophy className="w-20 h-20 mx-auto text-[var(--toxic)]" />
+          <h1 className="font-display text-5xl text-[var(--toxic)]">ЛАНА ВЫЖИЛА!</h1>
+          <p className="text-foreground/90">Главные двери школы открыты. Свежий воздух. Свобода.</p>
+          <div className="bg-card border border-border rounded-xl p-4 text-sm space-y-2 text-left">
+            <Row label="Очки" value={score.toString()} />
+            <Row label="Уровней пройдено" value="5 / 5" />
+            <Row label="Припасов собрано" value={supplies.length.toString()} />
+            <Row label="Сила в финале" value={"★".repeat(Math.min(10, strength))} />
           </div>
-          <p className="text-xs text-muted-foreground">Двери школы распахнулись. Свежий воздух. Финал.</p>
-          <Button onClick={reset} className="pixel-text text-xs bg-[var(--toxic)] text-black rounded-none px-6 py-5">
-            ▶ ИГРАТЬ СНОВА
-          </Button>
+          <Button onClick={startGame} className="bg-[var(--toxic)] text-black hover:bg-[var(--toxic)]/80">Сыграть снова</Button>
         </div>
-      </Shell>
+      </main>
     );
   }
 
   if (screen === "dead") {
     return (
-      <Shell>
-        <div className="text-center space-y-5 max-w-md mx-auto">
-          <div className="pixel-text text-3xl md:text-5xl text-[var(--blood)] flicker">GAME OVER</div>
-          <p className="text-xs text-muted-foreground">Зомби пируют. Школа победила.</p>
-          <div className="bg-card border-2 border-[var(--blood)]/40 p-4 text-left text-[11px] space-y-2">
-            <Row label="ОЧКИ" value={hudScore.toString().padStart(6, "0")} />
-            <Row label="УБИТО" value={hudKills.toString()} />
-            <Row label="СПАСЕНО" value={hudRescued.toString()} />
+      <main className="min-h-screen flex items-center justify-center p-4" style={{ background: "radial-gradient(ellipse at center, #3a1818 0%, #0a0e0c 80%)" }}>
+        <div className="max-w-md text-center space-y-5">
+          <Skull className="w-20 h-20 mx-auto text-[var(--blood)] flicker" />
+          <h1 className="font-display text-5xl text-[var(--blood)]">ЛАНУ СЪЕЛИ</h1>
+          <p className="text-muted-foreground">Школа победила. Звонок прозвенел последний раз.</p>
+          <div className="bg-card border border-border rounded-xl p-4 text-sm space-y-2 text-left">
+            <Row label="Очки" value={score.toString()} />
+            <Row label="Уровень" value={`${levelIdx + 1} / ${levels.length}`} />
+            <Row label="Припасов" value={supplies.length.toString()} />
           </div>
-          <Button onClick={reset} className="pixel-text text-xs bg-[var(--blood)] text-white rounded-none px-6 py-5">
-            ▶ ПРОДОЛЖИТЬ?
-          </Button>
+          <Button onClick={startGame} variant="destructive">Попробовать снова</Button>
         </div>
-      </Shell>
+      </main>
     );
   }
 
-  // PUZZLE OVERLAY
-  if (screen === "puzzle") {
-    const lv = levels[levelIdx];
-    const isBoss = lv.id === "gym";
-    const puzzle: Puzzle = isBoss && bossStep > 0 ? bossExtraPuzzles[bossStep - 1] : lv.puzzle;
-    const answer = (i: number) => {
-      const s = state.current;
-      if (i === puzzle.answer) {
-        if (isBoss) {
-          if (bossStep < bossExtraPuzzles.length) {
-            // continue boss fight
-            s.score += 100;
-            setHudScore(s.score);
-            setScreen("play");
-          } else {
-            // boss defeated entirely
-            setScreen("win");
-          }
-        } else {
-          // advance level
-          s.score += 100;
-          setHudScore(s.score);
-          if (levelIdx < levels.length - 1) {
-            const next = levelIdx + 1;
-            setLevelIdx(next);
-            startLevel(next);
-            setScreen("play");
-          } else {
-            setScreen("win");
-          }
-        }
-      } else {
-        setWrongFlash(true);
-        setTimeout(() => setWrongFlash(false), 400);
-        s.hp -= 15;
-        setHudHp(Math.max(0, s.hp));
-        if (s.hp <= 0) setScreen("dead");
-      }
-    };
-    return (
-      <Shell>
-        <div className="max-w-2xl mx-auto">
-          <div className={`bg-card border-2 ${wrongFlash ? "border-[var(--blood)]" : "border-[var(--toxic)]/50"} p-5 md:p-7 space-y-5`}>
-            <div className="text-[10px] text-[var(--toxic)]">
-              {isBoss ? `БОСС · РАУНД ${bossStep + 1}/3` : `${lv.location}`}
-            </div>
-            <h2 className="pixel-text text-base md:text-xl text-[var(--toxic)]">{lv.doorTitle}</h2>
-            <p className="text-[11px] text-muted-foreground italic">{lv.doorStory}</p>
-            <div className="bg-background/60 border border-border p-4 text-xs md:text-sm">
-              {puzzle.question}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {puzzle.options.map((opt, i) => (
-                <button
-                  key={i}
-                  onClick={() => answer(i)}
-                  className="text-left text-[11px] bg-background/60 hover:bg-[var(--toxic)] hover:text-black border border-border px-3 py-3 transition-colors"
-                >
-                  <span className="text-[var(--toxic)] mr-2">{String.fromCharCode(65 + i)}.</span>
-                  {opt}
-                </button>
-              ))}
-            </div>
-            {puzzle.hint && (
-              <div>
-                {showHint ? (
-                  <div className="text-[10px] text-[var(--toxic)] border border-[var(--toxic)]/30 p-2">
-                    ★ {puzzle.hint}
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setShowHint(true)}
-                    className="text-[10px] text-muted-foreground underline"
-                  >
-                    [подсказка]
-                  </button>
+  // PLAY
+  const exitReady = canReachExit();
+  const cameraX = Math.max(0, Math.min(WORLD_WIDTH - VIEWPORT_WIDTH, lanaX - VIEWPORT_WIDTH / 2));
+
+  return (
+    <main className="h-screen flex flex-col bg-background">
+      {/* HUD */}
+      <header className="bg-card/90 backdrop-blur border-b border-border px-4 py-3 flex items-center gap-4 z-20">
+        <div className="flex items-center gap-2 min-w-[200px]">
+          <Heart className="w-5 h-5 text-[var(--blood)]" />
+          <div className="flex-1 h-3 bg-secondary rounded-full overflow-hidden border border-border">
+            <div className="h-full bg-gradient-to-r from-[var(--blood)] to-red-400 transition-all" style={{ width: `${(hp / maxHp) * 100}%` }} />
+          </div>
+          <span className="text-xs font-bold tabular-nums">{hp}/{maxHp}</span>
+        </div>
+        <div className="flex items-center gap-1 text-sm">
+          <Zap className="w-4 h-4 text-[var(--toxic)]" />
+          <span className="font-bold">{strength}</span>
+          <span className="text-[var(--toxic)] tracking-wide">{"★".repeat(Math.min(5, strength))}</span>
+        </div>
+        <div className="flex items-center gap-1 text-sm">
+          <Backpack className="w-4 h-4 text-muted-foreground" />
+          <span className="font-bold">{supplies.length}</span>
+          <span className="text-xs text-muted-foreground hidden md:inline">{supplies.slice(-5).join(" ")}</span>
+        </div>
+        <div className="flex-1 text-center text-xs text-muted-foreground hidden md:block">
+          <div className="text-[var(--toxic)] font-bold uppercase tracking-widest text-[11px]">{lv.location}</div>
+          <div>
+            Классы: {classroomsChecked}/{lv.classroomsToCheck} · Зомби: {zombiesDefeated}/{lv.zombiesToDefeat || "BOSS"}
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-[10px] text-muted-foreground uppercase">Очки</div>
+          <div className="text-sm font-bold text-[var(--toxic)] tabular-nums">{score.toString().padStart(5, "0")}</div>
+        </div>
+      </header>
+
+      {/* SCENE */}
+      <div className={`relative flex-1 overflow-hidden ${wrongFlash ? "danger-pulse" : ""}`} style={{ background: lv.bgGradient }}>
+        {/* Ambient blood vignette when low HP */}
+        {hp < maxHp * 0.3 && (
+          <div className="absolute inset-0 pointer-events-none z-10" style={{ boxShadow: "inset 0 0 200px 40px rgba(180,20,20,0.4)", animation: "danger-vignette 1.5s infinite" }} />
+        )}
+
+        {/* Ceiling lights */}
+        <div className="absolute top-0 left-0 right-0 h-12 z-0 pointer-events-none">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className={i % 3 === 0 ? "flicker" : ""} style={{ position: "absolute", left: `${(i + 1) * 12}%`, top: 4, width: 80, height: 8, background: "linear-gradient(180deg, #c0ffa0, transparent)", borderRadius: 4, boxShadow: "0 0 30px 4px rgba(168,255,112,0.3)" }} />
+          ))}
+        </div>
+
+        {/* World container */}
+        <div
+          className="absolute bottom-0 left-0 will-change-transform scroll-smooth-x"
+          style={{
+            width: WORLD_WIDTH,
+            height: "100%",
+            transform: `translateX(${-cameraX}px)`,
+          }}
+        >
+          {/* Back wall */}
+          <div className="absolute left-0 right-0 bottom-[90px] top-12" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.7))" }}>
+            {/* Wall tiles / wainscoting */}
+            <div className="absolute bottom-0 left-0 right-0 h-16" style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%)", borderTop: "2px solid #3a3a3a" }} />
+          </div>
+
+          {/* Lockers / decorations between doors */}
+          {lv.id !== "gym" && Array.from({ length: 20 }).map((_, i) => {
+            const x = i * 120 + 40;
+            const hasDoor = doors.some((d) => Math.abs(d.x - x) < 80);
+            if (hasDoor) return null;
+            return (
+              <div key={i} className="absolute bottom-[110px]" style={{ left: x, width: 70, height: 180, background: "linear-gradient(180deg, #2a3a3a, #1a2a2a)", border: "2px solid #0a1414", borderRadius: 4, boxShadow: "inset 0 0 20px rgba(0,0,0,0.6)" }}>
+                <div style={{ position: "absolute", inset: 6, background: "rgba(0,0,0,0.3)", borderRadius: 2 }} />
+                <div style={{ position: "absolute", top: 18, left: 14, right: 14, height: 12, background: "rgba(0,0,0,0.6)", borderRadius: 2 }}>
+                  {[0, 1, 2].map((v) => (
+                    <div key={v} style={{ position: "absolute", left: 0, right: 0, top: v * 4, height: 1, background: "#0a0a0a" }} />
+                  ))}
+                </div>
+                <div style={{ position: "absolute", bottom: 50, right: 6, width: 5, height: 8, background: "#8a8a8a" }} />
+                {i % 4 === 0 && (
+                  <div style={{ position: "absolute", bottom: -10, left: 10, width: 30, height: 50, background: "radial-gradient(ellipse, rgba(120,20,20,0.6), transparent 70%)" }} />
                 )}
               </div>
-            )}
-            <div className="text-[9px] text-[var(--blood)]">ОШИБКА: −15 HP</div>
-          </div>
-        </div>
-      </Shell>
-    );
-  }
+            );
+          })}
 
-  // PLAY SCREEN — render canvas + HUD
-  const lv = levels[levelIdx];
-  return (
-    <Shell>
-      <div className="max-w-[820px] mx-auto">
-        {/* HUD */}
-        <div className="bg-black border-2 border-[var(--toxic)]/40 border-b-0 p-2 flex items-center justify-between gap-3 text-[9px]">
-          <div className="flex items-center gap-2">
-            <span className="text-[var(--toxic)]">ЛАНА</span>
-            <div className="w-24 h-3 bg-[var(--blood)]/30 border border-[var(--blood)]">
-              <div
-                className="h-full bg-[var(--blood)]"
-                style={{ width: `${(hudHp / hudMaxHp) * 100}%` }}
-              />
-            </div>
-            <span>{hudHp}/{hudMaxHp}</span>
+          {/* Floor */}
+          <div className="absolute bottom-0 left-0 right-0 h-[90px]" style={{ background: "linear-gradient(180deg, #1a1410 0%, #0a0806 100%)" }}>
+            {Array.from({ length: 30 }).map((_, i) => (
+              <div key={i} className="absolute top-0 bottom-0" style={{ left: i * 80, width: 1, background: "rgba(0,0,0,0.5)" }} />
+            ))}
+            {/* litter */}
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="absolute" style={{ left: i * 200 + 60, bottom: 10 + (i % 3) * 8, width: 12, height: 9, background: "#d8d4c4", transform: `rotate(${i * 17}deg)`, boxShadow: "1px 1px 0 rgba(0,0,0,0.4)" }} />
+            ))}
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[var(--toxic)]">СИЛА {"★".repeat(Math.min(5, hudStr))}</span>
-            <span>УБ:{hudKills}/{lv.zombiesToKill || "BOSS"}</span>
-            <span>SCR:{hudScore.toString().padStart(5, "0")}</span>
+
+          {/* Classroom doors */}
+          {doors.map((d) => (
+            <div key={d.id} className="absolute bottom-[90px]" style={{ left: d.x - 40 }}>
+              <ClassroomDoor name={d.name} inRange={!d.opened && Math.abs(d.x - lanaX) < INTERACT_RANGE} opened={d.opened} />
+            </div>
+          ))}
+
+          {/* Zombies */}
+          {zombies.map((z) => (
+            <div key={z.id} className="absolute bottom-[80px]" style={{ left: z.x - 40 }}>
+              <ZombieSprite defeated={z.defeated} />
+              {!z.defeated && (
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[var(--blood)] text-white text-[10px] px-2 py-0.5 rounded animate-pulse whitespace-nowrap">
+                  Зомби!
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Boss */}
+          {lv.id === "gym" && zombies[0] && !zombies[0].defeated && (
+            <div className="absolute bottom-[80px]" style={{ left: zombies[0].x - 60 }}>
+              <BossSprite />
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[var(--blood)] text-white text-xs px-3 py-1 rounded font-bold whitespace-nowrap">
+                Директор-зомби
+              </div>
+            </div>
+          )}
+
+          {/* Exit door */}
+          <div className="absolute bottom-[90px]" style={{ left: WORLD_WIDTH - 160 }}>
+            <div className="relative flex flex-col items-center">
+              <div className={`relative transition-all ${exitReady ? "glow-toxic" : ""}`} style={{
+                width: 100, height: 200,
+                background: exitReady ? "linear-gradient(180deg, #4a2a14 0%, #2a1408 100%)" : "linear-gradient(180deg, #2a1a14 0%, #1a0a08 100%)",
+                border: "4px solid #0a0404", borderRadius: "8px 8px 0 0",
+              }}>
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-[var(--toxic)]/20 border border-[var(--toxic)] px-2 py-0.5 text-[10px] text-[var(--toxic)] font-bold rounded">
+                  EXIT
+                </div>
+                {/* lock or open */}
+                <div className="absolute top-1/2 right-3 -translate-y-1/2 text-2xl">
+                  {exitReady ? "🟢" : "🔒"}
+                </div>
+              </div>
+              {exitReady && lanaX > WORLD_WIDTH - 200 && (
+                <div className="absolute -bottom-10 bg-[var(--toxic)] text-black px-3 py-1 text-xs font-bold rounded animate-pulse whitespace-nowrap">
+                  [E] Выйти
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Lana */}
+          <div className="absolute bottom-[80px]" style={{ left: lanaX - 40 }}>
+            <LanaSprite walking={walking} facingLeft={facingLeft} hurt={hurt} />
+            {/* floaters */}
+            {floaters.map((f) => (
+              <div key={f.id} className="absolute -top-10 left-1/2 -translate-x-1/2 font-bold text-sm float-up pointer-events-none whitespace-nowrap" style={{ color: f.color, textShadow: "1px 1px 2px black" }}>
+                {f.text}
+              </div>
+            ))}
           </div>
         </div>
-        {state.current.boss && (
-          <div className="bg-black border-x-2 border-[var(--toxic)]/40 px-2 py-1 flex items-center gap-2 text-[9px]">
-            <span className="text-[var(--blood)] flicker">★ ДИРЕКТОР-ЗОМБИ</span>
-            <div className="flex-1 h-2 bg-[var(--blood)]/20 border border-[var(--blood)]">
-              <div
-                className="h-full bg-[var(--blood)]"
-                style={{ width: `${Math.max(0, hudBossHp)}%` }}
-              />
+
+        {/* Progress dots in upper right */}
+        <div className="absolute top-16 right-4 z-10 bg-black/60 backdrop-blur rounded-lg p-2 flex gap-1.5">
+          {levels.map((_, i) => (
+            <div key={i} className={`w-2 h-2 rounded-full ${i < levelIdx ? "bg-[var(--toxic)]" : i === levelIdx ? "bg-[var(--toxic)] animate-pulse" : "bg-muted"}`} />
+          ))}
+        </div>
+
+        {/* Level intro banner */}
+        <LevelBanner key={levelIdx} location={lv.location} intro={lv.intro} />
+
+        {/* MODAL */}
+        {modal.kind === "search" && (
+          <Modal title="Обыск кабинета" icon={<Search className="w-5 h-5" />}>
+            <div className="text-center space-y-4">
+              <div className="text-7xl">{modal.supply.emoji}</div>
+              <div className="text-lg font-bold">{modal.supply.name}</div>
+              <p className="text-sm text-muted-foreground">{modal.supply.description}</p>
+              <div className="flex justify-center gap-3 text-xs">
+                {modal.supply.hpGain ? <span className="bg-[var(--blood)]/20 text-[var(--blood)] px-2 py-1 rounded">+{modal.supply.hpGain} HP</span> : null}
+                {modal.supply.maxHpGain ? <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">+{modal.supply.maxHpGain} макс HP</span> : null}
+                {modal.supply.strengthGain ? <span className="bg-[var(--toxic)]/20 text-[var(--toxic)] px-2 py-1 rounded">+{modal.supply.strengthGain} сила</span> : null}
+                {modal.supply.scoreGain ? <span className="bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded">+{modal.supply.scoreGain} очк.</span> : null}
+              </div>
+              <Button onClick={handleSearchClose} className="w-full bg-[var(--toxic)] text-black hover:bg-[var(--toxic)]/80">Забрать</Button>
             </div>
-          </div>
+          </Modal>
         )}
-        <canvas
-          ref={canvasRef}
-          width={W}
-          height={H}
-          className="pixel-canvas w-full block border-2 border-[var(--toxic)]/40 bg-black"
-          style={{ aspectRatio: `${W} / ${H}` }}
-        />
-        <div className="bg-black border-2 border-t-0 border-[var(--toxic)]/40 p-2 text-[9px] flex justify-between text-muted-foreground">
-          <span>A/D — ИДТИ · ПРОБЕЛ — УДАР · E — ДВЕРЬ</span>
-          <span className="text-[var(--toxic)]">{lv.location}</span>
-        </div>
+
+        {modal.kind === "combat" && (
+          <Modal
+            title="Зомби атакует!"
+            icon={<Skull className="w-5 h-5 text-[var(--blood)]" />}
+            danger
+          >
+            <div className="space-y-4">
+              <div className="flex justify-center">
+                <div style={{ transform: "scale(0.7)" }}>
+                  <ZombieSprite defeated={false} />
+                </div>
+              </div>
+              <p className="text-sm text-center text-muted-foreground italic">
+                Ответь правильно — и Лана вырубит его. Ошибёшься — укусит.
+              </p>
+              <div className="bg-background/60 border border-[var(--blood)]/40 rounded-lg p-4 flex items-start gap-3">
+                <Brain className="w-5 h-5 text-[var(--toxic)] mt-0.5 shrink-0" />
+                <p className="font-medium">{modal.puzzle.question}</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {modal.puzzle.options.map((opt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleCombatAnswer(i)}
+                    className="text-left text-sm bg-background/60 hover:bg-[var(--toxic)] hover:text-black border border-border hover:border-[var(--toxic)] rounded-lg px-3 py-3 transition-colors"
+                  >
+                    <span className="text-[var(--toxic)] font-bold mr-2">{String.fromCharCode(65 + i)}.</span>
+                    {opt}
+                  </button>
+                ))}
+              </div>
+              {modal.puzzle.hint && (
+                showHint ? (
+                  <div className="text-xs text-[var(--toxic)] bg-[var(--toxic)]/10 border border-[var(--toxic)]/30 rounded p-2">💡 {modal.puzzle.hint}</div>
+                ) : (
+                  <button onClick={() => setShowHint(true)} className="text-xs text-muted-foreground underline">подсказка</button>
+                )
+              )}
+              <div className="text-xs text-[var(--blood)] text-center">Ошибка стоит до 20 HP</div>
+            </div>
+          </Modal>
+        )}
+
+        {modal.kind === "exit" && (() => {
+          const isBoss = lv.id === "gym";
+          const step = modal.bossStep || 0;
+          const puzzle = isBoss && step > 0 ? bossExtraPuzzles[step - 1] : lv.exitPuzzle;
+          return (
+            <Modal
+              title={isBoss ? `Король-Директор · Раунд ${step + 1}/3` : lv.exitTitle}
+              icon={isBoss ? <Skull className="w-5 h-5 text-[var(--blood)]" /> : <DoorClosed className="w-5 h-5" />}
+              danger={isBoss}
+            >
+              <div className="space-y-4">
+                {isBoss && step === 0 && (
+                  <div className="flex justify-center"><BossSprite /></div>
+                )}
+                <p className="text-sm text-muted-foreground italic">{lv.exitStory}</p>
+                <div className="bg-background/60 border border-[var(--toxic)]/40 rounded-lg p-4 flex items-start gap-3">
+                  <Brain className="w-5 h-5 text-[var(--toxic)] mt-0.5 shrink-0" />
+                  <p className="font-medium">{puzzle.question}</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {puzzle.options.map((opt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleExitAnswer(i)}
+                      className="text-left text-sm bg-background/60 hover:bg-[var(--toxic)] hover:text-black border border-border hover:border-[var(--toxic)] rounded-lg px-3 py-3 transition-colors"
+                    >
+                      <span className="text-[var(--toxic)] font-bold mr-2">{String.fromCharCode(65 + i)}.</span>
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+                {puzzle.hint && (
+                  showHint ? (
+                    <div className="text-xs text-[var(--toxic)] bg-[var(--toxic)]/10 border border-[var(--toxic)]/30 rounded p-2">💡 {puzzle.hint}</div>
+                  ) : (
+                    <button onClick={() => setShowHint(true)} className="text-xs text-muted-foreground underline">подсказка</button>
+                  )
+                )}
+              </div>
+            </Modal>
+          );
+        })()}
       </div>
-    </Shell>
+    </main>
+  );
+}
+
+function Info({ icon, label }: { icon: string; label: string }) {
+  return (
+    <div className="bg-card/60 border border-border rounded-lg p-3 flex flex-col items-center gap-1">
+      <div className="text-2xl">{icon}</div>
+      <div className="text-muted-foreground">{label}</div>
+    </div>
   );
 }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-border/40 pb-1">
+    <div className="flex justify-between border-b border-border/40 pb-2">
       <span className="text-muted-foreground">{label}</span>
-      <span className="text-[var(--toxic)]">{value}</span>
+      <span className="text-[var(--toxic)] font-bold">{value}</span>
     </div>
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Modal({ title, icon, danger, children }: { title: string; icon?: React.ReactNode; danger?: boolean; children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center p-3 md:p-6">
-      <div className="w-full">{children}</div>
-    </main>
+    <div className="absolute inset-0 z-30 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className={`w-full max-w-md bg-card border-2 ${danger ? "border-[var(--blood)]" : "border-[var(--toxic)]/50"} rounded-2xl shadow-2xl overflow-hidden`}>
+        <div className={`px-5 py-3 flex items-center gap-2 ${danger ? "bg-[var(--blood)]/20" : "bg-[var(--toxic)]/10"} border-b border-border`}>
+          {icon}
+          <h3 className="font-bold uppercase tracking-wider text-sm">{title}</h3>
+        </div>
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function LevelBanner({ location, intro }: { location: string; intro: string }) {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(false), 3000);
+    return () => clearTimeout(t);
+  }, []);
+  if (!visible) return null;
+  return (
+    <div className="absolute top-1/3 left-1/2 -translate-x-1/2 z-20 pointer-events-none text-center animate-in fade-in zoom-in-95 duration-500">
+      <div className="bg-black/80 backdrop-blur border border-[var(--toxic)]/50 px-6 py-4 rounded-xl">
+        <div className="text-[var(--toxic)] font-display text-2xl tracking-wider">{location}</div>
+        <div className="text-sm text-muted-foreground italic mt-1 max-w-md">{intro}</div>
+      </div>
+    </div>
   );
 }
