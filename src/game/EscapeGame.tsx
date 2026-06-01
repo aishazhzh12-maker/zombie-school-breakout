@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  classrooms, zombies, bossRiddles, ADMIN_CODE, ADMIN_HINT,
-  WORLD_W, FLOOR_Y, CEIL_Y, EXIT_X,
+  levels, bossRiddles, ADMIN_CODE, ADMIN_HINT,
+  FLOOR_Y, CEIL_Y,
   type Classroom, type Zombie, type TaskKind,
 } from "./data";
 import {
-  Zap, KeyRound, Download, Flame, Trash2, ToggleRight, CreditCard,
-  X, Skull, Heart, DoorClosed,
+  Zap, KeyRound, Download, Flame, Trash2, ToggleRight,
+  Calculator, HelpCircle, Lock, Target,
+  X, Skull, Heart, DoorClosed, ArrowUp,
 } from "lucide-react";
 
 
