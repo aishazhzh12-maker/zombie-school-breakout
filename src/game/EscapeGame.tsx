@@ -1486,6 +1486,7 @@ export default function EscapeGame() {
                     </p>
                   </div>
                 </div>
+                <HintBox kind={modal.zombie.kind} advanced={save.owned.hint} />
                 {TIME_LIMITS[modal.zombie.kind] !== null && (
                   <TaskTimer
                     key={modal.zombie.id}
