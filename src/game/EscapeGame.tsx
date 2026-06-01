@@ -1054,28 +1054,135 @@ export default function EscapeGame() {
     }
   }, [hp, started, modal.kind, maxHp]);
 
+  const beginGame = () => {
+    const mh = 100 + (save.owned.hp ? 25 : 0);
+    setMaxHp(mh); setHp(mh);
+    setBatLeft(save.owned.bat); setGunLeft(save.owned.gun);
+    setLevel(0); setX(120); setStrength(1);
+    setKilled(new Set()); setSearched(new Set()); setInv([]);
+    setModal({ kind: "none" });
+    setStarted(true);
+  };
+
+  const buyOutfit = (o: Outfit) => {
+    if (save.outfit === o.id) return;
+    if (coins < o.price) { setToast("Не хватает монет"); setTimeout(() => setToast(""), 1500); return; }
+    const ns = { ...save, coins: coins - o.price, outfit: o.id };
+    setCoins(ns.coins); setSave(ns); writeSave(ns);
+  };
+  const equipOutfit = (o: Outfit) => {
+    const ns = { ...save, outfit: o.id };
+    setSave(ns); writeSave(ns);
+  };
+  const buyUpgrade = (u: Upgrade) => {
+    if (coins < u.price) { setToast("Не хватает монет"); setTimeout(() => setToast(""), 1500); return; }
+    const owned = { ...save.owned };
+    if (u.id === "bat" || u.id === "gun") {
+      if ((owned[u.id] ?? 0) >= (u.max ?? 99)) return;
+      owned[u.id] = (owned[u.id] ?? 0) + 1;
+    } else {
+      if (owned[u.id]) return;
+      owned[u.id] = true;
+    }
+    const ns = { ...save, coins: coins - u.price, owned };
+    setCoins(ns.coins); setSave(ns); writeSave(ns);
+  };
+
   if (!started) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-red-950 p-6">
-        <div className="max-w-2xl text-center space-y-6">
-          <div className="flex justify-center items-end gap-4 mb-4">
-            <Crewmate color="#ff66aa" />
+      <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-red-950 p-4 overflow-auto">
+        <div className="max-w-3xl w-full space-y-4">
+          <div className="flex justify-center items-end gap-4">
+            <Crewmate color="#ff66aa" palette={lanaPalette} size={72} />
             <PixelZombie />
             <PixelZombie facing={1} />
-            <Impostor size={72} />
+            <Impostor size={80} />
           </div>
-          <h1 className="font-display text-3xl md:text-4xl text-primary">СБЕГИ ИЗ ШКОЛЫ</h1>
-          <p className="text-muted-foreground">
-            Школа захвачена зомби. Лана идёт по коридору, осматривает кабинеты в поисках припасов и
-            сражается с зомби, решая задачи. В конце коридора — дверь на улицу.
-          </p>
-          <div className="text-left text-sm bg-black/40 rounded p-4 space-y-1">
-            <p>🎮 <b>A/D</b> или <b>←/→</b> — идти по коридору</p>
-            <p>⚡ <b>E</b> / <b>Enter</b> — осмотреть кабинет / атаковать зомби</p>
-            <p>🧟 Зомби побеждаются мини-играми (провода, код, рубильники и т.д.)</p>
-            <p>🏫 3 этажа · в конце — бой с директором-зомби</p>
+          <h1 className="font-display text-3xl md:text-4xl text-primary text-center">СБЕГИ ИЗ ШКОЛЫ</h1>
+          <div className="flex items-center justify-center gap-2">
+            <div className="px-3 py-1 bg-amber-900/40 border border-amber-700 rounded font-pixel text-amber-200 flex items-center gap-2">
+              <Coins className="h-4 w-4" /> {coins} монет
+            </div>
           </div>
-          <Button size="lg" onClick={() => setStarted(true)} className="font-display">НАЧАТЬ</Button>
+
+          <div className="flex gap-2 justify-center">
+            {[
+              { id: "play", label: "Игра", icon: ArrowUp },
+              { id: "outfit", label: "Одежда", icon: Shirt },
+              { id: "shop", label: "Магазин", icon: ShoppingBag },
+            ].map(t => (
+              <button key={t.id} onClick={() => setMenuTab(t.id as typeof menuTab)}
+                className={`px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border ${menuTab === t.id ? "bg-primary text-primary-foreground border-primary" : "bg-black/40 border-zinc-700 text-zinc-300"}`}>
+                <t.icon className="h-4 w-4" /> {t.label}
+              </button>
+            ))}
+          </div>
+
+          {menuTab === "play" && (
+            <div className="bg-black/40 rounded p-4 space-y-3">
+              <p className="text-sm text-muted-foreground text-center">
+                Школа захвачена зомби. Лана зачищает 3 этажа, выполняет задания, чтобы открыть выход.
+              </p>
+              <div className="text-left text-[12px] grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                <p>🎮 <b>A/D</b> · <b>←/→</b> — идти</p>
+                <p>🏃 <b>Shift</b> — бежать (шумно — зомби кусают сильнее)</p>
+                <p>⚡ <b>E</b> / <b>Enter</b> — взаимодействие</p>
+                <p>🏏 <b>G</b> — ударить битой (если есть)</p>
+                <p>🔫 <b>F</b> — выстрел (если есть)</p>
+                <p>💡 В заданиях есть кнопка «Подсказка»</p>
+                <p>🪙 За зомби и кабинеты — монеты</p>
+                <p>🌑 На 2–3 этаже темно — нужен фонарик</p>
+              </div>
+              <div className="flex justify-center">
+                <Button size="lg" onClick={beginGame} className="font-display">НАЧАТЬ ИГРУ</Button>
+              </div>
+            </div>
+          )}
+
+          {menuTab === "outfit" && (
+            <div className="bg-black/40 rounded p-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+              {OUTFITS.map(o => {
+                const owned = o.price === 0 || (save.outfit === o.id);
+                const equipped = save.outfit === o.id;
+                return (
+                  <div key={o.id} className={`p-3 rounded border ${equipped ? "border-primary bg-primary/10" : "border-zinc-700 bg-black/40"} flex flex-col items-center gap-2`}>
+                    <PixelHuman palette={o.palette} variant="girl" size={64} />
+                    <div className="text-xs font-pixel text-center">{o.name}</div>
+                    {equipped
+                      ? <div className="text-[10px] text-primary font-pixel">НАДЕТО</div>
+                      : owned
+                        ? <Button size="sm" variant="secondary" onClick={() => equipOutfit(o)}>Надеть</Button>
+                        : <Button size="sm" onClick={() => buyOutfit(o)} disabled={coins < o.price}>
+                            <Coins className="h-3 w-3 mr-1" /> {o.price}
+                          </Button>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {menuTab === "shop" && (
+            <div className="bg-black/40 rounded p-4 space-y-2">
+              {UPGRADES.map(u => {
+                const I = u.icon;
+                const cur = u.id === "bat" || u.id === "gun" ? (save.owned[u.id] as number) : (save.owned[u.id] ? 1 : 0);
+                const maxed = u.id === "bat" || u.id === "gun" ? cur >= (u.max ?? 5) : cur >= 1;
+                return (
+                  <div key={u.id} className="flex items-center gap-3 p-2 border border-zinc-700 rounded bg-black/40">
+                    <I className="h-6 w-6 text-amber-300" />
+                    <div className="flex-1">
+                      <div className="font-pixel text-sm">{u.name} {(u.id === "bat" || u.id === "gun") && <span className="text-amber-300">×{cur}</span>}</div>
+                      <div className="text-[11px] text-muted-foreground">{u.desc}</div>
+                    </div>
+                    <Button size="sm" disabled={maxed || coins < u.price} onClick={() => buyUpgrade(u)}>
+                      {maxed ? "Куплено" : <><Coins className="h-3 w-3 mr-1" /> {u.price}</>}
+                    </Button>
+                  </div>
+                );
+              })}
+              <p className="text-[11px] text-muted-foreground text-center pt-1">Покупки сохраняются между играми.</p>
+            </div>
+          )}
         </div>
       </div>
     );
