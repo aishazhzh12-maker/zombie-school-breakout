@@ -7,7 +7,7 @@ export type Classroom = {
   id: string;
   x: number;
   name: string;
-  loot: { name: string; emoji: string; hpGain?: number; strengthGain?: number };
+  loot: { name: string; emoji: string; hpGain?: number; strengthGain?: number; foodGain?: number };
 };
 
 export type Zombie = {
@@ -15,6 +15,7 @@ export type Zombie = {
   x: number;
   kind: TaskKind;
   name: string;
+  sleeping?: boolean; // стоит, смотрит в потолок. Услышит — съест.
 };
 
 export type Level = {
