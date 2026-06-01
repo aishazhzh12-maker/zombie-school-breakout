@@ -814,9 +814,21 @@ export default function EscapeGame() {
   const [hint, setHint] = useState("");
   const [shake, setShake] = useState(false);
   const [toast, setToast] = useState<string>("");
-  const [inv, setInv] = useState<{ id: string; name: string; emoji: string; hp: number }[]>([]);
+  const [inv, setInv] = useState<InvItem[]>([]);
   const invRef = useRef(inv); invRef.current = inv;
   const lastBiteRef = useRef(0);
+
+  // Hunger 0..100. Tick down over time; at 0 starts damaging HP.
+  const MAX_HUNGER = 100;
+  const [hunger, setHunger] = useState(MAX_HUNGER);
+  const hungerRef = useRef(hunger); hungerRef.current = hunger;
+
+  // Сидя на корточках — медленно, но без шума.
+  const [crouching, setCrouching] = useState(false);
+  const crouchRef = useRef(false); crouchRef.current = crouching;
+
+  // Спящие зомби, которых уже разбудили (после этого ведут себя как обычные).
+  const wokenRef = useRef<Set<string>>(new Set());
 
   // Weapons remaining (decreases as used; bought in shop)
   const [batLeft, setBatLeft] = useState(save.owned.bat);
