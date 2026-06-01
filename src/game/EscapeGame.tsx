@@ -10,6 +10,7 @@ import {
   Zap, KeyRound, Download, Flame, Trash2, ToggleRight,
   Calculator, HelpCircle, Lock, Target,
   X, Skull, Heart, DoorClosed, ArrowUp,
+  Lightbulb, Coins, Shirt, ShoppingBag, Crosshair, Swords, Flashlight, Volume2, VolumeX,
 } from "lucide-react";
 
 
