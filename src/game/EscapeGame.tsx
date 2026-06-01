@@ -864,13 +864,34 @@ export default function EscapeGame() {
     if (modal.kind !== "search") { setModal({ kind: "none" }); return; }
     const c = modal.classroom;
     const loot = c.loot;
-    if (loot.hpGain) setHp(h => Math.min(maxHp, h + loot.hpGain!));
     if (loot.strengthGain) setStrength(s => s + loot.strengthGain!);
+    if (loot.hpGain) {
+      setInv(prev => [...prev, { id: `${c.id}-${prev.length}`, name: loot.name, emoji: loot.emoji, hp: loot.hpGain! }]);
+      setToast(`📦 В рюкзаке: ${loot.emoji} ${loot.name} (+${loot.hpGain} HP)`);
+    } else {
+      setToast(`Найдено: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} 💪)` : ""}`);
+    }
     setSearched(prev => new Set(prev).add(c.id));
-    setToast(`Найдено: ${loot.emoji} ${loot.name}`);
     setTimeout(() => setToast(""), 1800);
     setModal({ kind: "none" });
   }, [modal, maxHp]);
+
+  // Auto-use the strongest heal item from inventory when HP drops low.
+  useEffect(() => {
+    if (!started) return;
+    if (modal.kind === "lose" || modal.kind === "win") return;
+    if (hp === 0) { setModal({ kind: "lose" }); return; }
+    if (hp < 35 && invRef.current.length > 0) {
+      const list = invRef.current;
+      let bestIdx = 0;
+      for (let i = 1; i < list.length; i++) if (list[i].hp > list[bestIdx].hp) bestIdx = i;
+      const item = list[bestIdx];
+      setInv(p => p.filter((_, i) => i !== bestIdx));
+      setHp(h => Math.min(maxHp, h + item.hp));
+      setToast(`💊 Лана использует ${item.emoji} ${item.name} (+${item.hp} HP)`);
+      setTimeout(() => setToast(""), 1800);
+    }
+  }, [hp, started, modal.kind, maxHp]);
 
   if (!started) {
     return (
