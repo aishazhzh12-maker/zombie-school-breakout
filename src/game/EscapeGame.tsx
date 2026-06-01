@@ -942,10 +942,12 @@ export default function EscapeGame() {
       zomPosRef.current = pos;
       setZomTick(t => (t + 1) % 1000000);
 
-      // Run mode (Shift): faster but шумно — пробуждает зомби раньше (увеличивает дистанцию укуса)
-      const isRun = !!(keys.current["shift"]);
+      // Crouch (C) — тихо, медленно. Run (Shift) — шумно, быстро.
+      const isCrouch = !!(keys.current["c"] || keys.current["control"]);
+      const isRun = !isCrouch && !!(keys.current["shift"]);
       setRunning(isRun);
-      const speed = isRun ? SPEED * 1.7 : SPEED;
+      setCrouching(isCrouch);
+      const speed = isCrouch ? SPEED * 0.45 : (isRun ? SPEED * 1.7 : SPEED);
 
       let dx = 0;
       if (keys.current["a"] || keys.current["arrowleft"]) { dx -= 1; setFacing(-1); }
@@ -965,15 +967,40 @@ export default function EscapeGame() {
         });
       } else setMoving(false);
 
-      // Contact damage — patrolling zombie within bite range.
-      // Бег = шум: радиус укуса больше; ниндзя — на 6px тише.
       const nowT = performance.now();
+
+      // ===== Sleeping zombies: hearing detection =====
+      // Сидя на корточках — полностью тихо. Стоя — слышат. Бегом — слышат издалека.
+      // Услышали = просыпаются и сразу кусают за огромный урон.
+      if (!isCrouch) {
+        const hearRange = isRun ? 130 : (dx !== 0 ? 75 : 40) - (isNinja ? 10 : 0);
+        for (let i = 0; i < zombies.length; i++) {
+          const z = zombies[i];
+          if (!z.sleeping) continue;
+          if (killedRef.current.has(z.id) || wokenRef.current.has(z.id)) continue;
+          if (Math.abs(z.x - xRef.current) < hearRange) {
+            wokenRef.current.add(z.id);
+            const dmg = 35 + level * 5 + (isRun ? 15 : 0);
+            setHp(h => Math.max(0, h - dmg));
+            setShake(true);
+            setTimeout(() => setShake(false), 600);
+            setToast(`😱 ${z.name} проснулся и накинулся! -${dmg} HP`);
+            setTimeout(() => setToast(""), 2200);
+            lastBiteRef.current = nowT;
+            break;
+          }
+        }
+      }
+
+      // Contact damage — patrolling zombie within bite range.
       const biteCD = isRun ? 500 : 800;
-      const biteRange = (isRun ? 48 : 32) - (isNinja ? 6 : 0);
+      const biteRange = (isCrouch ? 22 : (isRun ? 48 : 32)) - (isNinja ? 6 : 0);
       if (nowT - lastBiteRef.current > biteCD) {
         for (let i = 0; i < zombies.length; i++) {
           const z = zombies[i];
           if (killedRef.current.has(z.id)) continue;
+          // Спящие, ещё не разбуженные, не кусают пассивно.
+          if (z.sleeping && !wokenRef.current.has(z.id)) continue;
           if (Math.abs(pos[z.id] - xRef.current) < biteRange) {
             lastBiteRef.current = nowT;
             const base = 4 + Math.floor(Math.random() * 5);
