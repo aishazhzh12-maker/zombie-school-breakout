@@ -714,6 +714,16 @@ export default function EscapeGame() {
   const xRef = useRef(x); xRef.current = x;
   const viewportRef = useRef<HTMLDivElement>(null);
 
+  // Animated zombie positions (patrol around their home x).
+  const zomPosRef = useRef<Record<string, number>>({});
+  const [, setZomTick] = useState(0);
+  const tStartRef = useRef(performance.now());
+  const zx = useCallback((z: Zombie, idx: number) => {
+    const t = (performance.now() - tStartRef.current) / 1000;
+    return z.x + Math.sin(t * 0.9 + idx * 1.7) * 60;
+  }, []);
+  const killedRef = useRef(killed); killedRef.current = killed;
+
   // input
   useEffect(() => {
     const dn = (e: KeyboardEvent) => { keys.current[e.key.toLowerCase()] = true; };
