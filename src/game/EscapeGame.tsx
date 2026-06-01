@@ -1193,7 +1193,7 @@ export default function EscapeGame() {
       {/* HUD */}
       <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/90 to-transparent p-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Crewmate color="#ff66aa" size={36} />
+          <Crewmate color="#ff66aa" palette={lanaPalette} size={36} />
           <div>
             <div className="font-display text-sm text-primary">ЛАНА</div>
             <div className="text-[10px] text-muted-foreground">{cur.name}</div>
