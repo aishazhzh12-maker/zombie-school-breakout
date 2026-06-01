@@ -830,6 +830,104 @@ function Info({ icon, label }: { icon: string; label: string }) {
   );
 }
 
+// Универсальный компонент ответа: варианты, число или код
+function PuzzleAnswer({ puzzle, onSubmit }: { puzzle: Puzzle; onSubmit: (correct: boolean) => void }) {
+  const [val, setVal] = useState("");
+  const [shake, setShake] = useState(false);
+
+  if (puzzle.options && puzzle.options.length > 0) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {puzzle.options.map((opt, i) => (
+          <button
+            key={i}
+            onClick={() => onSubmit(i === puzzle.answer)}
+            className="text-left text-sm bg-background/60 hover:bg-[var(--toxic)] hover:text-black border border-border hover:border-[var(--toxic)] px-3 py-3 transition-colors"
+          >
+            <span className="text-[var(--toxic)] font-bold mr-2">{String.fromCharCode(65 + i)}.</span>
+            {opt}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  const isCode = puzzle.input === "code";
+  const len = puzzle.codeLength || 4;
+
+  const submit = () => {
+    const v = val.trim();
+    const correct = v === String(puzzle.answer);
+    if (!correct) {
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+    }
+    onSubmit(correct);
+    if (!correct) setVal("");
+  };
+
+  if (isCode) {
+    return (
+      <div className={`flex flex-col items-center gap-3 ${shake ? "shake" : ""}`}>
+        <div className="flex items-center gap-2 text-[var(--toxic)]">
+          <KeyRound className="w-5 h-5" />
+          <span className="text-xs uppercase tracking-widest">Кодовый замок · {len} цифр</span>
+        </div>
+        <div className="flex gap-2">
+          {Array.from({ length: len }).map((_, i) => (
+            <div
+              key={i}
+              className="w-12 h-14 border-2 border-[var(--toxic)]/60 bg-black/60 flex items-center justify-center text-2xl font-display text-[var(--toxic)]"
+              style={{ boxShadow: "inset 0 0 10px rgba(168,255,112,0.2)" }}
+            >
+              {val[i] || ""}
+            </div>
+          ))}
+        </div>
+        <Input
+          autoFocus
+          inputMode="numeric"
+          maxLength={len}
+          value={val}
+          onChange={(e) => setVal(e.target.value.replace(/\D/g, "").slice(0, len))}
+          onKeyDown={(e) => { if (e.key === "Enter" && val.length === len) submit(); }}
+          className="w-48 text-center text-lg font-display tracking-[0.5em] bg-background border-2 border-border focus:border-[var(--toxic)]"
+          placeholder={"·".repeat(len)}
+        />
+        <Button
+          onClick={submit}
+          disabled={val.length !== len}
+          className="bg-[var(--toxic)] text-black hover:bg-[var(--toxic)]/80 font-display text-xs px-6"
+        >
+          Открыть замок
+        </Button>
+      </div>
+    );
+  }
+
+  // number / text input
+  return (
+    <div className={`flex flex-col items-center gap-3 ${shake ? "shake" : ""}`}>
+      <Input
+        autoFocus
+        inputMode={puzzle.input === "number" ? "numeric" : "text"}
+        value={val}
+        onChange={(e) => setVal(puzzle.input === "number" ? e.target.value.replace(/[^\d.-]/g, "") : e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter" && val.length > 0) submit(); }}
+        className="w-56 text-center text-xl font-display bg-background border-2 border-border focus:border-[var(--toxic)]"
+        placeholder="ответ"
+      />
+      <Button
+        onClick={submit}
+        disabled={val.length === 0}
+        className="bg-[var(--toxic)] text-black hover:bg-[var(--toxic)]/80 font-display text-xs px-6"
+      >
+        Ответить
+      </Button>
+    </div>
+  );
+}
+
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between border-b border-border/40 pb-2">
