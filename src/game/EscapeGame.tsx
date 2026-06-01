@@ -26,7 +26,10 @@ type Modal =
   | { kind: "nextLevel" }
   | { kind: "win" }
   | { kind: "lose" }
+  | { kind: "backpack" }
   | { kind: "boss" };
+
+type InvItem = { id: string; name: string; emoji: string; hp: number; food: number; strength: number };
 
 
 // ---- helpers ----
