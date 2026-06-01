@@ -441,44 +441,148 @@ function SwitchesGame({ onDone }: { onDone: (ok: boolean) => void }) {
   );
 }
 
-// 7) SWIPE — drag a card horizontally at proper speed
-function SwipeGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const [x, setX] = useState(0);
-  const drag = useRef<{ start: number; t: number } | null>(null);
-  const [msg, setMsg] = useState("Проведи карту →");
-  const slot = useRef<HTMLDivElement>(null);
+// 7) MATH — solve arithmetic
+function MathGame({ onDone }: { onDone: (ok: boolean) => void }) {
+  const problem = useMemo(() => {
+    const a = 12 + Math.floor(Math.random() * 80);
+    const b = 7 + Math.floor(Math.random() * 40);
+    const ops = ["+", "-", "×"] as const;
+    const op = ops[Math.floor(Math.random() * 3)];
+    const ans = op === "+" ? a + b : op === "-" ? a - b : a * b;
+    return { a, b, op, ans };
+  }, []);
+  const [val, setVal] = useState("");
+  const [err, setErr] = useState(false);
+  const submit = () => {
+    if (parseInt(val, 10) === problem.ans) onDone(true);
+    else { setErr(true); setTimeout(() => setErr(false), 400); }
+  };
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <p className="text-sm text-muted-foreground">Реши пример, чтобы оглушить зомби.</p>
+      <div className={`text-4xl font-display text-primary ${err ? "shake" : ""}`}>
+        {problem.a} {problem.op} {problem.b} = ?
+      </div>
+      <Input autoFocus inputMode="numeric" value={val}
+        onChange={(e) => setVal(e.target.value.replace(/[^\d-]/g, "").slice(0, 6))}
+        onKeyDown={(e) => e.key === "Enter" && submit()}
+        className="text-center w-40 text-2xl font-mono" />
+      <Button onClick={submit} disabled={!val}>
+        <Calculator className="mr-2 h-4 w-4" /> Ответить
+      </Button>
+    </div>
+  );
+}
 
-  const finish = (speed: number) => {
-    if (x < 250) { setMsg("Слишком коротко"); setX(0); return; }
-    if (speed < 0.4) setMsg("Слишком медленно — повтори");
-    else if (speed > 2.2) setMsg("Слишком быстро — повтори");
-    else { setMsg("✓ Принято"); onDone(true); return; }
-    setX(0);
+// 8) QUIZ — school question
+const QUIZ_POOL = [
+  { q: "Столица Австралии?", o: ["Сидней", "Канберра", "Мельбурн", "Перт"], a: 1 },
+  { q: "Сколько планет в Солнечной системе?", o: ["7", "8", "9", "10"], a: 1 },
+  { q: "Автор «Войны и мира»?", o: ["Достоевский", "Чехов", "Толстой", "Пушкин"], a: 2 },
+  { q: "Химический символ золота?", o: ["Go", "Gd", "Au", "Ag"], a: 2 },
+  { q: "Сколько хромосом у человека?", o: ["23", "44", "46", "48"], a: 2 },
+  { q: "Самая длинная река мира?", o: ["Амазонка", "Нил", "Янцзы", "Волга"], a: 1 },
+  { q: "Кто открыл закон тяготения?", o: ["Эйнштейн", "Ньютон", "Галилей", "Кеплер"], a: 1 },
+];
+function QuizGame({ onDone }: { onDone: (ok: boolean) => void }) {
+  const item = useMemo(() => QUIZ_POOL[Math.floor(Math.random() * QUIZ_POOL.length)], []);
+  const [tries, setTries] = useState(2);
+  const pick = (i: number) => {
+    if (i === item.a) onDone(true);
+    else {
+      const t = tries - 1;
+      setTries(t);
+      if (t <= 0) onDone(false);
+    }
+  };
+  return (
+    <div className="flex flex-col items-center gap-4 max-w-md">
+      <p className="text-sm text-muted-foreground">Школьный вопрос. Попыток: {tries}</p>
+      <h3 className="text-lg font-display text-center">{item.q}</h3>
+      <div className="grid grid-cols-2 gap-2 w-full">
+        {item.o.map((o, i) => (
+          <Button key={i} variant="secondary" onClick={() => pick(i)}>{o}</Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 9) LOCK — find code from hints
+function LockGame({ onDone }: { onDone: (ok: boolean) => void }) {
+  const target = useMemo(() => Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)), []);
+  const [dials, setDials] = useState([0, 0, 0]);
+  useEffect(() => {
+    if (dials.every((d, i) => d === target[i])) setTimeout(() => onDone(true), 300);
+  }, [dials, target, onDone]);
+  const hints = [
+    `Сумма цифр = ${target.reduce((a, b) => a + b, 0)}`,
+    `Первая цифра ${target[0] % 2 === 0 ? "чётная" : "нечётная"}`,
+    `Последняя цифра = ${target[2]}`,
+  ];
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <p className="text-sm text-muted-foreground">Подбери код по подсказкам:</p>
+      <ul className="text-xs text-amber-300 list-disc list-inside">
+        {hints.map((h, i) => <li key={i}>{h}</li>)}
+      </ul>
+      <div className="flex gap-3 bg-black/60 p-4 rounded border-2 border-amber-700">
+        {dials.map((d, i) => (
+          <div key={i} className="flex flex-col items-center gap-1">
+            <button onClick={() => setDials(p => p.map((v, j) => j === i ? (v + 1) % 10 : v))}
+              className="text-amber-300 hover:text-amber-100 text-xl">▲</button>
+            <div className="w-12 h-14 bg-zinc-900 border border-amber-600 rounded flex items-center justify-center text-3xl font-mono text-amber-200">
+              {d}
+            </div>
+            <button onClick={() => setDials(p => p.map((v, j) => j === i ? (v + 9) % 10 : v))}
+              className="text-amber-300 hover:text-amber-100 text-xl">▼</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 10) AIM — click 5 targets fast
+function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
+  const [hits, setHits] = useState(0);
+  const [pos, setPos] = useState({ x: 50, y: 50 });
+  const [time, setTime] = useState(8);
+  useEffect(() => {
+    const id = setInterval(() => setTime(t => {
+      if (t <= 0.1) { clearInterval(id); onDone(false); return 0; }
+      return +(t - 0.1).toFixed(1);
+    }), 100);
+    return () => clearInterval(id);
+  }, [onDone]);
+  const respawn = () => setPos({ x: 10 + Math.random() * 80, y: 10 + Math.random() * 80 });
+  const hit = () => {
+    const n = hits + 1;
+    setHits(n);
+    if (n >= 5) onDone(true); else respawn();
   };
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">Проведи плавно — не слишком быстро и не медленно.</p>
-      <div ref={slot} className="relative w-80 h-24 bg-black/70 border-2 border-primary/50 rounded overflow-hidden">
-        <div className="absolute top-0 bottom-0 right-0 w-2 bg-primary/60" />
-        <div
-          className="absolute top-2 bottom-2 w-20 rounded bg-gradient-to-br from-amber-300 to-amber-600 border-2 border-amber-900 cursor-grab active:cursor-grabbing flex items-center justify-center text-xs font-bold text-amber-950"
-          style={{ left: x + 4 }}
-          onMouseDown={(e) => { drag.current = { start: e.clientX - x, t: performance.now() }; }}
-          onMouseMove={(e) => { if (drag.current) setX(clamp(e.clientX - drag.current.start, 0, 280)); }}
-          onMouseUp={() => { if (drag.current) { const dt = (performance.now() - drag.current.t) / 1000; finish(x / 200 / Math.max(dt, 0.05)); drag.current = null; } }}
-          onMouseLeave={() => { if (drag.current) { setX(0); drag.current = null; setMsg("Не отрывай"); } }}
-        >
-          <CreditCard className="h-6 w-6" />
-        </div>
+      <p className="text-sm text-muted-foreground">Попади 5 раз. Осталось: <b className="text-red-400">{time}s</b></p>
+      <div className="relative w-80 h-64 bg-black/70 rounded border-2 border-red-500/50 overflow-hidden">
+        <button onClick={hit}
+          className="absolute w-10 h-10 rounded-full bg-red-500 hover:bg-red-400 border-2 border-red-200 transition-all"
+          style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: "translate(-50%, -50%)" }}>
+          <Target className="h-5 w-5 mx-auto text-white" />
+        </button>
       </div>
-      <p className="text-sm text-primary font-bold">{msg}</p>
+      <p className="font-mono text-primary">Попаданий: {hits}/5</p>
     </div>
   );
 }
 
 // ============== TASK ICONS ==============
 function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string }) {
-  const map = { wires: Zap, code: KeyRound, download: Download, reactor: Flame, trash: Trash2, switches: ToggleRight, swipe: CreditCard };
+  const map: Record<TaskKind, typeof Zap> = {
+    wires: Zap, code: KeyRound, download: Download, reactor: Flame,
+    trash: Trash2, switches: ToggleRight,
+    math: Calculator, quiz: HelpCircle, lock: Lock, aim: Target,
+  };
   const I = map[kind];
   return <I className={className} />;
 }
