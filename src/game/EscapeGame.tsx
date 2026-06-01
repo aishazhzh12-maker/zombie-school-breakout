@@ -702,6 +702,9 @@ export default function EscapeGame() {
   const [hint, setHint] = useState("");
   const [shake, setShake] = useState(false);
   const [toast, setToast] = useState<string>("");
+  const [inv, setInv] = useState<{ id: string; name: string; emoji: string; hp: number }[]>([]);
+  const invRef = useRef(inv); invRef.current = inv;
+  const lastBiteRef = useRef(0);
 
   const cur = levels[level];
   const zombies = cur.zombies;
