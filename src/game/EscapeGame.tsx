@@ -1031,6 +1031,7 @@ export default function EscapeGame() {
     } else {
       setToast(`Найдено: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} 💪)` : ""}`);
     }
+    setCoins(c => c + 5);
     setSearched(prev => new Set(prev).add(c.id));
     setTimeout(() => setToast(""), 1800);
     setModal({ kind: "none" });
