@@ -742,7 +742,7 @@ export default function EscapeGame() {
       if (e.key.toLowerCase() !== "e" && e.key !== "Enter") return;
       const px = xRef.current;
       // nearest zombie
-      const z = zombies.find(z => !killed.has(z.id) && Math.abs(z.x - px) < REACH);
+      const z = zombies.find((z, i) => !killed.has(z.id) && Math.abs(zx(z, i) - px) < REACH);
       if (z) { setModal({ kind: "task", zombie: z }); return; }
       // nearest classroom
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
