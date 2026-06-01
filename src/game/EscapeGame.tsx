@@ -1034,13 +1034,19 @@ export default function EscapeGame() {
                     </p>
                   </div>
                 </div>
+                {TIME_LIMITS[modal.zombie.kind] !== null && (
+                  <TaskTimer
+                    key={modal.zombie.id}
+                    seconds={TIME_LIMITS[modal.zombie.kind] as number}
+                    onTimeout={() => finishTask(false)}
+                  />
+                )}
                 {modal.zombie.kind === "wires" && <WiresGame onDone={finishTask} />}
                 {modal.zombie.kind === "code" && <CodeGame onDone={finishTask} />}
                 {modal.zombie.kind === "download" && <DownloadGame onDone={finishTask} />}
                 {modal.zombie.kind === "reactor" && <ReactorGame onDone={finishTask} />}
                 {modal.zombie.kind === "trash" && <TrashGame onDone={finishTask} />}
                 {modal.zombie.kind === "switches" && <SwitchesGame onDone={finishTask} />}
-                
                 {modal.zombie.kind === "quiz" && <QuizGame onDone={finishTask} />}
                 {modal.zombie.kind === "lock" && <LockGame onDone={finishTask} />}
                 {modal.zombie.kind === "aim" && <AimGame onDone={finishTask} />}
