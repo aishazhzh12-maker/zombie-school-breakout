@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "зомби школа" },
+      { name: "description", content: "Главная героиня заперта в школе помоги ей выбраться." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "зомби школа" },
+      { property: "og:description", content: "Главная героиня заперта в школе помоги ей выбраться." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "зомби школа" },
+      { name: "twitter:description", content: "Главная героиня заперта в школе помоги ей выбраться." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3188cd14-acfb-4d70-8fa3-dc37e995719e" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3188cd14-acfb-4d70-8fa3-dc37e995719e" },
     ],
     links: [
       {
