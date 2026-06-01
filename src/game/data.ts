@@ -1,7 +1,7 @@
 // Side-scrolling school corridor data — multi-level
 export type TaskKind =
   | "wires" | "code" | "download" | "reactor" | "trash" | "switches"
-  | "math" | "quiz" | "lock" | "aim";
+  | "quiz" | "lock" | "aim";
 
 export type Classroom = {
   id: string;
