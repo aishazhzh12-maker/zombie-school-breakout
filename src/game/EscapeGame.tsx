@@ -1043,9 +1043,21 @@ export default function EscapeGame() {
     const c = modal.classroom;
     const loot = c.loot;
     if (loot.strengthGain) setStrength(s => s + loot.strengthGain!);
-    if (loot.hpGain) {
-      setInv(prev => [...prev, { id: `${c.id}-${prev.length}`, name: loot.name, emoji: loot.emoji, hp: loot.hpGain! }]);
-      setToast(`📦 В рюкзаке: ${loot.emoji} ${loot.name} (+${loot.hpGain} HP)`);
+    const item: InvItem = {
+      id: `${c.id}-${Date.now()}`,
+      name: loot.name,
+      emoji: loot.emoji,
+      hp: loot.hpGain ?? 0,
+      food: loot.foodGain ?? 0,
+      strength: loot.strengthGain ?? 0,
+    };
+    if (item.hp || item.food) {
+      setInv(prev => [...prev, item]);
+      const bonus = [
+        item.hp ? `+${item.hp} HP` : null,
+        item.food ? `+${item.food} 🍴` : null,
+      ].filter(Boolean).join(", ");
+      setToast(`🎒 В рюкзаке: ${loot.emoji} ${loot.name} (${bonus})`);
     } else {
       setToast(`Найдено: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} 💪)` : ""}`);
     }
@@ -1055,22 +1067,55 @@ export default function EscapeGame() {
     setModal({ kind: "none" });
   }, [modal, maxHp]);
 
-  // Auto-use the strongest heal item from inventory when HP drops low.
+  // Use a specific item from the backpack.
+  const useItem = useCallback((idx: number) => {
+    const it = invRef.current[idx];
+    if (!it) return;
+    setInv(p => p.filter((_, i) => i !== idx));
+    if (it.hp) setHp(h => Math.min(maxHp, h + it.hp));
+    if (it.food) setHunger(h => Math.min(MAX_HUNGER, h + it.food));
+    if (it.strength) setStrength(s => s + it.strength);
+    setToast(`💊 ${it.emoji} ${it.name} использовано`);
+    setTimeout(() => setToast(""), 1400);
+  }, [maxHp]);
+
+  // Auto-emergency-heal только при критическом HP.
   useEffect(() => {
     if (!started) return;
     if (modal.kind === "lose" || modal.kind === "win") return;
     if (hp === 0) { setModal({ kind: "lose" }); return; }
-    if (hp < 35 && invRef.current.length > 0) {
+    if (hp < 20 && invRef.current.some(i => i.hp > 0)) {
       const list = invRef.current;
-      let bestIdx = 0;
-      for (let i = 1; i < list.length; i++) if (list[i].hp > list[bestIdx].hp) bestIdx = i;
+      let bestIdx = -1;
+      for (let i = 0; i < list.length; i++) if (list[i].hp > 0 && (bestIdx < 0 || list[i].hp > list[bestIdx].hp)) bestIdx = i;
+      if (bestIdx < 0) return;
       const item = list[bestIdx];
       setInv(p => p.filter((_, i) => i !== bestIdx));
       setHp(h => Math.min(maxHp, h + item.hp));
-      setToast(`💊 Лана использует ${item.emoji} ${item.name} (+${item.hp} HP)`);
+      if (item.food) setHunger(h => Math.min(MAX_HUNGER, h + item.food));
+      setToast(`💊 Авто: ${item.emoji} ${item.name} (+${item.hp} HP)`);
       setTimeout(() => setToast(""), 1800);
     }
   }, [hp, started, modal.kind, maxHp]);
+
+  // Hunger tick — убывает со временем, при 0 — кусает голод.
+  useEffect(() => {
+    if (!started || modal.kind === "lose" || modal.kind === "win") return;
+    const id = setInterval(() => {
+      if (modal.kind !== "none") return; // не убывает во время заданий
+      setHunger(h => {
+        const nh = Math.max(0, h - 1);
+        if (nh === 0) {
+          // голодаем — теряем 2 HP
+          setHp(hh => Math.max(0, hh - 2));
+          setToast("🍴 Лана голодна! -2 HP");
+          setTimeout(() => setToast(""), 1200);
+        }
+        return nh;
+      });
+    }, 2200);
+    return () => clearInterval(id);
+  }, [started, modal.kind]);
 
   const beginGame = () => {
     const mh = 100 + (save.owned.hp ? 25 : 0);
