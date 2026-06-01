@@ -1631,6 +1631,8 @@ export default function EscapeGame() {
                     setKilled(new Set());
                     setSearched(new Set());
                     setInv([]);
+                    setHunger(MAX_HUNGER);
+                    wokenRef.current = new Set();
                     setHp(h => Math.min(maxHp, h + 20));
                     setModal({ kind: "none" });
                     setToast(`▲ Этаж ${cur.id + 1}`);
