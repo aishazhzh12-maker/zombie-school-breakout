@@ -783,18 +783,7 @@ export default function EscapeGame() {
                   <Brain className="w-5 h-5 text-[var(--toxic)] mt-0.5 shrink-0" />
                   <p className="font-medium">{puzzle.question}</p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {puzzle.options.map((opt, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleExitAnswer(i)}
-                      className="text-left text-sm bg-background/60 hover:bg-[var(--toxic)] hover:text-black border border-border hover:border-[var(--toxic)] rounded-lg px-3 py-3 transition-colors"
-                    >
-                      <span className="text-[var(--toxic)] font-bold mr-2">{String.fromCharCode(65 + i)}.</span>
-                      {opt}
-                    </button>
-                  ))}
-                </div>
+                <PuzzleAnswer key={`${isBoss}-${step}`} puzzle={puzzle} onSubmit={handleExitAnswer} />
                 {puzzle.hint && (
                   showHint ? (
                     <div className="text-xs text-[var(--toxic)] bg-[var(--toxic)]/10 border border-[var(--toxic)]/30 rounded p-2">💡 {puzzle.hint}</div>
