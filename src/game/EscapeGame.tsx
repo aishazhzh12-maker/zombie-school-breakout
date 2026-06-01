@@ -968,7 +968,7 @@ export default function EscapeGame() {
           </div>
 
           {/* Zombies */}
-          {zombies.map(z => {
+          {zombies.map((z, i) => {
             if (killed.has(z.id)) {
               return (
                 <div key={z.id} className="absolute opacity-60" style={{ left: z.x - 28, top: FLOOR_Y - 20, transform: "rotate(90deg)" }}>
@@ -976,10 +976,11 @@ export default function EscapeGame() {
                 </div>
               );
             }
+            const zCur = zomPosRef.current[z.id] ?? z.x;
             return (
-              <div key={z.id} className="absolute zombie-walk" style={{ left: z.x - 28, top: FLOOR_Y - 70 }}>
-                <PixelZombie size={56} facing={z.x > x ? -1 : 1} />
-                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1">
+              <div key={z.id} className="absolute zombie-walk" style={{ left: zCur - 28, top: FLOOR_Y - 70, transition: "left 0.08s linear" }}>
+                <PixelZombie size={56} facing={zCur > x ? -1 : 1} />
+                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
                   <TaskIcon kind={z.kind} className="h-3 w-3" />
                   {z.name}
                 </div>
