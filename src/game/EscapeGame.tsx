@@ -1139,6 +1139,7 @@ export default function EscapeGame() {
                     setX(120);
                     setKilled(new Set());
                     setSearched(new Set());
+                    setInv([]);
                     setHp(h => Math.min(maxHp, h + 20));
                     setModal({ kind: "none" });
                     setToast(`▲ Этаж ${cur.id + 1}`);
