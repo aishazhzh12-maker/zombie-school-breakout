@@ -791,6 +791,25 @@ export default function EscapeGame() {
           return np;
         });
       } else setMoving(false);
+
+      // Contact damage — patrolling zombie within bite range
+      const nowT = performance.now();
+      if (nowT - lastBiteRef.current > 700) {
+        for (let i = 0; i < zombies.length; i++) {
+          const z = zombies[i];
+          if (killedRef.current.has(z.id)) continue;
+          if (Math.abs(pos[z.id] - xRef.current) < 36) {
+            lastBiteRef.current = nowT;
+            const dmg = 4 + Math.floor(Math.random() * 5);
+            setHp(h => Math.max(0, h - dmg));
+            setShake(true);
+            setTimeout(() => setShake(false), 350);
+            setToast(`🩸 ${z.name} кусает! -${dmg} HP`);
+            setTimeout(() => setToast(""), 1200);
+            break;
+          }
+        }
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
