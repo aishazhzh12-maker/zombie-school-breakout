@@ -540,18 +540,28 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
   );
 }
 
-// ============== MAIN ==============
+// ============== SCHOOL CORRIDOR (side-scroller) ==============
+const SPEED = 3.5;
+const VIEW_H = 520;
+const REACH = 70;
+
 export default function EscapeGame() {
   const [started, setStarted] = useState(false);
-  const [pos, setPos] = useState<Vec>({ x: 200, y: 140 });
+  const [x, setX] = useState(120);
   const [facing, setFacing] = useState<1 | -1>(1);
   const [moving, setMoving] = useState(false);
-  const [done, setDone] = useState<Set<string>>(new Set());
+  const [hp, setHp] = useState(80);
+  const [maxHp, setMaxHp] = useState(100);
+  const [strength, setStrength] = useState(1);
+  const [killed, setKilled] = useState<Set<string>>(new Set());
+  const [searched, setSearched] = useState<Set<string>>(new Set());
   const [modal, setModal] = useState<Modal>({ kind: "none" });
-  const [hint, setHint] = useState<string>("");
+  const [hint, setHint] = useState("");
+  const [shake, setShake] = useState(false);
+  const [toast, setToast] = useState<string>("");
+
   const keys = useRef<Record<string, boolean>>({});
-  const posRef = useRef(pos);
-  posRef.current = pos;
+  const xRef = useRef(x); xRef.current = x;
   const viewportRef = useRef<HTMLDivElement>(null);
 
   // input
@@ -563,250 +573,274 @@ export default function EscapeGame() {
     return () => { window.removeEventListener("keydown", dn); window.removeEventListener("keyup", up); };
   }, []);
 
-  // interact key
+  const allKilled = killed.size === zombies.length;
+
+  // interact
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (modal.kind !== "none") return;
-      if (e.key.toLowerCase() === "e" || e.key === "Enter") {
-        // nearest task
-        const near = tasks.find(t => !done.has(t.id) && dist(posRef.current, { x: t.x, y: t.y }) < 50);
-        if (near) { setModal({ kind: "task", task: near }); return; }
-        // boss check
-        if (done.size === tasks.length) {
-          const cafeteria = rooms.find(r => r.id === "cafeteria")!;
-          if (inRect(posRef.current, cafeteria)) { setModal({ kind: "boss" }); return; }
-        }
-        // talk
-        const cm = crewmates.find(c => {
-          const r = rooms.find(rr => rr.id === c.room)!;
-          return dist(posRef.current, { x: r.x + c.ox, y: r.y + c.oy }) < 60;
-        });
-        if (cm) setModal({ kind: "talk", name: cm.name, line: cm.line });
+      if (e.key.toLowerCase() !== "e" && e.key !== "Enter") return;
+      const px = xRef.current;
+      // nearest zombie
+      const z = zombies.find(z => !killed.has(z.id) && Math.abs(z.x - px) < REACH);
+      if (z) { setModal({ kind: "task", zombie: z }); return; }
+      // nearest classroom
+      const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
+      if (c) { setModal({ kind: "search", classroom: c }); return; }
+      // exit door
+      if (Math.abs(EXIT_X - px) < REACH) {
+        if (!allKilled) {
+          setToast("Дверь не откроется — впереди ещё зомби.");
+          setTimeout(() => setToast(""), 1800);
+        } else setModal({ kind: "exit" });
       }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [modal.kind, done]);
+  }, [modal.kind, killed, searched, allKilled]);
 
-  // game loop
+  // game loop — walking + auto-block at zombies
   useEffect(() => {
     if (!started || modal.kind !== "none") { setMoving(false); return; }
     let raf = 0;
     const tick = () => {
-      let dx = 0, dy = 0;
-      if (keys.current["w"] || keys.current["arrowup"]) dy -= 1;
-      if (keys.current["s"] || keys.current["arrowdown"]) dy += 1;
+      let dx = 0;
       if (keys.current["a"] || keys.current["arrowleft"]) { dx -= 1; setFacing(-1); }
       if (keys.current["d"] || keys.current["arrowright"]) { dx += 1; setFacing(1); }
-      const mag = Math.hypot(dx, dy);
-      if (mag > 0) {
-        dx = (dx / mag) * SPEED; dy = (dy / mag) * SPEED;
+      if (dx !== 0) {
         setMoving(true);
-        setPos(p => {
-          // restrict to rooms/corridor: must be inside ANY room
-          const np = { x: clamp(p.x + dx, PLAYER_R, MAP_W - PLAYER_R), y: clamp(p.y + dy, PLAYER_R, MAP_H - PLAYER_R) };
-          const tryX = { x: np.x, y: p.y };
-          const tryY = { x: p.x, y: np.y };
-          const ok = (q: Vec) => rooms.some(r => inRect(q, r, 10));
-          const next = { x: ok(tryX) ? np.x : p.x, y: ok(tryY) ? np.y : p.y };
-          return next;
+        setX(p => {
+          let np = clamp(p + dx * SPEED, 80, WORLD_W - 80);
+          // block at undefeated zombies (only when walking towards them)
+          const block = zombies.find(z => !killed.has(z.id) &&
+            ((dx > 0 && z.x > p && z.x < np + 30) || (dx < 0 && z.x < p && z.x > np - 30)));
+          if (block) np = dx > 0 ? block.x - 40 : block.x + 40;
+          // block at exit door if not all killed
+          if (!allKilled && dx > 0 && EXIT_X > p && EXIT_X < np + 30) np = EXIT_X - 40;
+          return np;
         });
       } else setMoving(false);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [started, modal.kind]);
+  }, [started, modal.kind, killed, allKilled]);
 
-  // hint near task
+  // hint
   useEffect(() => {
     const id = setInterval(() => {
-      const near = tasks.find(t => !done.has(t.id) && dist(posRef.current, { x: t.x, y: t.y }) < 50);
-      if (near) { setHint(`[E] ${near.title}`); return; }
-      const cm = crewmates.find(c => {
-        const r = rooms.find(rr => rr.id === c.room)!;
-        return dist(posRef.current, { x: r.x + c.ox, y: r.y + c.oy }) < 60;
-      });
-      if (cm) { setHint(`[E] Поговорить с ${cm.name}`); return; }
-      if (done.size === tasks.length) {
-        const cafe = rooms.find(r => r.id === "cafeteria")!;
-        if (inRect(posRef.current, cafe)) { setHint("[E] СБЕЖАТЬ через столовую — но Директор ждёт!"); return; }
+      const px = xRef.current;
+      const z = zombies.find(z => !killed.has(z.id) && Math.abs(z.x - px) < REACH);
+      if (z) { setHint(`[E] Победить ${z.name}`); return; }
+      const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
+      if (c) { setHint(`[E] Осмотреть · ${c.name}`); return; }
+      if (Math.abs(EXIT_X - px) < REACH) {
+        setHint(allKilled ? "[E] СБЕЖАТЬ из школы!" : "Дверь заблокирована");
+        return;
       }
       setHint("");
     }, 120);
     return () => clearInterval(id);
-  }, [done]);
+  }, [killed, searched, allKilled]);
 
   // camera follow
   const cam = useMemo(() => {
-    const el = viewportRef.current;
-    const vw = el?.clientWidth ?? 800;
-    const vh = el?.clientHeight ?? 600;
-    return {
-      x: clamp(pos.x - vw / 2, 0, MAP_W - vw),
-      y: clamp(pos.y - vh / 2, 0, MAP_H - vh),
-    };
-  }, [pos]);
+    const vw = viewportRef.current?.clientWidth ?? 800;
+    return clamp(x - vw / 2, 0, WORLD_W - vw);
+  }, [x]);
 
   const finishTask = useCallback((ok: boolean) => {
-    if (ok && modal.kind === "task") {
-      setDone(prev => new Set(prev).add(modal.task.id));
+    if (modal.kind !== "task") { setModal({ kind: "none" }); return; }
+    const z = modal.zombie;
+    if (ok) {
+      setKilled(prev => new Set(prev).add(z.id));
+      setToast(`💀 ${z.name} повержен! +50 очков`);
+    } else {
+      const dmg = Math.max(8, 25 - strength * 3);
+      setHp(h => {
+        const nh = Math.max(0, h - dmg);
+        if (nh === 0) setTimeout(() => setModal({ kind: "lose" }), 200);
+        return nh;
+      });
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      setToast(`💢 Зомби укусил! -${dmg} HP`);
     }
+    setTimeout(() => setToast(""), 1800);
     setModal({ kind: "none" });
-  }, [modal]);
+  }, [modal, strength]);
+
+  const finishSearch = useCallback(() => {
+    if (modal.kind !== "search") { setModal({ kind: "none" }); return; }
+    const c = modal.classroom;
+    const loot = c.loot;
+    if (loot.hpGain) setHp(h => Math.min(maxHp, h + loot.hpGain!));
+    if (loot.strengthGain) setStrength(s => s + loot.strengthGain!);
+    setSearched(prev => new Set(prev).add(c.id));
+    setToast(`Найдено: ${loot.emoji} ${loot.name}`);
+    setTimeout(() => setToast(""), 1800);
+    setModal({ kind: "none" });
+  }, [modal, maxHp]);
 
   if (!started) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-red-950 p-6">
         <div className="max-w-2xl text-center space-y-6">
-          <div className="flex justify-center gap-3 mb-4">
+          <div className="flex justify-center items-end gap-4 mb-4">
             <Crewmate color="#ff66aa" />
-            <Crewmate color="#3aa3ff" />
+            <PixelZombie />
+            <PixelZombie facing={1} />
             <Impostor size={72} />
-            <Crewmate color="#ffd23a" />
-            <Crewmate color="#7ad84a" />
           </div>
           <h1 className="font-display text-3xl md:text-4xl text-primary">СБЕГИ ИЗ ШКОЛЫ</h1>
           <p className="text-muted-foreground">
-            Школа захвачена. Среди вас — <span className="text-red-400 font-bold">импостор-Директор</span>.
-            Лана и одноклассники должны выполнить все задания, чтобы открыть выход через столовую — и победить босса.
+            Школа захвачена зомби. Лана идёт по коридору, осматривает кабинеты в поисках припасов и
+            сражается с зомби, решая задачи. В конце коридора — дверь на улицу.
           </p>
           <div className="text-left text-sm bg-black/40 rounded p-4 space-y-1">
-            <p>🎮 <b>WASD</b> или <b>стрелки</b> — двигаться</p>
-            <p>⚡ <b>E</b> / <b>Enter</b> — взаимодействовать (задание / диалог)</p>
-            <p>✅ Выполни все 7 заданий → иди в <b>Столовую</b> на финального босса</p>
+            <p>🎮 <b>A/D</b> или <b>←/→</b> — идти по коридору</p>
+            <p>⚡ <b>E</b> / <b>Enter</b> — осмотреть кабинет / атаковать зомби</p>
+            <p>🧟 Зомби побеждаются мини-играми (провода, код, рубильники и т.д.)</p>
+            <p>🚪 Дверь выхода откроется, когда все зомби в коридоре повержены.</p>
           </div>
-          <Button size="lg" onClick={() => setStarted(true)} className="font-display">
-            НАЧАТЬ
-          </Button>
+          <Button size="lg" onClick={() => setStarted(true)} className="font-display">НАЧАТЬ</Button>
         </div>
       </div>
     );
   }
 
-  const progress = done.size;
-  const total = tasks.length;
-
   return (
-    <div className="h-screen w-screen overflow-hidden bg-black text-foreground relative select-none">
+    <div className={`h-screen w-screen overflow-hidden bg-black text-foreground relative select-none ${shake ? "shake" : ""}`}>
       {/* HUD */}
-      <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/90 to-transparent p-3 flex items-center justify-between">
+      <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/90 to-transparent p-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Crewmate color="#ff66aa" size={36} />
           <div>
             <div className="font-display text-sm text-primary">ЛАНА</div>
-            <div className="text-xs text-muted-foreground">Школа №7 · Карантин</div>
+            <div className="text-[10px] text-muted-foreground">Школа №7 · Коридор</div>
           </div>
         </div>
-        <div className="flex-1 max-w-md mx-6">
-          <div className="flex justify-between text-xs mb-1">
-            <span>Задания</span>
-            <span className="font-mono">{progress} / {total}</span>
-          </div>
-          <div className="h-3 bg-black/60 rounded border border-primary/40 overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-emerald-400 to-primary transition-all" style={{ width: `${(progress / total) * 100}%` }} />
+        <div className="flex-1 max-w-md">
+          <div className="flex justify-between text-xs mb-1"><span>HP</span><span className="font-mono">{hp} / {maxHp}</span></div>
+          <div className="h-3 bg-black/60 rounded border border-red-400/40 overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-red-600 to-rose-400 transition-all" style={{ width: `${(hp / maxHp) * 100}%` }} />
           </div>
         </div>
-        <div className="text-right text-xs">
-          <div className="flex gap-1 justify-end mb-1">
-            {tasks.map(t => (
-              <div key={t.id} title={t.title}
-                className={`w-6 h-6 rounded flex items-center justify-center border ${done.has(t.id) ? "bg-emerald-500/30 border-emerald-400 text-emerald-300" : "bg-black/40 border-zinc-600 text-zinc-500"}`}>
-                <TaskIcon kind={t.kind} className="h-3 w-3" />
-              </div>
-            ))}
+        <div className="text-right text-xs space-y-1">
+          <div className="flex gap-3 justify-end">
+            <span>💪 ×{strength}</span>
+            <span>💀 {killed.size}/{zombies.length}</span>
+            <span>🔍 {searched.size}/{classrooms.length}</span>
           </div>
-          {done.size === total && <div className="text-red-400 font-bold animate-pulse">→ Столовая: финал!</div>}
+          {allKilled && <div className="text-emerald-400 font-bold animate-pulse">→ Беги к выходу!</div>}
         </div>
       </div>
 
-      {/* Map viewport */}
+      {/* Corridor */}
       <div ref={viewportRef} className="absolute inset-0 pt-16">
-        <div className="relative" style={{ width: MAP_W, height: MAP_H, transform: `translate(${-cam.x}px, ${-cam.y}px)` }}>
-          {/* space background */}
-          <div className="absolute -inset-40 bg-[radial-gradient(ellipse_at_center,#1a1a2e_0%,#0a0a14_70%)]" />
-          {/* corridors connecting rooms */}
-          <svg className="absolute inset-0 pointer-events-none" width={MAP_W} height={MAP_H}>
-            <g stroke="#1f2530" strokeWidth={40} fill="none" strokeLinecap="round">
-              <line x1={400} y1={140} x2={600} y2={140} />
-              <line x1={720} y1={140} x2={760} y2={140} />
-              <line x1={190} y1={220} x2={190} y2={460} />
-              <line x1={300} y1={550} x2={360} y2={550} />
-              <line x1={600} y1={550} x2={660} y2={550} />
-              <line x1={880} y1={550} x2={940} y2={420} />
-              <line x1={600} y1={220} x2={600} y2={460} />
-              <line x1={860} y1={220} x2={1040} y2={300} />
-            </g>
-          </svg>
+        <div className="relative h-full" style={{ width: WORLD_W, transform: `translateX(${-cam}px)` }}>
+          {/* Sky / outdoors visible at exit */}
+          <div className="absolute inset-0" style={{
+            background: "linear-gradient(180deg, #1a1825 0%, #221820 50%, #181018 100%)",
+          }} />
+          {/* Floor */}
+          <div className="absolute left-0 right-0" style={{ top: FLOOR_Y + 30, height: VIEW_H - FLOOR_Y - 30,
+            background: "repeating-linear-gradient(90deg, #2a1f1a 0 60px, #1f1612 60px 120px)",
+            boxShadow: "inset 0 4px 0 #0a0606" }} />
+          {/* Ceiling */}
+          <div className="absolute left-0 right-0" style={{ top: 0, height: CEIL_Y - 16,
+            background: "linear-gradient(180deg,#0a0a14, #1a1a26)", boxShadow: "inset 0 -3px 0 #000" }} />
+          {/* Wall stripe */}
+          <div className="absolute left-0 right-0" style={{ top: CEIL_Y - 16, height: 8, background: "#3a2a2a" }} />
 
-          {/* Rooms */}
-          {rooms.map((r: Room) => (
-            <div key={r.id}
-              className="absolute rounded-lg border-2 border-black/70 shadow-[inset_0_0_60px_rgba(0,0,0,0.6)]"
-              style={{ left: r.x, top: r.y, width: r.w, height: r.h, background: r.color }}>
-              <div className="absolute top-1 left-2 text-[11px] uppercase tracking-wider font-display text-white/70">{r.name}</div>
-              {/* floor tiles */}
-              <div className="absolute inset-2 rounded opacity-30"
-                style={{ backgroundImage: "linear-gradient(45deg, transparent 48%, rgba(255,255,255,0.08) 48% 52%, transparent 52%), linear-gradient(-45deg, transparent 48%, rgba(255,255,255,0.08) 48% 52%, transparent 52%)", backgroundSize: "24px 24px" }} />
-            </div>
+          {/* Flickering lights */}
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="absolute flicker" style={{
+              left: 180 + i * 320, top: CEIL_Y - 8, width: 60, height: 14,
+              background: "radial-gradient(ellipse, #ffeb3b 0%, #ffb84d 40%, transparent 70%)",
+              filter: "blur(2px)",
+            }} />
           ))}
 
-          {/* Tasks markers */}
-          {tasks.map((t: Task) => {
-            const isDone = done.has(t.id);
+          {/* Classroom doors */}
+          {classrooms.map(c => {
+            const isDone = searched.has(c.id);
             return (
-              <div key={t.id} className="absolute"
-                style={{ left: t.x - 18, top: t.y - 18 }}>
-                <div className={`relative w-9 h-9 rounded-full flex items-center justify-center border-2 ${isDone ? "bg-emerald-500/30 border-emerald-300" : "bg-amber-400/30 border-amber-300 glow-toxic"}`}>
-                  <TaskIcon kind={t.kind} className={`h-5 w-5 ${isDone ? "text-emerald-200" : "text-amber-100"}`} />
-                  {isDone && <CheckCircle2 className="absolute -top-2 -right-2 h-4 w-4 text-emerald-300 bg-black rounded-full" />}
+              <div key={c.id} className="absolute" style={{ left: c.x - 40, top: FLOOR_Y - 110 }}>
+                {/* door */}
+                <div className="relative w-20 h-32 border-4 border-amber-900 rounded-t-md shadow-[inset_0_0_20px_#000]"
+                  style={{ background: isDone ? "#3a2a2a" : "linear-gradient(180deg,#5a3a1a,#3a2410)" }}>
+                  <div className="absolute right-2 top-14 w-2 h-2 rounded-full bg-amber-300" />
+                  {/* sign */}
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/80 text-[9px] text-amber-200 px-2 py-0.5 rounded whitespace-nowrap font-pixel">
+                    {c.name}
+                  </div>
+                  {isDone && (
+                    <div className="absolute inset-0 flex items-center justify-center text-emerald-400 text-3xl font-bold">✓</div>
+                  )}
                 </div>
               </div>
             );
           })}
 
-          {/* Crewmates */}
-          {crewmates.map(c => {
-            const r = rooms.find(rr => rr.id === c.room)!;
+          {/* Exit door */}
+          <div className="absolute" style={{ left: EXIT_X - 50, top: FLOOR_Y - 150 }}>
+            <div className={`relative w-24 h-40 border-4 rounded-t-md ${allKilled ? "border-emerald-400 glow-toxic" : "border-red-700"}`}
+              style={{ background: allKilled ? "linear-gradient(180deg,#1a3a1a,#0a1a0a)" : "linear-gradient(180deg,#2a0a0a,#1a0505)" }}>
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/90 text-[10px] text-emerald-300 px-2 py-0.5 rounded whitespace-nowrap font-pixel">
+                {allKilled ? "ВЫХОД ОТКРЫТ" : "ВЫХОД ⛔"}
+              </div>
+              <DoorClosed className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-white/60" />
+            </div>
+          </div>
+
+          {/* Zombies */}
+          {zombies.map(z => {
+            if (killed.has(z.id)) {
+              return (
+                <div key={z.id} className="absolute opacity-60" style={{ left: z.x - 28, top: FLOOR_Y - 20, transform: "rotate(90deg)" }}>
+                  <PixelZombie size={56} />
+                </div>
+              );
+            }
             return (
-              <div key={c.id} className="absolute lana-idle" style={{ left: r.x + c.ox - 28, top: r.y + c.oy - 30 }}>
-                <Crewmate color={c.color} size={56} />
-                <div className="text-center text-[10px] mt-1 bg-black/70 px-1 rounded">{c.name}</div>
+              <div key={z.id} className="absolute zombie-walk" style={{ left: z.x - 28, top: FLOOR_Y - 70 }}>
+                <PixelZombie size={56} facing={z.x > x ? -1 : 1} />
+                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1">
+                  <TaskIcon kind={z.kind} className="h-3 w-3" />
+                  {z.name}
+                </div>
               </div>
             );
           })}
 
-          {/* Impostor in cafeteria (visible when all tasks done) */}
-          {done.size === tasks.length && (() => {
-            const cafe = rooms.find(r => r.id === "cafeteria")!;
-            return (
-              <div className="absolute" style={{ left: cafe.x + cafe.w / 2 - 40, top: cafe.y + cafe.h / 2 - 40 }}>
-                <Impostor size={80} />
-                <div className="text-center text-[10px] mt-1 bg-red-900/80 text-red-100 px-1 rounded font-display animate-pulse">ДИРЕКТОР</div>
-              </div>
-            );
-          })()}
-
-          {/* Lana (player) */}
-          <div className="absolute" style={{ left: pos.x - 28, top: pos.y - 32 }}>
+          {/* Lana */}
+          <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 }}>
             <div className={moving ? "lana-walk" : "lana-idle"}>
               <Crewmate color="#ff66aa" facing={facing} size={56} />
             </div>
-            <div className="text-center text-[10px] mt-1 bg-pink-900/70 text-pink-100 px-1 rounded">Лана</div>
           </div>
+
+          {/* Scanlines */}
+          <div className="absolute inset-0 pointer-events-none scanlines" />
         </div>
       </div>
 
-      {/* Hint */}
+      {/* Hint + toast */}
       {hint && modal.kind === "none" && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-black/80 border border-primary/50 px-4 py-2 rounded font-display text-sm text-primary animate-pulse">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-black/85 border border-primary/50 px-4 py-2 rounded font-display text-sm text-primary animate-pulse">
           {hint}
+        </div>
+      )}
+      {toast && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 bg-black/90 border border-amber-400/60 text-amber-200 px-4 py-2 rounded font-pixel text-base">
+          {toast}
         </div>
       )}
 
       {/* Modals */}
       {modal.kind !== "none" && (
-        <div className="absolute inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="absolute inset-0 z-40 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-zinc-900 border-2 border-primary/60 rounded-lg max-w-2xl w-full p-6 relative">
             {modal.kind !== "win" && modal.kind !== "lose" && modal.kind !== "boss" && (
               <button onClick={() => setModal({ kind: "none" })} className="absolute top-2 right-2 text-zinc-400 hover:text-white">
@@ -816,27 +850,45 @@ export default function EscapeGame() {
 
             {modal.kind === "task" && (
               <div>
-                <h2 className="font-display text-lg text-primary mb-1 flex items-center gap-2">
-                  <TaskIcon kind={modal.task.kind} className="h-5 w-5" />
-                  {modal.task.title}
-                </h2>
-                <p className="text-xs text-muted-foreground mb-4">{modal.task.hint}</p>
-                {modal.task.kind === "wires" && <WiresGame onDone={finishTask} />}
-                {modal.task.kind === "code" && <CodeGame onDone={finishTask} />}
-                {modal.task.kind === "download" && <DownloadGame onDone={finishTask} />}
-                {modal.task.kind === "reactor" && <ReactorGame onDone={finishTask} />}
-                {modal.task.kind === "trash" && <TrashGame onDone={finishTask} />}
-                {modal.task.kind === "switches" && <SwitchesGame onDone={finishTask} />}
-                {modal.task.kind === "swipe" && <SwipeGame onDone={finishTask} />}
+                <div className="flex items-center gap-3 mb-3">
+                  <PixelZombie size={48} />
+                  <div>
+                    <h2 className="font-display text-lg text-red-400">{modal.zombie.name}</h2>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <TaskIcon kind={modal.zombie.kind} className="h-3 w-3" />
+                      Реши задачу, чтобы повергнуть зомби
+                    </p>
+                  </div>
+                </div>
+                {modal.zombie.kind === "wires" && <WiresGame onDone={finishTask} />}
+                {modal.zombie.kind === "code" && <CodeGame onDone={finishTask} />}
+                {modal.zombie.kind === "download" && <DownloadGame onDone={finishTask} />}
+                {modal.zombie.kind === "reactor" && <ReactorGame onDone={finishTask} />}
+                {modal.zombie.kind === "trash" && <TrashGame onDone={finishTask} />}
+                {modal.zombie.kind === "switches" && <SwitchesGame onDone={finishTask} />}
+                {modal.zombie.kind === "swipe" && <SwipeGame onDone={finishTask} />}
               </div>
             )}
 
-            {modal.kind === "talk" && (
+            {modal.kind === "search" && (
               <div className="flex flex-col items-center gap-4 text-center">
-                <MessageCircle className="h-8 w-8 text-primary" />
-                <h3 className="font-display text-lg">{modal.name}</h3>
-                <p className="text-base">«{modal.line}»</p>
-                <Button onClick={() => setModal({ kind: "none" })}>Понятно</Button>
+                <h3 className="font-display text-lg text-primary">{modal.classroom.name}</h3>
+                <div className="text-6xl">{modal.classroom.loot.emoji}</div>
+                <p>Лана находит: <b>{modal.classroom.loot.name}</b></p>
+                <p className="text-xs text-muted-foreground">
+                  {modal.classroom.loot.hpGain ? `+${modal.classroom.loot.hpGain} HP  ` : ""}
+                  {modal.classroom.loot.strengthGain ? `+${modal.classroom.loot.strengthGain} 💪` : ""}
+                </p>
+                <Button onClick={finishSearch}>Забрать</Button>
+              </div>
+            )}
+
+            {modal.kind === "exit" && (
+              <div className="flex flex-col items-center gap-4 text-center max-w-md">
+                <Impostor size={80} />
+                <h3 className="font-display text-lg text-red-400">У выхода ждёт Директор</h3>
+                <p>«Лана… последний рубеж. Ответь на три загадки — и ты свободна.»</p>
+                <Button onClick={() => setModal({ kind: "boss" })}>Принять бой</Button>
               </div>
             )}
 
@@ -847,17 +899,12 @@ export default function EscapeGame() {
             {modal.kind === "win" && (
               <div className="text-center space-y-4">
                 <h2 className="font-display text-2xl text-emerald-400">ПОБЕДА!</h2>
-                <p>Лана и одноклассники вырвались из школы. Импостор остался запертым в спортзале.</p>
-                <div className="flex justify-center gap-2">
-                  <Crewmate color="#ff66aa" />
-                  <Crewmate color="#e84545" />
-                  <Crewmate color="#3aa3ff" />
-                  <Crewmate color="#ffd23a" />
-                  <Crewmate color="#7ad84a" />
-                </div>
-                <Button onClick={() => { setDone(new Set()); setPos({ x: 200, y: 140 }); setModal({ kind: "none" }); }}>
-                  Снова
-                </Button>
+                <p>Лана выбежала из школы. Солнце. Свобода.</p>
+                <div className="flex justify-center"><Crewmate color="#ff66aa" size={80} /></div>
+                <Button onClick={() => {
+                  setStarted(false); setX(120); setHp(80); setMaxHp(100); setStrength(1);
+                  setKilled(new Set()); setSearched(new Set()); setModal({ kind: "none" });
+                }}>Снова</Button>
               </div>
             )}
 
@@ -865,8 +912,11 @@ export default function EscapeGame() {
               <div className="text-center space-y-4">
                 <Skull className="h-16 w-16 text-red-500 mx-auto" />
                 <h2 className="font-display text-2xl text-red-400">ПОРАЖЕНИЕ</h2>
-                <p>Директор-импостор оказался хитрее. Попробуй снова.</p>
-                <Button onClick={() => setModal({ kind: "boss" })}>Повторить бой</Button>
+                <p>Зомби оказались сильнее. Попробуй снова.</p>
+                <Button onClick={() => {
+                  setStarted(false); setX(120); setHp(80); setMaxHp(100); setStrength(1);
+                  setKilled(new Set()); setSearched(new Set()); setModal({ kind: "none" });
+                }}>Начать заново</Button>
               </div>
             )}
           </div>
@@ -875,3 +925,4 @@ export default function EscapeGame() {
     </div>
   );
 }
+
