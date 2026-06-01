@@ -1,7 +1,7 @@
 // Side-scrolling school corridor data — multi-level
 export type TaskKind =
   | "wires" | "code" | "download" | "reactor" | "trash" | "switches"
-  | "math" | "quiz" | "lock" | "aim";
+  | "quiz" | "lock" | "aim";
 
 export type Classroom = {
   id: string;
@@ -43,7 +43,7 @@ export const levels: Level[] = [
     ],
     zombies: [
       { id: "l1-z1", x: 500, kind: "switches", name: "Зомби-ученик" },
-      { id: "l1-z2", x: 1050, kind: "math", name: "Зомби-математик" },
+      { id: "l1-z2", x: 1050, kind: "trash", name: "Зомби-уборщик" },
       { id: "l1-z3", x: 1750, kind: "wires", name: "Зомби-электрик" },
       { id: "l1-z4", x: 2450, kind: "quiz", name: "Зомби-учитель" },
     ],
@@ -81,7 +81,7 @@ export const levels: Level[] = [
       { id: "l3-canteen", x: 2900, name: "Столовая", loot: { name: "Обед", emoji: "🍲", hpGain: 40 } },
     ],
     zombies: [
-      { id: "l3-z1", x: 600, kind: "math", name: "Зомби-завкафедрой" },
+      { id: "l3-z1", x: 600, kind: "reactor", name: "Зомби-завкафедрой" },
       { id: "l3-z2", x: 1200, kind: "quiz", name: "Зомби-психолог" },
       { id: "l3-z3", x: 1800, kind: "wires", name: "Зомби-электрик" },
       { id: "l3-z4", x: 2500, kind: "lock", name: "Зомби-охранник" },

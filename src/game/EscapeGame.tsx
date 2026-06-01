@@ -314,7 +314,7 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
   useEffect(() => {
     const tick = () => {
       setProgress(p => {
-        const np = holding.current ? Math.min(100, p + 1) : Math.max(0, p - 0.5);
+        const np = holding.current ? Math.min(100, p + 0.8) : Math.max(0, p - 1.2);
         if (np >= 100) { onDone(true); return 100; }
         return np;
       });
@@ -344,7 +344,7 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
 
 // 4) REACTOR — Simon
 function ReactorGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const [seq] = useState(() => Array.from({ length: 5 }, () => Math.floor(Math.random() * 4)));
+  const [seq] = useState(() => Array.from({ length: 7 }, () => Math.floor(Math.random() * 4)));
   const [step, setStep] = useState(0);
   const [showing, setShowing] = useState(-1);
   const [phase, setPhase] = useState<"watch" | "input">("watch");
@@ -582,7 +582,7 @@ function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string
   const map: Record<TaskKind, typeof Zap> = {
     wires: Zap, code: KeyRound, download: Download, reactor: Flame,
     trash: Trash2, switches: ToggleRight,
-    math: Calculator, quiz: HelpCircle, lock: Lock, aim: Target,
+    quiz: HelpCircle, lock: Lock, aim: Target,
   };
   const I = map[kind];
   return <I className={className} />;
@@ -647,6 +647,46 @@ const SPEED = 3.5;
 const VIEW_H = 520;
 const REACH = 70;
 
+// Task time limits (seconds). aim has its own timer.
+const TIME_LIMITS: Record<TaskKind, number | null> = {
+  wires: 14, code: 18, download: 10, reactor: 22,
+  trash: 12, switches: 10, quiz: 10, lock: 25, aim: null,
+};
+
+// Countdown above each task — calls onTimeout when 0.
+function TaskTimer({ seconds, onTimeout }: { seconds: number; onTimeout: () => void }) {
+  const [left, setLeft] = useState(seconds);
+  const firedRef = useRef(false);
+  useEffect(() => {
+    const t0 = performance.now();
+    const id = setInterval(() => {
+      const elapsed = (performance.now() - t0) / 1000;
+      const remaining = Math.max(0, seconds - elapsed);
+      setLeft(remaining);
+      if (remaining <= 0 && !firedRef.current) {
+        firedRef.current = true;
+        clearInterval(id);
+        onTimeout();
+      }
+    }, 50);
+    return () => clearInterval(id);
+  }, [seconds, onTimeout]);
+  const pct = (left / seconds) * 100;
+  const danger = left < seconds * 0.3;
+  return (
+    <div className="mb-3">
+      <div className="flex justify-between text-[11px] font-pixel mb-1">
+        <span className={danger ? "text-red-400 animate-pulse" : "text-amber-300"}>⏱ Время на задание</span>
+        <span className={`font-mono ${danger ? "text-red-400" : "text-amber-200"}`}>{left.toFixed(1)}s</span>
+      </div>
+      <div className="h-2 bg-black/70 rounded overflow-hidden border border-amber-700/40">
+        <div className={`h-full transition-[width] ${danger ? "bg-red-500" : "bg-gradient-to-r from-amber-400 to-red-500"}`}
+          style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 export default function EscapeGame() {
   const [started, setStarted] = useState(false);
   const [level, setLevel] = useState(0);
@@ -674,6 +714,16 @@ export default function EscapeGame() {
   const xRef = useRef(x); xRef.current = x;
   const viewportRef = useRef<HTMLDivElement>(null);
 
+  // Animated zombie positions (patrol around their home x).
+  const zomPosRef = useRef<Record<string, number>>({});
+  const [, setZomTick] = useState(0);
+  const tStartRef = useRef(performance.now());
+  const zx = useCallback((z: Zombie, idx: number) => {
+    const t = (performance.now() - tStartRef.current) / 1000;
+    return z.x + Math.sin(t * 0.9 + idx * 1.7) * 60;
+  }, []);
+  const killedRef = useRef(killed); killedRef.current = killed;
+
   // input
   useEffect(() => {
     const dn = (e: KeyboardEvent) => { keys.current[e.key.toLowerCase()] = true; };
@@ -692,7 +742,7 @@ export default function EscapeGame() {
       if (e.key.toLowerCase() !== "e" && e.key !== "Enter") return;
       const px = xRef.current;
       // nearest zombie
-      const z = zombies.find(z => !killed.has(z.id) && Math.abs(z.x - px) < REACH);
+      const z = zombies.find((z, i) => !killed.has(z.id) && Math.abs(zx(z, i) - px) < REACH);
       if (z) { setModal({ kind: "task", zombie: z }); return; }
       // nearest classroom
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
@@ -714,6 +764,12 @@ export default function EscapeGame() {
     if (!started || modal.kind !== "none") { setMoving(false); return; }
     let raf = 0;
     const tick = () => {
+      // Update zombie patrol positions
+      const pos: Record<string, number> = {};
+      zombies.forEach((z, i) => { pos[z.id] = zx(z, i); });
+      zomPosRef.current = pos;
+      setZomTick(t => (t + 1) % 1000000);
+
       let dx = 0;
       if (keys.current["a"] || keys.current["arrowleft"]) { dx -= 1; setFacing(-1); }
       if (keys.current["d"] || keys.current["arrowright"]) { dx += 1; setFacing(1); }
@@ -721,11 +777,13 @@ export default function EscapeGame() {
         setMoving(true);
         setX(p => {
           let np = clamp(p + dx * SPEED, 80, WORLD_W - 80);
-          // block at undefeated zombies (only when walking towards them)
-          const block = zombies.find(z => !killed.has(z.id) &&
-            ((dx > 0 && z.x > p && z.x < np + 30) || (dx < 0 && z.x < p && z.x > np - 30)));
-          if (block) np = dx > 0 ? block.x - 40 : block.x + 40;
-          // block at exit door if not all killed
+          // block at undefeated zombies (only when walking towards them) — use live pos
+          const block = zombies.find(z => {
+            if (killedRef.current.has(z.id)) return false;
+            const zc = pos[z.id];
+            return (dx > 0 && zc > p && zc < np + 30) || (dx < 0 && zc < p && zc > np - 30);
+          });
+          if (block) np = dx > 0 ? pos[block.id] - 40 : pos[block.id] + 40;
           if (!allKilled && dx > 0 && EXIT_X > p && EXIT_X < np + 30) np = EXIT_X - 40;
           return np;
         });
@@ -734,13 +792,13 @@ export default function EscapeGame() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [started, modal.kind, killed, allKilled, level]);
+  }, [started, modal.kind, allKilled, level, zombies, EXIT_X, WORLD_W, zx]);
 
   // hint
   useEffect(() => {
     const id = setInterval(() => {
       const px = xRef.current;
-      const z = zombies.find(z => !killed.has(z.id) && Math.abs(z.x - px) < REACH);
+      const z = zombies.find((z, i) => !killed.has(z.id) && Math.abs((zomPosRef.current[z.id] ?? zx(z, i)) - px) < REACH);
       if (z) { setHint(`[E] Победить ${z.name}`); return; }
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
       if (c) { setHint(`[E] Осмотреть · ${c.name}`); return; }
@@ -910,7 +968,7 @@ export default function EscapeGame() {
           </div>
 
           {/* Zombies */}
-          {zombies.map(z => {
+          {zombies.map((z, i) => {
             if (killed.has(z.id)) {
               return (
                 <div key={z.id} className="absolute opacity-60" style={{ left: z.x - 28, top: FLOOR_Y - 20, transform: "rotate(90deg)" }}>
@@ -918,10 +976,11 @@ export default function EscapeGame() {
                 </div>
               );
             }
+            const zCur = zomPosRef.current[z.id] ?? z.x;
             return (
-              <div key={z.id} className="absolute zombie-walk" style={{ left: z.x - 28, top: FLOOR_Y - 70 }}>
-                <PixelZombie size={56} facing={z.x > x ? -1 : 1} />
-                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1">
+              <div key={z.id} className="absolute zombie-walk" style={{ left: zCur - 28, top: FLOOR_Y - 70, transition: "left 0.08s linear" }}>
+                <PixelZombie size={56} facing={zCur > x ? -1 : 1} />
+                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
                   <TaskIcon kind={z.kind} className="h-3 w-3" />
                   {z.name}
                 </div>
@@ -975,13 +1034,19 @@ export default function EscapeGame() {
                     </p>
                   </div>
                 </div>
+                {TIME_LIMITS[modal.zombie.kind] !== null && (
+                  <TaskTimer
+                    key={modal.zombie.id}
+                    seconds={TIME_LIMITS[modal.zombie.kind] as number}
+                    onTimeout={() => finishTask(false)}
+                  />
+                )}
                 {modal.zombie.kind === "wires" && <WiresGame onDone={finishTask} />}
                 {modal.zombie.kind === "code" && <CodeGame onDone={finishTask} />}
                 {modal.zombie.kind === "download" && <DownloadGame onDone={finishTask} />}
                 {modal.zombie.kind === "reactor" && <ReactorGame onDone={finishTask} />}
                 {modal.zombie.kind === "trash" && <TrashGame onDone={finishTask} />}
                 {modal.zombie.kind === "switches" && <SwitchesGame onDone={finishTask} />}
-                {modal.zombie.kind === "math" && <MathGame onDone={finishTask} />}
                 {modal.zombie.kind === "quiz" && <QuizGame onDone={finishTask} />}
                 {modal.zombie.kind === "lock" && <LockGame onDone={finishTask} />}
                 {modal.zombie.kind === "aim" && <AimGame onDone={finishTask} />}
