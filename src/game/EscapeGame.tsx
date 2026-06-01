@@ -791,13 +791,18 @@ function TaskTimer({ seconds, onTimeout }: { seconds: number; onTimeout: () => v
 }
 
 export default function EscapeGame() {
+  // Persisted (menu / shop)
+  const [save, setSave] = useState<SaveData>(() => loadSave());
+  const [menuTab, setMenuTab] = useState<"play" | "outfit" | "shop">("play");
+
   const [started, setStarted] = useState(false);
   const [level, setLevel] = useState(0);
   const [x, setX] = useState(120);
   const [facing, setFacing] = useState<1 | -1>(1);
   const [moving, setMoving] = useState(false);
-  const [hp, setHp] = useState(80);
-  const [maxHp] = useState(100);
+  const baseMaxHp = 100 + (save.owned.hp ? 25 : 0);
+  const [hp, setHp] = useState(baseMaxHp);
+  const [maxHp, setMaxHp] = useState(baseMaxHp);
   const [strength, setStrength] = useState(1);
   const [killed, setKilled] = useState<Set<string>>(new Set());
   const [searched, setSearched] = useState<Set<string>>(new Set());
@@ -808,6 +813,23 @@ export default function EscapeGame() {
   const [inv, setInv] = useState<{ id: string; name: string; emoji: string; hp: number }[]>([]);
   const invRef = useRef(inv); invRef.current = inv;
   const lastBiteRef = useRef(0);
+
+  // Weapons remaining (decreases as used; bought in shop)
+  const [batLeft, setBatLeft] = useState(save.owned.bat);
+  const [gunLeft, setGunLeft] = useState(save.owned.gun);
+  const [coins, setCoins] = useState(save.coins);
+  // Running mode (Shift). Noisy — wakes "sleeping" zombies sooner.
+  const [running, setRunning] = useState(false);
+
+  // Selected outfit
+  const outfit = useMemo(() => OUTFITS.find(o => o.id === save.outfit) ?? OUTFITS[0], [save.outfit]);
+  const lanaPalette = outfit.palette;
+  const isNinja = outfit.id === "ninja";
+
+  // Persist coins + owned weapons left on changes
+  useEffect(() => {
+    writeSave({ ...save, coins });
+  }, [coins]);
 
   const cur = levels[level];
   const zombies = cur.zombies;
