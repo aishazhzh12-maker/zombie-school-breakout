@@ -1579,11 +1579,12 @@ export default function EscapeGame() {
               <div className="text-center space-y-4">
                 <h2 className="font-display text-2xl text-emerald-400">ПОБЕДА!</h2>
                 <p>Лана выбежала из школы. Солнце. Свобода.</p>
-                <div className="flex justify-center"><Crewmate color="#ff66aa" size={80} /></div>
+                <div className="flex justify-center"><Crewmate color="#ff66aa" palette={lanaPalette} size={80} /></div>
+                <p className="text-amber-300 font-pixel">Бонус за победу: +200 🪙</p>
                 <Button onClick={() => {
-                  setStarted(false); setLevel(0); setX(120); setHp(80); setStrength(1);
-                  setKilled(new Set()); setSearched(new Set()); setInv([]); setModal({ kind: "none" });
-                }}>Снова</Button>
+                  setCoins(c => c + 200);
+                  setStarted(false); setModal({ kind: "none" });
+                }}>В меню</Button>
               </div>
             )}
 
@@ -1591,11 +1592,8 @@ export default function EscapeGame() {
               <div className="text-center space-y-4">
                 <Skull className="h-16 w-16 text-red-500 mx-auto" />
                 <h2 className="font-display text-2xl text-red-400">ПОРАЖЕНИЕ</h2>
-                <p>Зомби оказались сильнее. Попробуй снова.</p>
-                <Button onClick={() => {
-                  setStarted(false); setLevel(0); setX(120); setHp(80); setStrength(1);
-                  setKilled(new Set()); setSearched(new Set()); setInv([]); setModal({ kind: "none" });
-                }}>Начать заново</Button>
+                <p>Зомби оказались сильнее. Купи улучшения и попробуй снова.</p>
+                <Button onClick={() => { setStarted(false); setModal({ kind: "none" }); }}>В меню</Button>
               </div>
             )}
           </div>
