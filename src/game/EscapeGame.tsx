@@ -1160,7 +1160,7 @@ export default function EscapeGame() {
                 <div className="flex justify-center"><Crewmate color="#ff66aa" size={80} /></div>
                 <Button onClick={() => {
                   setStarted(false); setLevel(0); setX(120); setHp(80); setStrength(1);
-                  setKilled(new Set()); setSearched(new Set()); setModal({ kind: "none" });
+                  setKilled(new Set()); setSearched(new Set()); setInv([]); setModal({ kind: "none" });
                 }}>Снова</Button>
               </div>
             )}
