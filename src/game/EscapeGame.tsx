@@ -764,6 +764,12 @@ export default function EscapeGame() {
     if (!started || modal.kind !== "none") { setMoving(false); return; }
     let raf = 0;
     const tick = () => {
+      // Update zombie patrol positions
+      const pos: Record<string, number> = {};
+      zombies.forEach((z, i) => { pos[z.id] = zx(z, i); });
+      zomPosRef.current = pos;
+      setZomTick(t => (t + 1) % 1000000);
+
       let dx = 0;
       if (keys.current["a"] || keys.current["arrowleft"]) { dx -= 1; setFacing(-1); }
       if (keys.current["d"] || keys.current["arrowright"]) { dx += 1; setFacing(1); }
@@ -771,11 +777,13 @@ export default function EscapeGame() {
         setMoving(true);
         setX(p => {
           let np = clamp(p + dx * SPEED, 80, WORLD_W - 80);
-          // block at undefeated zombies (only when walking towards them)
-          const block = zombies.find(z => !killed.has(z.id) &&
-            ((dx > 0 && z.x > p && z.x < np + 30) || (dx < 0 && z.x < p && z.x > np - 30)));
-          if (block) np = dx > 0 ? block.x - 40 : block.x + 40;
-          // block at exit door if not all killed
+          // block at undefeated zombies (only when walking towards them) — use live pos
+          const block = zombies.find(z => {
+            if (killedRef.current.has(z.id)) return false;
+            const zc = pos[z.id];
+            return (dx > 0 && zc > p && zc < np + 30) || (dx < 0 && zc < p && zc > np - 30);
+          });
+          if (block) np = dx > 0 ? pos[block.id] - 40 : pos[block.id] + 40;
           if (!allKilled && dx > 0 && EXIT_X > p && EXIT_X < np + 30) np = EXIT_X - 40;
           return np;
         });
@@ -784,13 +792,13 @@ export default function EscapeGame() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [started, modal.kind, killed, allKilled, level]);
+  }, [started, modal.kind, allKilled, level, zombies, EXIT_X, WORLD_W, zx]);
 
   // hint
   useEffect(() => {
     const id = setInterval(() => {
       const px = xRef.current;
-      const z = zombies.find(z => !killed.has(z.id) && Math.abs(z.x - px) < REACH);
+      const z = zombies.find((z, i) => !killed.has(z.id) && Math.abs((zomPosRef.current[z.id] ?? zx(z, i)) - px) < REACH);
       if (z) { setHint(`[E] Победить ${z.name}`); return; }
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
       if (c) { setHint(`[E] Осмотреть · ${c.name}`); return; }
