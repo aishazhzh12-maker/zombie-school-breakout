@@ -649,11 +649,12 @@ const REACH = 70;
 
 export default function EscapeGame() {
   const [started, setStarted] = useState(false);
+  const [level, setLevel] = useState(0);
   const [x, setX] = useState(120);
   const [facing, setFacing] = useState<1 | -1>(1);
   const [moving, setMoving] = useState(false);
   const [hp, setHp] = useState(80);
-  const [maxHp, setMaxHp] = useState(100);
+  const [maxHp] = useState(100);
   const [strength, setStrength] = useState(1);
   const [killed, setKilled] = useState<Set<string>>(new Set());
   const [searched, setSearched] = useState<Set<string>>(new Set());
@@ -661,6 +662,13 @@ export default function EscapeGame() {
   const [hint, setHint] = useState("");
   const [shake, setShake] = useState(false);
   const [toast, setToast] = useState<string>("");
+
+  const cur = levels[level];
+  const zombies = cur.zombies;
+  const classrooms = cur.classrooms;
+  const EXIT_X = cur.exitX;
+  const WORLD_W = cur.worldW;
+  const isFinalLevel = level === levels.length - 1;
 
   const keys = useRef<Record<string, boolean>>({});
   const xRef = useRef(x); xRef.current = x;
