@@ -944,6 +944,18 @@ export default function EscapeGame() {
             <span>💀 {killed.size}/{zombies.length}</span>
             <span>🔍 {searched.size}/{classrooms.length}</span>
           </div>
+          <div className="flex gap-1 justify-end items-center min-h-[18px]">
+            <span className="text-[10px] text-muted-foreground mr-1">Рюкзак:</span>
+            {inv.length === 0
+              ? <span className="text-[10px] text-zinc-600">пусто</span>
+              : inv.slice(0, 6).map((it, i) => (
+                <span key={it.id + i} title={`${it.name} +${it.hp} HP`}
+                  className="bg-black/60 border border-amber-700/60 rounded px-1 text-sm leading-none">
+                  {it.emoji}
+                </span>
+              ))}
+            {inv.length > 6 && <span className="text-[10px] text-amber-300">+{inv.length - 6}</span>}
+          </div>
           {allKilled && <div className="text-emerald-400 font-bold animate-pulse">
             → {isFinalLevel ? "Беги к директору!" : "Лестница наверх!"}
           </div>}
