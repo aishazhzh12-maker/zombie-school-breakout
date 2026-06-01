@@ -33,69 +33,179 @@ const dist = (a: Vec, b: Vec) => Math.hypot(a.x - b.x, a.y - b.y);
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
-// ---- Crewmate SVG (Among-Us style, more detailed) ----
-function Crewmate({ color, facing = 1, size = 56, dead = false }: { color: string; facing?: 1 | -1; size?: number; dead?: boolean }) {
+// ---- Pixel-art human sprites ----
+// Grid 16x20 px-units, rendered crisp via shape-rendering crispEdges.
+type PixelPalette = {
+  skin: string; skinShade: string;
+  hair: string; hairShade: string;
+  shirt: string; shirtShade: string;
+  pants: string; pantsShade: string;
+  shoes: string;
+  eyes?: string;
+};
+
+function PixelHuman({ palette, facing = 1, size = 56, variant = "student", dead = false }:
+  { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
+  // Build grid using cells (x,y,color). Use rectangles for crisp pixels.
+  // 16 columns x 20 rows
+  const px = (x: number, y: number, c: string, w = 1, h = 1) =>
+    <rect key={`${x}-${y}-${c}`} x={x} y={y} width={w} height={h} fill={c} />;
+
+  const isGirl = variant === "girl";
+  const isBoss = variant === "boss";
+  const cells: React.ReactNode[] = [];
+
+  // Hair back (girl: long hair behind body)
+  if (isGirl) {
+    cells.push(px(4, 11, palette.hairShade, 8, 5));
+    cells.push(px(3, 12, palette.hairShade, 1, 3));
+    cells.push(px(12, 12, palette.hairShade, 1, 3));
+  }
+
+  // Head (rows 2..6)
+  // skin block
+  cells.push(px(6, 2, palette.skin, 4, 5));
+  cells.push(px(5, 3, palette.skin, 6, 3));
+  // skin shading right side
+  cells.push(px(10, 3, palette.skinShade, 1, 3));
+  cells.push(px(9, 6, palette.skinShade, 1, 1));
+  // hair top
+  cells.push(px(5, 1, palette.hair, 6, 1));
+  cells.push(px(4, 2, palette.hair, 8, 1));
+  cells.push(px(4, 3, palette.hair, 1, 2));
+  cells.push(px(11, 3, palette.hair, 1, 2));
+  if (isGirl) {
+    // bangs
+    cells.push(px(5, 3, palette.hair, 2, 1));
+    cells.push(px(9, 3, palette.hair, 2, 1));
+  }
+  if (isBoss) {
+    // bald with side gray
+    cells.push(px(5, 2, palette.skin, 6, 1));
+    cells.push(px(4, 2, palette.hair, 1, 2));
+    cells.push(px(11, 2, palette.hair, 1, 2));
+  }
+  // eyes
+  cells.push(px(6, 4, palette.eyes ?? "#1b1b1b", 1, 1));
+  cells.push(px(9, 4, palette.eyes ?? "#1b1b1b", 1, 1));
+  // mouth
+  if (isBoss) {
+    cells.push(px(7, 6, "#5a0a0a", 2, 1));
+  } else {
+    cells.push(px(7, 6, "#8a3a3a", 2, 1));
+  }
+  // neck
+  cells.push(px(7, 7, palette.skinShade, 2, 1));
+
+  // Body / shirt (rows 8..13)
+  cells.push(px(4, 8, palette.shirt, 8, 5));
+  cells.push(px(3, 9, palette.shirt, 1, 3));
+  cells.push(px(12, 9, palette.shirt, 1, 3));
+  // shirt shading
+  cells.push(px(11, 8, palette.shirtShade, 1, 5));
+  cells.push(px(4, 12, palette.shirtShade, 8, 1));
+  if (isGirl) {
+    // collar / detail
+    cells.push(px(7, 8, "#ffffff", 2, 1));
+  }
+  if (isBoss) {
+    // tie
+    cells.push(px(7, 8, "#1b1b1b", 2, 4));
+    cells.push(px(7, 12, "#1b1b1b", 2, 1));
+  }
+  // arms
+  cells.push(px(3, 8, palette.shirt, 1, 1));
+  cells.push(px(12, 8, palette.shirt, 1, 1));
+  // hands
+  cells.push(px(3, 12, palette.skin, 1, 1));
+  cells.push(px(12, 12, palette.skin, 1, 1));
+
+  // Pants / legs (rows 13..17)
+  cells.push(px(5, 13, palette.pants, 6, 4));
+  cells.push(px(5, 13, palette.pants, 2, 4));
+  cells.push(px(9, 13, palette.pants, 2, 4));
+  cells.push(px(7, 13, palette.pantsShade, 2, 4));
+  // shoes
+  cells.push(px(4, 17, palette.shoes, 3, 1));
+  cells.push(px(9, 17, palette.shoes, 3, 1));
+
+  // Girl: hair down sides
+  if (isGirl) {
+    cells.push(px(4, 7, palette.hair, 1, 3));
+    cells.push(px(11, 7, palette.hair, 1, 3));
+  }
+
   return (
-    <svg width={size} height={size * 1.1} viewBox="0 0 100 110" style={{ transform: `scaleX(${facing})` }}>
-      <defs>
-        <radialGradient id={`bd-${color}`} cx="40%" cy="35%" r="70%">
-          <stop offset="0%" stopColor="white" stopOpacity="0.5" />
-          <stop offset="40%" stopColor={color} stopOpacity="0.95" />
-          <stop offset="100%" stopColor="#000" stopOpacity="0.6" />
-        </radialGradient>
-        <linearGradient id="visor" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#cfeaff" />
-          <stop offset="60%" stopColor="#5fa8d3" />
-          <stop offset="100%" stopColor="#1d3a52" />
-        </linearGradient>
-      </defs>
+    <svg width={size} height={size * 1.25} viewBox="0 0 16 20"
+      style={{ transform: `scaleX(${facing})`, imageRendering: "pixelated", shapeRendering: "crispEdges" }}>
       {/* shadow */}
-      <ellipse cx="50" cy="102" rx="28" ry="5" fill="#000" opacity="0.35" />
-      {/* legs */}
-      <rect x="28" y="78" width="16" height="22" rx="6" fill={color} stroke="#000" strokeWidth="2" />
-      <rect x="56" y="78" width="16" height="22" rx="6" fill={color} stroke="#000" strokeWidth="2" />
-      {/* body */}
-      <path d="M22,40 C22,18 78,18 78,40 L82,82 C82,92 70,96 50,96 C30,96 18,92 18,82 Z"
-        fill={`url(#bd-${color})`} stroke="#000" strokeWidth="2.5" />
-      {/* backpack */}
-      <path d="M78,38 C90,40 92,60 86,78 L78,78 Z" fill={color} stroke="#000" strokeWidth="2.5" />
-      {/* visor */}
-      <path d="M34,32 C34,22 66,22 66,32 L70,52 C70,60 30,60 30,52 Z"
-        fill="url(#visor)" stroke="#000" strokeWidth="2.5" />
-      {/* visor shine */}
-      <ellipse cx="44" cy="38" rx="8" ry="4" fill="#fff" opacity="0.75" />
-      {dead && <text x="50" y="48" textAnchor="middle" fontSize="22" fill="#fff">✕</text>}
+      <ellipse cx="8" cy="19" rx="4" ry="0.6" fill="#000" opacity="0.5" />
+      {cells}
+      {dead && <text x="8" y="6" textAnchor="middle" fontSize="3" fill="red">X</text>}
     </svg>
   );
 }
 
-function Impostor({ size = 80 }: { size?: number }) {
-  return (
-    <svg width={size} height={size * 1.1} viewBox="0 0 100 110">
-      <defs>
-        <radialGradient id="imp" cx="40%" cy="35%" r="70%">
-          <stop offset="0%" stopColor="#ff8080" />
-          <stop offset="60%" stopColor="#9b1414" />
-          <stop offset="100%" stopColor="#1a0000" />
-        </radialGradient>
-      </defs>
-      <ellipse cx="50" cy="103" rx="32" ry="6" fill="#000" opacity="0.5" />
-      <rect x="26" y="78" width="18" height="24" rx="6" fill="#5a0a0a" stroke="#000" strokeWidth="2" />
-      <rect x="56" y="78" width="18" height="24" rx="6" fill="#5a0a0a" stroke="#000" strokeWidth="2" />
-      <path d="M20,40 C20,16 80,16 80,40 L84,82 C84,94 70,98 50,98 C30,98 16,94 16,82 Z"
-        fill="url(#imp)" stroke="#000" strokeWidth="3" />
-      <path d="M82,40 C94,44 96,62 88,80 L82,78 Z" fill="#7a0a0a" stroke="#000" strokeWidth="2.5" />
-      {/* visor — red */}
-      <path d="M32,32 C32,20 68,20 68,32 L72,54 C72,62 28,62 28,54 Z"
-        fill="#1a0000" stroke="#000" strokeWidth="2.5" />
-      <ellipse cx="44" cy="38" rx="6" ry="3" fill="#ff3030" />
-      <ellipse cx="60" cy="38" rx="6" ry="3" fill="#ff3030" />
-      {/* fangs */}
-      <path d="M40,56 L44,66 L48,56 Z" fill="#fff" stroke="#000" strokeWidth="1" />
-      <path d="M52,56 L56,66 L60,56 Z" fill="#fff" stroke="#000" strokeWidth="1" />
-    </svg>
-  );
+// Palettes
+const PAL_LANA: PixelPalette = {
+  skin: "#f4c8a8", skinShade: "#d49a78",
+  hair: "#c4377a", hairShade: "#7a1e4a",
+  shirt: "#ff6aa8", shirtShade: "#a83a6a",
+  pants: "#3a3a55", pantsShade: "#1f1f33",
+  shoes: "#1a1a1a",
+};
+const PAL_MILA: PixelPalette = {
+  skin: "#f0c098", skinShade: "#c89070",
+  hair: "#6b3a1a", hairShade: "#3a1f0a",
+  shirt: "#e84545", shirtShade: "#8a2222",
+  pants: "#2a2a3a", pantsShade: "#15151f",
+  shoes: "#1a1a1a",
+};
+const PAL_ARSENY: PixelPalette = {
+  skin: "#e8b890", skinShade: "#b8855f",
+  hair: "#1a1a1a", hairShade: "#000000",
+  shirt: "#3aa3ff", shirtShade: "#1f5a8a",
+  pants: "#2a2a3a", pantsShade: "#15151f",
+  shoes: "#3a2a1a",
+};
+const PAL_VIKA: PixelPalette = {
+  skin: "#f8d0b0", skinShade: "#d49a78",
+  hair: "#e8c038", hairShade: "#8a6a1a",
+  shirt: "#ffd23a", shirtShade: "#a87a1f",
+  pants: "#3a2a4a", pantsShade: "#1f1530",
+  shoes: "#2a1a1a",
+};
+const PAL_TIMUR: PixelPalette = {
+  skin: "#d8a878", skinShade: "#a87850",
+  hair: "#2a1a0a", hairShade: "#000000",
+  shirt: "#7ad84a", shirtShade: "#3a7a22",
+  pants: "#2a2a2a", pantsShade: "#0a0a0a",
+  shoes: "#1a1a1a",
+};
+const PAL_BOSS: PixelPalette = {
+  skin: "#c8a890", skinShade: "#8a5a3a",
+  hair: "#8a8a8a", hairShade: "#3a3a3a",
+  shirt: "#1f1f2a", shirtShade: "#0a0a14",
+  pants: "#0a0a0a", pantsShade: "#000000",
+  shoes: "#000000",
+  eyes: "#ff3030",
+};
+
+const PALETTES: Record<string, PixelPalette> = {
+  lana: PAL_LANA, "#e84545": PAL_MILA, "#3aa3ff": PAL_ARSENY, "#ffd23a": PAL_VIKA, "#7ad84a": PAL_TIMUR,
+};
+
+// Backwards-compatible API used elsewhere in this file
+function Crewmate({ color, facing = 1, size = 56, dead = false }: { color: string; facing?: 1 | -1; size?: number; dead?: boolean }) {
+  const isLana = color === "#ff66aa";
+  const palette = isLana ? PAL_LANA : (PALETTES[color] ?? { ...PAL_MILA, shirt: color, shirtShade: color });
+  return <PixelHuman palette={palette} facing={facing} size={size} variant={isLana ? "girl" : "student"} dead={dead} />;
 }
+
+function Impostor({ size = 80 }: { size?: number }) {
+  return <PixelHuman palette={PAL_BOSS} size={size} variant="boss" />;
+}
+
 
 // ============== TASK MINI-GAMES ==============
 
