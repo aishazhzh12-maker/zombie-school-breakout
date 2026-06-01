@@ -1002,7 +1002,9 @@ export default function EscapeGame() {
     const z = modal.zombie;
     if (ok) {
       setKilled(prev => new Set(prev).add(z.id));
-      setToast(`💀 ${z.name} повержен! +50 очков`);
+      const reward = 10 + level * 5;
+      setCoins(c => c + reward);
+      setToast(`💀 ${z.name} повержен! +${reward} 🪙`);
     } else {
       const dmg = Math.max(8, 25 - strength * 3);
       setHp(h => {
