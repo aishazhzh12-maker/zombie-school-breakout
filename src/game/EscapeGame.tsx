@@ -923,14 +923,18 @@ export default function EscapeGame() {
       zomPosRef.current = pos;
       setZomTick(t => (t + 1) % 1000000);
 
+      // Run mode (Shift): faster but шумно — пробуждает зомби раньше (увеличивает дистанцию укуса)
+      const isRun = !!(keys.current["shift"]);
+      setRunning(isRun);
+      const speed = isRun ? SPEED * 1.7 : SPEED;
+
       let dx = 0;
       if (keys.current["a"] || keys.current["arrowleft"]) { dx -= 1; setFacing(-1); }
       if (keys.current["d"] || keys.current["arrowright"]) { dx += 1; setFacing(1); }
       if (dx !== 0) {
         setMoving(true);
         setX(p => {
-          let np = clamp(p + dx * SPEED, 80, WORLD_W - 80);
-          // block at undefeated zombies (only when walking towards them) — use live pos
+          let np = clamp(p + dx * speed, 80, WORLD_W - 80);
           const block = zombies.find(z => {
             if (killedRef.current.has(z.id)) return false;
             const zc = pos[z.id];
@@ -942,19 +946,23 @@ export default function EscapeGame() {
         });
       } else setMoving(false);
 
-      // Contact damage — patrolling zombie within bite range
+      // Contact damage — patrolling zombie within bite range.
+      // Бег = шум: радиус укуса больше; ниндзя — на 6px тише.
       const nowT = performance.now();
-      if (nowT - lastBiteRef.current > 700) {
+      const biteCD = isRun ? 500 : 800;
+      const biteRange = (isRun ? 48 : 32) - (isNinja ? 6 : 0);
+      if (nowT - lastBiteRef.current > biteCD) {
         for (let i = 0; i < zombies.length; i++) {
           const z = zombies[i];
           if (killedRef.current.has(z.id)) continue;
-          if (Math.abs(pos[z.id] - xRef.current) < 36) {
+          if (Math.abs(pos[z.id] - xRef.current) < biteRange) {
             lastBiteRef.current = nowT;
-            const dmg = 4 + Math.floor(Math.random() * 5);
+            const base = 4 + Math.floor(Math.random() * 5);
+            const dmg = base + (level * 2) + (isRun ? 3 : 0);
             setHp(h => Math.max(0, h - dmg));
             setShake(true);
             setTimeout(() => setShake(false), 350);
-            setToast(`🩸 ${z.name} кусает! -${dmg} HP`);
+            setToast(`🩸 ${z.name} кусает! -${dmg} HP${isRun ? " (шумно!)" : ""}`);
             setTimeout(() => setToast(""), 1200);
             break;
           }
