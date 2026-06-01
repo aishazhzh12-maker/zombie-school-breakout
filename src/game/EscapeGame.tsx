@@ -1206,11 +1206,15 @@ export default function EscapeGame() {
           </div>
         </div>
         <div className="text-right text-xs space-y-1">
-          <div className="flex gap-3 justify-end">
+          <div className="flex gap-3 justify-end flex-wrap">
             <span className="text-amber-300">🏫 Этаж {cur.id}/{levels.length}</span>
-            <span>💪 ×{strength}</span>
+            <span className="flex items-center gap-1"><Coins className="h-3 w-3 text-amber-300" />{coins}</span>
+            <span title="Бита (G)">🏏 {batLeft}</span>
+            <span title="Пистолет (F)">🔫 {gunLeft}</span>
+            {save.owned.flashlight && <span title="Фонарик"><Flashlight className="h-3 w-3 inline text-amber-200" /></span>}
             <span>💀 {killed.size}/{zombies.length}</span>
             <span>🔍 {searched.size}/{classrooms.length}</span>
+            <span className={running ? "text-red-400" : "text-zinc-500"} title="Шум">{running ? <Volume2 className="h-3 w-3 inline" /> : <VolumeX className="h-3 w-3 inline" />}</span>
           </div>
           <div className="flex gap-1 justify-end items-center min-h-[18px]">
             <span className="text-[10px] text-muted-foreground mr-1">Рюкзак:</span>
