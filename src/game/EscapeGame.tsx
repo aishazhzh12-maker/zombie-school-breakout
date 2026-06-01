@@ -905,7 +905,7 @@ export default function EscapeGame() {
         if (!allKilled) {
           setToast("Дверь не откроется — впереди ещё зомби.");
           setTimeout(() => setToast(""), 1800);
-        } else setModal({ kind: "doorTask" });
+        } else setModal({ kind: isFinalLevel ? "doorTask" : "exit" });
       }
     };
     window.addEventListener("keydown", h);
