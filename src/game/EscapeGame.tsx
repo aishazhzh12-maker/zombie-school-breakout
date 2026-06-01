@@ -574,7 +574,7 @@ export default function EscapeGame() {
       </header>
 
       {/* SCENE */}
-      <div className={`relative flex-1 overflow-hidden ${wrongFlash ? "danger-pulse" : ""}`} style={{ background: lv.bgGradient }}>
+      <div className={`relative flex-1 overflow-hidden scanlines crt-vignette ${wrongFlash ? "danger-pulse" : ""}`} style={{ background: lv.bgGradient, imageRendering: "pixelated" }}>
         {/* Ambient blood vignette when low HP */}
         {hp < maxHp * 0.3 && (
           <div className="absolute inset-0 pointer-events-none z-10" style={{ boxShadow: "inset 0 0 200px 40px rgba(180,20,20,0.4)", animation: "danger-vignette 1.5s infinite" }} />
