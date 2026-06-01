@@ -1547,6 +1547,30 @@ export default function EscapeGame() {
               )
             )}
 
+            {modal.kind === "doorTask" && (
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <DoorClosed className="h-10 w-10 text-amber-400" />
+                  <div>
+                    <h2 className="font-display text-lg text-amber-300">Замок на двери</h2>
+                    <p className="text-xs text-muted-foreground">Подбери код, чтобы открыть путь к директору.</p>
+                  </div>
+                </div>
+                <HintBox kind="lock" advanced={save.owned.hint} />
+                <TaskTimer seconds={30} onTimeout={() => {
+                  setHp(h => Math.max(0, h - 15));
+                  setShake(true); setTimeout(() => setShake(false), 400);
+                  setToast("🩸 Зомби подкрался у двери! -15 HP");
+                  setTimeout(() => setToast(""), 1600);
+                  setModal({ kind: "none" });
+                }} />
+                <LockGame onDone={(ok) => {
+                  if (ok) { setToast("🚪 Дверь открыта!"); setTimeout(() => setToast(""), 1500); setModal({ kind: "boss" }); }
+                  else { setHp(h => Math.max(0, h - 10)); setModal({ kind: "none" }); }
+                }} />
+              </div>
+            )}
+
             {modal.kind === "boss" && (
               <BossFight onWin={() => setModal({ kind: "win" })} onLose={() => setModal({ kind: "lose" })} />
             )}
