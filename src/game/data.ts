@@ -1,149 +1,78 @@
-export type Puzzle = {
-  question: string;
-  options?: string[];          // если есть — вариант выбора
-  answer: number | string;     // index для options; строка для input/code
-  input?: "number" | "text" | "code"; // тип ввода если нет options
-  codeLength?: number;         // для input=code: длина кода
-  hint?: string;
-};
+// Among-Us style task & room data for "Сбеги из школы"
 
-export type Supply = {
-  type: "food" | "medkit" | "energy" | "weapon" | "nothing";
+export type RoomId =
+  | "cafeteria"
+  | "electrical"
+  | "admin"
+  | "medbay"
+  | "comms"
+  | "reactor"
+  | "storage"
+  | "corridor";
+
+export type Room = {
+  id: RoomId;
   name: string;
-  emoji: string;
-  hpGain?: number;
-  maxHpGain?: number;
-  strengthGain?: number;
-  scoreGain?: number;
-  description: string;
+  x: number; y: number; w: number; h: number;
+  color: string;
 };
 
-export const supplyPool: Supply[] = [
-  { type: "food", name: "Бутерброд из столовой", emoji: "🥪", hpGain: 15, scoreGain: 10, description: "Чёрствый, но съедобный. Лана глотает не жуя." },
-  { type: "food", name: "Шоколадный батончик", emoji: "🍫", hpGain: 10, scoreGain: 5, description: "Был в кармане у одноклассника. Сахар спасает." },
-  { type: "food", name: "Яблоко", emoji: "🍎", hpGain: 8, scoreGain: 5, description: "Из учительской. Хрустит." },
-  { type: "energy", name: "Энергетик", emoji: "⚡", hpGain: 5, strengthGain: 1, scoreGain: 15, description: "Запрещённый в школе. Сегодня — спасение." },
-  { type: "medkit", name: "Школьная аптечка", emoji: "🩹", hpGain: 35, maxHpGain: 10, scoreGain: 25, description: "Бинты, йод, пара таблеток. Лана выдыхает." },
-  { type: "weapon", name: "Швабра уборщицы", emoji: "🧹", strengthGain: 1, scoreGain: 15, description: "Длинная, прочная. Сила +1." },
-  { type: "weapon", name: "Учебник физики", emoji: "📕", strengthGain: 1, scoreGain: 10, description: "Тяжёлый. Знания = сила." },
-  { type: "food", name: "Бутылка воды", emoji: "💧", hpGain: 12, scoreGain: 5, description: "Холодная. Лана делает три жадных глотка." },
+// Map is 1200 x 700
+export const rooms: Room[] = [
+  { id: "cafeteria", name: "Столовая", x: 480, y: 40, w: 240, h: 180, color: "#2b3a4a" },
+  { id: "admin",     name: "Кабинет директора", x: 760, y: 60, w: 200, h: 160, color: "#3a2b4a" },
+  { id: "medbay",    name: "Медпункт", x: 80,  y: 260, w: 220, h: 160, color: "#2b4a3a" },
+  { id: "electrical",name: "Щитовая",  x: 80,  y: 460, w: 220, h: 180, color: "#4a3a1f" },
+  { id: "reactor",   name: "Котельная", x: 360, y: 460, w: 240, h: 180, color: "#4a2222" },
+  { id: "comms",     name: "Радиоузел", x: 660, y: 460, w: 220, h: 180, color: "#22384a" },
+  { id: "storage",   name: "Склад",     x: 940, y: 300, w: 200, h: 240, color: "#3a3a22" },
+  { id: "corridor",  name: "Коридор",   x: 80,  y: 60,  w: 380, h: 160, color: "#1f2530" },
 ];
 
-// Pool of logic questions used to "defeat" a zombie. Right answer = kill.
-export const combatPuzzles: Puzzle[] = [
-  { question: "Если все розы — цветы, и некоторые цветы быстро вянут, то…", options: ["Все розы быстро вянут", "Некоторые розы могут быстро вянуть", "Розы не вянут", "Никаких выводов"], answer: 1, hint: "«Некоторые» допускает оба варианта." },
-  { question: "Продолжи: 1, 1, 2, 3, 5, 8, ?", options: ["11", "12", "13", "15"], answer: 2, hint: "Сумма двух предыдущих." },
-  { question: "В корзине 5 яблок. Раздай 5 детям так, чтобы одно яблоко осталось в корзине.", options: ["Невозможно", "Отдать корзину с яблоком", "Разрезать яблоко", "Дать 4 детям"], answer: 1, hint: "Одно яблоко может уйти вместе с корзиной." },
-  { question: "Какое число лишнее: 9, 16, 25, 36, 49, 50?", options: ["9", "36", "49", "50"], answer: 3, hint: "Квадраты целых чисел." },
-  { question: "Что тяжелее: килограмм пуха или килограмм железа?", options: ["Железо", "Пух", "Одинаково", "Зависит от объёма"], answer: 2, hint: "Килограмм есть килограмм." },
-  { question: "Часы показывают 15:15. Какой угол между стрелками?", options: ["0°", "7,5°", "15°", "30°"], answer: 1, hint: "Часовая стрелка не стоит на 3." },
-  { question: "Если 5 машин делают 5 деталей за 5 минут, за сколько 100 машин сделают 100 деталей?", options: ["1 мин", "5 мин", "20 мин", "100 мин"], answer: 1, hint: "Скорость не зависит от количества машин." },
-  { question: "У отца 6 сыновей. У каждого сына — одна сестра. Сколько детей всего?", options: ["6", "7", "12", "13"], answer: 1, hint: "Сестра у всех — одна и та же." },
-  { question: "Какое слово содержит 6 букв «о»?", options: ["Колобок", "Хорошо", "Молоковоз", "Обороноспособность"], answer: 3, hint: "Длинное." },
-  { question: "Лана идёт со скоростью 4 км/ч. За сколько пройдёт 2 км?", options: ["15 мин", "20 мин", "30 мин", "45 мин"], answer: 2, hint: "Время = путь / скорость." },
-  { question: "Какая цифра пропущена: 2, 4, 8, 16, ?, 64", options: ["24", "30", "32", "48"], answer: 2, hint: "Каждое × 2." },
-  { question: "В комнате 4 угла. В каждом сидит кошка. Напротив каждой кошки — 3 кошки. Сколько кошек всего?", options: ["3", "4", "12", "16"], answer: 1, hint: "Перечитай: их 4." },
-  { question: "Дочь моего отца — но не моя сестра. Кто она?", options: ["Мать", "Тётя", "Я сама", "Бабушка"], answer: 2, hint: "Подумай о себе." },
-  { question: "У меня 3 свечи. 2 потухли. Сколько свечей осталось?", options: ["1", "2", "3", "0"], answer: 1, hint: "Те, что горят — сгорят." },
-  { question: "Найди закономерность: ПН, ВТ, СР, ?, ПТ", options: ["ВС", "СБ", "ЧТ", "ПН"], answer: 2, hint: "Дни недели." },
-  { question: "Что можно увидеть с закрытыми глазами?", options: ["Свет", "Сон", "Цвет", "Ничего"], answer: 1, hint: "Случается ночью." },
-  { question: "Если вчера была среда, какой день будет послезавтра?", options: ["Пятница", "Суббота", "Воскресенье", "Понедельник"], answer: 1, hint: "Сегодня — четверг." },
-  { question: "На столе 4 кружки, по 2 в каждом ряду и в каждом столбце. Как?", options: ["Невозможно", "В форме квадрата", "В форме треугольника", "В одну линию"], answer: 1, hint: "Квадрат 2×2." },
-  // ===== Математические задачи (ввод числа) =====
-  { question: "Реши: 17 × 6 = ?", input: "number", answer: "102", hint: "17×6 = 17×5 + 17." },
-  { question: "В рюкзаке 3 тетради по 48 страниц. Всего страниц?", input: "number", answer: "144", hint: "3 × 48." },
-  { question: "Лана пробежала 250 м за 50 секунд. Скорость в м/с?", input: "number", answer: "5", hint: "путь / время." },
-  { question: "Корень из 169 = ?", input: "number", answer: "13", hint: "13² = 169." },
-  { question: "Сколько секунд в 2 часах 15 минутах?", input: "number", answer: "8100", hint: "2·3600 + 15·60." },
-  { question: "Уравнение: 3x + 7 = 28. Чему равен x?", input: "number", answer: "7", hint: "3x = 21." },
-  { question: "Половина от четверти от 800?", input: "number", answer: "100", hint: "800/4 = 200, /2 = 100." },
-  { question: "Сколько простых чисел от 1 до 20?", input: "number", answer: "8", hint: "2,3,5,7,11,13,17,19." },
-];
+export type TaskKind = "wires" | "code" | "download" | "reactor" | "trash" | "switches" | "swipe";
 
-export type Level = {
+export type Task = {
   id: string;
-  location: string;
-  intro: string;
-  classroomsToCheck: number;
-  zombiesToDefeat: number;
-  bgGradient: string;
-  exitTitle: string;
-  exitStory: string;
-  exitPuzzle: Puzzle;
+  kind: TaskKind;
+  title: string;
+  hint: string;
+  room: RoomId;
+  x: number; y: number; // marker position on map
 };
 
-export const levels: Level[] = [
-  {
-    id: "first-floor",
-    location: "Первый этаж · 14:32",
-    intro: "Лана выскользнула из кабинета №13. Коридор пуст… пока что.",
-    classroomsToCheck: 3,
-    zombiesToDefeat: 2,
-    bgGradient: "linear-gradient(180deg, #1a2a22 0%, #0e1812 60%, #1a1410 100%)",
-    exitTitle: "Дверь на лестницу",
-    exitStory: "Дверь заперта цифровым замком учителя информатики.",
-    exitPuzzle: { question: "2, 6, 12, 20, 30, ?", options: ["36", "40", "42", "44"], answer: 2, hint: "Разница растёт на 2." },
-  },
-  {
-    id: "east-wing",
-    location: "Восточное крыло · 14:55",
-    intro: "Лампы мигают. Из-за поворота уже слышны стоны.",
-    classroomsToCheck: 3,
-    zombiesToDefeat: 3,
-    bgGradient: "linear-gradient(180deg, #1f1a28 0%, #100c16 60%, #161018 100%)",
-    exitTitle: "Кодовый замок",
-    exitStory: "На стене кровью: «Дата захвата школы». Лана помнит дату из объявления — 1207. Замок старый, чугунный.",
-    exitPuzzle: { question: "Введи 4-значный код. На стене написано: «1·2·0·7 наоборот».", input: "code", codeLength: 4, answer: "7021", hint: "Переверни цифры 1207." },
-  },
-  {
-    id: "cafeteria",
-    location: "Столовая · 15:22",
-    intro: "Запах гнилой еды. У раздачи — повара с мёртвыми глазами.",
-    classroomsToCheck: 2,
-    zombiesToDefeat: 4,
-    bgGradient: "linear-gradient(180deg, #1f2a2f 0%, #0e1418 60%, #181214 100%)",
-    exitTitle: "Весы поварёнка",
-    exitStory: "У кассы — записка.",
-    exitPuzzle: { question: "8 яблок одинаковы на вид, одно легче. За МИНИМАЛЬНОЕ число взвешиваний на чашечных весах его найдёшь. Введи число.", input: "number", answer: "2", hint: "Дели 3-3-2." },
-  },
-  {
-    id: "library",
-    location: "Библиотека · 15:48",
-    intro: "Стеллажи рухнули. Зомби-читатели всё ещё «читают».",
-    classroomsToCheck: 3,
-    zombiesToDefeat: 4,
-    bgGradient: "linear-gradient(180deg, #2a1f14 0%, #160e08 60%, #1a1410 100%)",
-    exitTitle: "Шифр Марины Петровны",
-    exitStory: "Тетрадь библиотекаря. Кровавый отпечаток.",
-    exitPuzzle: { question: "ШКОЛА=24, УРОК=16. ЗОМБИ=?", options: ["18", "20", "22", "25"], answer: 1, hint: "Букв × 4." },
-  },
-  {
-    id: "gym",
-    location: "Спортзал · 16:10 · ФИНАЛ",
-    intro: "Двери закрылись. В центре — ОН. Директор Анатолий Сергеевич.",
-    classroomsToCheck: 0,
-    zombiesToDefeat: 0,
-    bgGradient: "linear-gradient(180deg, #2a1818 0%, #180a0a 60%, #1a0a0a 100%)",
-    exitTitle: "Король-Директор",
-    exitStory: "«Лана… ответь на три загадки — и я открою выход. Иначе…»",
-    exitPuzzle: { question: "Говорю без рта, оживаю с ветром. Кто я?", options: ["Тень", "Эхо", "Призрак", "Мысль"], answer: 1, hint: "Крикни в горах." },
-  },
+export const tasks: Task[] = [
+  { id: "t-wires",     kind: "wires",     title: "Соединить провода",  hint: "Соедини провода по цвету", room: "electrical", x: 170, y: 540 },
+  { id: "t-code",      kind: "code",      title: "Взломать кодовый замок", hint: "Подбери 4-значный код по подсказке", room: "admin", x: 860, y: 140 },
+  { id: "t-download",  kind: "download",  title: "Скачать данные с сервера", hint: "Удерживай кнопку, не отпуская", room: "comms", x: 760, y: 540 },
+  { id: "t-reactor",   kind: "reactor",   title: "Перезапуск котла", hint: "Повтори последовательность (Simon)", room: "reactor", x: 470, y: 540 },
+  { id: "t-trash",     kind: "trash",     title: "Вынести мусор", hint: "Удерживай рычаг, пока бак не опустеет", room: "storage", x: 1030, y: 420 },
+  { id: "t-switches",  kind: "switches",  title: "Починить свет", hint: "Все рубильники должны быть ВКЛ", room: "electrical", x: 220, y: 600 },
+  { id: "t-swipe",     kind: "swipe",     title: "Прокатить пропуск", hint: "Быстро и плавно проведи пропуск слева направо", room: "medbay", x: 200, y: 320 },
 ];
 
-export const bossExtraPuzzles: Puzzle[] = [
-  { question: "Отец Марии имеет 5 дочерей: Чача, Чече, Чичи, Чочо… пятая?", options: ["Чучу", "Мария", "Чача-2", "Неизвестно"], answer: 1, hint: "Перечитай первое слово." },
-  { question: "Что становится больше, если поставить с ног на голову?", options: ["Гора", "Число 6", "Часы", "Зеркало"], answer: 1, hint: "6 ↔ 9." },
+export type Crewmate = {
+  id: string;
+  name: string;
+  color: string;
+  room: RoomId;
+  ox: number; oy: number; // offset inside room
+  line: string;
+};
+
+export const crewmates: Crewmate[] = [
+  { id: "c-mila",  name: "Мила",  color: "#e84545", room: "cafeteria", ox: 60, oy: 100, line: "Лана! Все задания — и мы выберемся. Я держу столовую." },
+  { id: "c-arseny",name: "Арсений", color: "#3aa3ff", room: "medbay",  ox: 60, oy: 90,  line: "У меня перевязка. Прокатишь мой пропуск в медпункте?" },
+  { id: "c-vika",  name: "Вика",  color: "#ffd23a", room: "comms",     ox: 50, oy: 100, line: "Радио ловит сигнал! Скачай данные — узнаем, где безопасно." },
+  { id: "c-timur", name: "Тимур", color: "#7ad84a", room: "reactor",   ox: 60, oy: 100, line: "Котёл вот-вот взорвётся. Перезапуск!" },
 ];
 
-// Classroom flavor names per level
-export const classroomNames = [
-  "Кабинет физики №21",
-  "Учительская",
-  "Кабинет химии №18",
-  "Кабинет литературы №7",
-  "Раздевалка",
-  "Кладовая",
-  "Кабинет биологии №25",
-  "Архив",
-  "Кабинет рисования",
+// Boss riddles (used after all tasks done)
+export const bossRiddles: { question: string; options: string[]; answer: number }[] = [
+  { question: "Что становится больше, если поставить с ног на голову?", options: ["Гора", "Число 6", "Часы", "Зеркало"], answer: 1 },
+  { question: "Я говорю без рта и слышу без ушей. Кто я?", options: ["Тень", "Эхо", "Ветер", "Сон"], answer: 1 },
+  { question: "1, 1, 2, 3, 5, 8, 13, ?", options: ["18", "20", "21", "24"], answer: 2 },
 ];
+
+// Code hint for the admin door
+export const ADMIN_CODE = "4071";
+export const ADMIN_HINT = "На столе записка: «год основания школы 1740 + 2331»";
