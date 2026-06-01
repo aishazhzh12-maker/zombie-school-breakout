@@ -827,7 +827,7 @@ export default function EscapeGame() {
           <Crewmate color="#ff66aa" size={36} />
           <div>
             <div className="font-display text-sm text-primary">ЛАНА</div>
-            <div className="text-[10px] text-muted-foreground">Школа №7 · Коридор</div>
+            <div className="text-[10px] text-muted-foreground">{cur.name}</div>
           </div>
         </div>
         <div className="flex-1 max-w-md">
