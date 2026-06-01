@@ -12,10 +12,6 @@ import {
 } from "lucide-react";
 
 
-const MAP_W = 1200;
-const MAP_H = 700;
-const PLAYER_R = 14;
-const SPEED = 3.2;
 
 type Vec = { x: number; y: number };
 
