@@ -11,6 +11,7 @@ import {
   Calculator, HelpCircle, Lock, Target,
   X, Skull, Heart, DoorClosed, ArrowUp,
   Lightbulb, Coins, Shirt, ShoppingBag, Crosshair, Swords, Flashlight, Volume2, VolumeX,
+  Backpack, Utensils, ArrowDown,
 } from "lucide-react";
 
 
@@ -26,7 +27,10 @@ type Modal =
   | { kind: "nextLevel" }
   | { kind: "win" }
   | { kind: "lose" }
+  | { kind: "backpack" }
   | { kind: "boss" };
+
+type InvItem = { id: string; name: string; emoji: string; hp: number; food: number; strength: number };
 
 
 // ---- helpers ----
@@ -810,9 +814,21 @@ export default function EscapeGame() {
   const [hint, setHint] = useState("");
   const [shake, setShake] = useState(false);
   const [toast, setToast] = useState<string>("");
-  const [inv, setInv] = useState<{ id: string; name: string; emoji: string; hp: number }[]>([]);
+  const [inv, setInv] = useState<InvItem[]>([]);
   const invRef = useRef(inv); invRef.current = inv;
   const lastBiteRef = useRef(0);
+
+  // Hunger 0..100. Tick down over time; at 0 starts damaging HP.
+  const MAX_HUNGER = 100;
+  const [hunger, setHunger] = useState(MAX_HUNGER);
+  const hungerRef = useRef(hunger); hungerRef.current = hunger;
+
+  // Сидя на корточках — медленно, но без шума.
+  const [crouching, setCrouching] = useState(false);
+  const crouchRef = useRef(false); crouchRef.current = crouching;
+
+  // Спящие зомби, которых уже разбудили (после этого ведут себя как обычные).
+  const wokenRef = useRef<Set<string>>(new Set());
 
   // Weapons remaining (decreases as used; bought in shop)
   const [batLeft, setBatLeft] = useState(save.owned.bat);
@@ -847,6 +863,8 @@ export default function EscapeGame() {
   const [, setZomTick] = useState(0);
   const tStartRef = useRef(performance.now());
   const zx = useCallback((z: Zombie, idx: number) => {
+    // Sleeping (and not yet woken) — стоят на месте.
+    if (z.sleeping && !wokenRef.current.has(z.id)) return z.x;
     const t = (performance.now() - tStartRef.current) / 1000;
     return z.x + Math.sin(t * 0.9 + idx * 1.7) * 60;
   }, []);
@@ -893,6 +911,7 @@ export default function EscapeGame() {
         setTimeout(() => setToast(""), 1200);
         return;
       }
+      if (k === "b") { setModal({ kind: "backpack" }); return; }
       if (k !== "e" && e.key !== "Enter") return;
       // nearest zombie
       const z = zombies.find((zz, i) => !killed.has(zz.id) && Math.abs(zx(zz, i) - px) < REACH);
@@ -923,10 +942,12 @@ export default function EscapeGame() {
       zomPosRef.current = pos;
       setZomTick(t => (t + 1) % 1000000);
 
-      // Run mode (Shift): faster but шумно — пробуждает зомби раньше (увеличивает дистанцию укуса)
-      const isRun = !!(keys.current["shift"]);
+      // Crouch (C) — тихо, медленно. Run (Shift) — шумно, быстро.
+      const isCrouch = !!(keys.current["c"] || keys.current["control"]);
+      const isRun = !isCrouch && !!(keys.current["shift"]);
       setRunning(isRun);
-      const speed = isRun ? SPEED * 1.7 : SPEED;
+      setCrouching(isCrouch);
+      const speed = isCrouch ? SPEED * 0.45 : (isRun ? SPEED * 1.7 : SPEED);
 
       let dx = 0;
       if (keys.current["a"] || keys.current["arrowleft"]) { dx -= 1; setFacing(-1); }
@@ -946,15 +967,40 @@ export default function EscapeGame() {
         });
       } else setMoving(false);
 
-      // Contact damage — patrolling zombie within bite range.
-      // Бег = шум: радиус укуса больше; ниндзя — на 6px тише.
       const nowT = performance.now();
+
+      // ===== Sleeping zombies: hearing detection =====
+      // Сидя на корточках — полностью тихо. Стоя — слышат. Бегом — слышат издалека.
+      // Услышали = просыпаются и сразу кусают за огромный урон.
+      if (!isCrouch) {
+        const hearRange = isRun ? 130 : (dx !== 0 ? 75 : 40) - (isNinja ? 10 : 0);
+        for (let i = 0; i < zombies.length; i++) {
+          const z = zombies[i];
+          if (!z.sleeping) continue;
+          if (killedRef.current.has(z.id) || wokenRef.current.has(z.id)) continue;
+          if (Math.abs(z.x - xRef.current) < hearRange) {
+            wokenRef.current.add(z.id);
+            const dmg = 35 + level * 5 + (isRun ? 15 : 0);
+            setHp(h => Math.max(0, h - dmg));
+            setShake(true);
+            setTimeout(() => setShake(false), 600);
+            setToast(`😱 ${z.name} проснулся и накинулся! -${dmg} HP`);
+            setTimeout(() => setToast(""), 2200);
+            lastBiteRef.current = nowT;
+            break;
+          }
+        }
+      }
+
+      // Contact damage — patrolling zombie within bite range.
       const biteCD = isRun ? 500 : 800;
-      const biteRange = (isRun ? 48 : 32) - (isNinja ? 6 : 0);
+      const biteRange = (isCrouch ? 22 : (isRun ? 48 : 32)) - (isNinja ? 6 : 0);
       if (nowT - lastBiteRef.current > biteCD) {
         for (let i = 0; i < zombies.length; i++) {
           const z = zombies[i];
           if (killedRef.current.has(z.id)) continue;
+          // Спящие, ещё не разбуженные, не кусают пассивно.
+          if (z.sleeping && !wokenRef.current.has(z.id)) continue;
           if (Math.abs(pos[z.id] - xRef.current) < biteRange) {
             lastBiteRef.current = nowT;
             const base = 4 + Math.floor(Math.random() * 5);
@@ -1025,9 +1071,21 @@ export default function EscapeGame() {
     const c = modal.classroom;
     const loot = c.loot;
     if (loot.strengthGain) setStrength(s => s + loot.strengthGain!);
-    if (loot.hpGain) {
-      setInv(prev => [...prev, { id: `${c.id}-${prev.length}`, name: loot.name, emoji: loot.emoji, hp: loot.hpGain! }]);
-      setToast(`📦 В рюкзаке: ${loot.emoji} ${loot.name} (+${loot.hpGain} HP)`);
+    const item: InvItem = {
+      id: `${c.id}-${Date.now()}`,
+      name: loot.name,
+      emoji: loot.emoji,
+      hp: loot.hpGain ?? 0,
+      food: loot.foodGain ?? 0,
+      strength: loot.strengthGain ?? 0,
+    };
+    if (item.hp || item.food) {
+      setInv(prev => [...prev, item]);
+      const bonus = [
+        item.hp ? `+${item.hp} HP` : null,
+        item.food ? `+${item.food} 🍴` : null,
+      ].filter(Boolean).join(", ");
+      setToast(`🎒 В рюкзаке: ${loot.emoji} ${loot.name} (${bonus})`);
     } else {
       setToast(`Найдено: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} 💪)` : ""}`);
     }
@@ -1037,22 +1095,55 @@ export default function EscapeGame() {
     setModal({ kind: "none" });
   }, [modal, maxHp]);
 
-  // Auto-use the strongest heal item from inventory when HP drops low.
+  // Use a specific item from the backpack.
+  const useItem = useCallback((idx: number) => {
+    const it = invRef.current[idx];
+    if (!it) return;
+    setInv(p => p.filter((_, i) => i !== idx));
+    if (it.hp) setHp(h => Math.min(maxHp, h + it.hp));
+    if (it.food) setHunger(h => Math.min(MAX_HUNGER, h + it.food));
+    if (it.strength) setStrength(s => s + it.strength);
+    setToast(`💊 ${it.emoji} ${it.name} использовано`);
+    setTimeout(() => setToast(""), 1400);
+  }, [maxHp]);
+
+  // Auto-emergency-heal только при критическом HP.
   useEffect(() => {
     if (!started) return;
     if (modal.kind === "lose" || modal.kind === "win") return;
     if (hp === 0) { setModal({ kind: "lose" }); return; }
-    if (hp < 35 && invRef.current.length > 0) {
+    if (hp < 20 && invRef.current.some(i => i.hp > 0)) {
       const list = invRef.current;
-      let bestIdx = 0;
-      for (let i = 1; i < list.length; i++) if (list[i].hp > list[bestIdx].hp) bestIdx = i;
+      let bestIdx = -1;
+      for (let i = 0; i < list.length; i++) if (list[i].hp > 0 && (bestIdx < 0 || list[i].hp > list[bestIdx].hp)) bestIdx = i;
+      if (bestIdx < 0) return;
       const item = list[bestIdx];
       setInv(p => p.filter((_, i) => i !== bestIdx));
       setHp(h => Math.min(maxHp, h + item.hp));
-      setToast(`💊 Лана использует ${item.emoji} ${item.name} (+${item.hp} HP)`);
+      if (item.food) setHunger(h => Math.min(MAX_HUNGER, h + item.food));
+      setToast(`💊 Авто: ${item.emoji} ${item.name} (+${item.hp} HP)`);
       setTimeout(() => setToast(""), 1800);
     }
   }, [hp, started, modal.kind, maxHp]);
+
+  // Hunger tick — убывает со временем, при 0 — кусает голод.
+  useEffect(() => {
+    if (!started || modal.kind === "lose" || modal.kind === "win") return;
+    const id = setInterval(() => {
+      if (modal.kind !== "none") return; // не убывает во время заданий
+      setHunger(h => {
+        const nh = Math.max(0, h - 1);
+        if (nh === 0) {
+          // голодаем — теряем 2 HP
+          setHp(hh => Math.max(0, hh - 2));
+          setToast("🍴 Лана голодна! -2 HP");
+          setTimeout(() => setToast(""), 1200);
+        }
+        return nh;
+      });
+    }, 2200);
+    return () => clearInterval(id);
+  }, [started, modal.kind]);
 
   const beginGame = () => {
     const mh = 100 + (save.owned.hp ? 25 : 0);
@@ -1060,6 +1151,8 @@ export default function EscapeGame() {
     setBatLeft(save.owned.bat); setGunLeft(save.owned.gun);
     setLevel(0); setX(120); setStrength(1);
     setKilled(new Set()); setSearched(new Set()); setInv([]);
+    setHunger(MAX_HUNGER);
+    wokenRef.current = new Set();
     setModal({ kind: "none" });
     setStarted(true);
   };
@@ -1125,12 +1218,13 @@ export default function EscapeGame() {
               </p>
               <div className="text-left text-[12px] grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
                 <p>🎮 <b>A/D</b> · <b>←/→</b> — идти</p>
-                <p>🏃 <b>Shift</b> — бежать (шумно — зомби кусают сильнее)</p>
+                <p>🏃 <b>Shift</b> — бежать (шумно!)</p>
+                <p>🤫 <b>C</b> / <b>Ctrl</b> — присесть (тихо, мимо спящих)</p>
+                <p>🎒 <b>B</b> — рюкзак / использовать предметы</p>
                 <p>⚡ <b>E</b> / <b>Enter</b> — взаимодействие</p>
-                <p>🏏 <b>G</b> — ударить битой (если есть)</p>
-                <p>🔫 <b>F</b> — выстрел (если есть)</p>
-                <p>💡 В заданиях есть кнопка «Подсказка»</p>
-                <p>🪙 За зомби и кабинеты — монеты</p>
+                <p>🏏 <b>G</b> — бита · 🔫 <b>F</b> — пистолет</p>
+                <p>🍴 Не забывай есть — голод отнимает HP</p>
+                <p>😴 Спящие зомби съедят, если их услышать</p>
                 <p>🌑 На 2–3 этаже темно — нужен фонарик</p>
               </div>
               <div className="flex justify-center">
@@ -1199,10 +1293,21 @@ export default function EscapeGame() {
             <div className="text-[10px] text-muted-foreground">{cur.name}</div>
           </div>
         </div>
-        <div className="flex-1 max-w-md">
-          <div className="flex justify-between text-xs mb-1"><span>HP</span><span className="font-mono">{hp} / {maxHp}</span></div>
-          <div className="h-3 bg-black/60 rounded border border-red-400/40 overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-red-600 to-rose-400 transition-all" style={{ width: `${(hp / maxHp) * 100}%` }} />
+        <div className="flex-1 max-w-md space-y-1">
+          <div>
+            <div className="flex justify-between text-xs mb-1"><span>HP</span><span className="font-mono">{hp} / {maxHp}</span></div>
+            <div className="h-3 bg-black/60 rounded border border-red-400/40 overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-red-600 to-rose-400 transition-all" style={{ width: `${(hp / maxHp) * 100}%` }} />
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-[11px] mb-1">
+              <span className="flex items-center gap-1"><Utensils className="h-3 w-3 text-amber-300" /> Сытость</span>
+              <span className={`font-mono ${hunger < 25 ? "text-red-400 animate-pulse" : "text-amber-200"}`}>{hunger}</span>
+            </div>
+            <div className="h-2 bg-black/60 rounded border border-amber-700/40 overflow-hidden">
+              <div className={`h-full transition-all ${hunger < 25 ? "bg-red-500" : "bg-gradient-to-r from-amber-500 to-yellow-300"}`} style={{ width: `${(hunger / MAX_HUNGER) * 100}%` }} />
+            </div>
           </div>
         </div>
         <div className="text-right text-xs space-y-1">
@@ -1214,19 +1319,22 @@ export default function EscapeGame() {
             {save.owned.flashlight && <span title="Фонарик"><Flashlight className="h-3 w-3 inline text-amber-200" /></span>}
             <span>💀 {killed.size}/{zombies.length}</span>
             <span>🔍 {searched.size}/{classrooms.length}</span>
-            <span className={running ? "text-red-400" : "text-zinc-500"} title="Шум">{running ? <Volume2 className="h-3 w-3 inline" /> : <VolumeX className="h-3 w-3 inline" />}</span>
+            <span className={crouching ? "text-emerald-400" : (running ? "text-red-400" : "text-zinc-500")} title={crouching ? "Сидит — тихо" : (running ? "Бежит — шумно" : "Идёт")}>
+              {crouching ? <ArrowDown className="h-3 w-3 inline" /> : (running ? <Volume2 className="h-3 w-3 inline" /> : <VolumeX className="h-3 w-3 inline" />)}
+            </span>
           </div>
           <div className="flex gap-1 justify-end items-center min-h-[18px]">
-            <span className="text-[10px] text-muted-foreground mr-1">Рюкзак:</span>
-            {inv.length === 0
-              ? <span className="text-[10px] text-zinc-600">пусто</span>
-              : inv.slice(0, 6).map((it, i) => (
-                <span key={it.id + i} title={`${it.name} +${it.hp} HP`}
-                  className="bg-black/60 border border-amber-700/60 rounded px-1 text-sm leading-none">
-                  {it.emoji}
-                </span>
-              ))}
-            {inv.length > 6 && <span className="text-[10px] text-amber-300">+{inv.length - 6}</span>}
+            <button onClick={() => setModal({ kind: "backpack" })}
+              className="flex items-center gap-1 text-[10px] text-amber-200 hover:text-amber-100 bg-black/60 border border-amber-700/60 rounded px-2 py-0.5 font-pixel">
+              <Backpack className="h-3 w-3" /> Рюкзак [B] · {inv.length}
+            </button>
+            {inv.slice(0, 5).map((it, i) => (
+              <span key={it.id + i} title={`${it.name}${it.hp ? ` +${it.hp} HP` : ""}${it.food ? ` +${it.food} 🍴` : ""}`}
+                className="bg-black/60 border border-amber-700/60 rounded px-1 text-sm leading-none">
+                {it.emoji}
+              </span>
+            ))}
+            {inv.length > 5 && <span className="text-[10px] text-amber-300">+{inv.length - 5}</span>}
           </div>
           {allKilled && <div className="text-emerald-400 font-bold animate-pulse">
             → {isFinalLevel ? "Беги к директору!" : "Лестница наверх!"}
@@ -1411,6 +1519,24 @@ export default function EscapeGame() {
                 </div>
               );
             }
+            const isSleeping = !!z.sleeping && !wokenRef.current.has(z.id);
+            if (isSleeping) {
+              return (
+                <div key={z.id} className="absolute" style={{ left: z.x - 28, top: FLOOR_Y - 70 }}>
+                  {/* tilted up, looking at ceiling */}
+                  <div style={{ transform: "rotate(-18deg)", transformOrigin: "50% 90%" }}>
+                    <PixelZombie size={56} facing={1} />
+                  </div>
+                  {/* Zzz */}
+                  <div className="absolute -top-6 left-10 text-blue-200 font-pixel text-sm animate-pulse drop-shadow">
+                    Zzz
+                  </div>
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-blue-900/80 text-blue-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
+                    😴 {z.name}
+                  </div>
+                </div>
+              );
+            }
             const zCur = zomPosRef.current[z.id] ?? z.x;
             return (
               <div key={z.id} className="absolute zombie-walk" style={{ left: zCur - 28, top: FLOOR_Y - 70, transition: "left 0.08s linear" }}>
@@ -1425,9 +1551,13 @@ export default function EscapeGame() {
 
           {/* Lana */}
           <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 }}>
-            <div className={moving ? "lana-walk" : "lana-idle"}>
+            <div className={moving ? "lana-walk" : "lana-idle"}
+              style={crouching ? { transform: "scaleY(0.7) translateY(18px)", transformOrigin: "50% 100%" } : undefined}>
               <Crewmate color="#ff66aa" palette={lanaPalette} facing={facing} size={56} />
             </div>
+            {crouching && (
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-emerald-900/80 text-emerald-100 text-[9px] px-1 rounded font-pixel">🤫 тихо</div>
+            )}
           </div>
 
           {/* Scanlines */}
@@ -1538,6 +1668,8 @@ export default function EscapeGame() {
                     setKilled(new Set());
                     setSearched(new Set());
                     setInv([]);
+                    setHunger(MAX_HUNGER);
+                    wokenRef.current = new Set();
                     setHp(h => Math.min(maxHp, h + 20));
                     setModal({ kind: "none" });
                     setToast(`▲ Этаж ${cur.id + 1}`);
@@ -1573,6 +1705,52 @@ export default function EscapeGame() {
 
             {modal.kind === "boss" && (
               <BossFight onWin={() => setModal({ kind: "win" })} onLose={() => setModal({ kind: "lose" })} />
+            )}
+
+            {modal.kind === "backpack" && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 mb-1">
+                  <Backpack className="h-7 w-7 text-amber-300" />
+                  <div>
+                    <h2 className="font-display text-lg text-amber-300">Рюкзак Ланы</h2>
+                    <p className="text-xs text-muted-foreground">Используй предметы, чтобы лечиться, есть или стать сильнее.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="bg-black/40 border border-red-700/40 rounded p-2 text-center">
+                    <div className="text-red-300">HP</div><div className="font-mono">{hp}/{maxHp}</div>
+                  </div>
+                  <div className="bg-black/40 border border-amber-700/40 rounded p-2 text-center">
+                    <div className="text-amber-300">Сытость</div><div className="font-mono">{hunger}/{MAX_HUNGER}</div>
+                  </div>
+                  <div className="bg-black/40 border border-emerald-700/40 rounded p-2 text-center">
+                    <div className="text-emerald-300">Сила</div><div className="font-mono">×{strength}</div>
+                  </div>
+                </div>
+                {inv.length === 0 ? (
+                  <p className="text-center text-muted-foreground text-sm py-6">Рюкзак пуст. Ищи предметы в кабинетах.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto">
+                    {inv.map((it, idx) => (
+                      <div key={it.id} className="flex items-center gap-2 p-2 bg-black/40 border border-amber-700/40 rounded">
+                        <div className="text-2xl">{it.emoji}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-pixel truncate">{it.name}</div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {it.hp ? `+${it.hp} HP ` : ""}
+                            {it.food ? `+${it.food} 🍴 ` : ""}
+                            {it.strength ? `+${it.strength} 💪` : ""}
+                          </div>
+                        </div>
+                        <Button size="sm" onClick={() => useItem(idx)}>Исп.</Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex justify-end">
+                  <Button variant="secondary" onClick={() => setModal({ kind: "none" })}>Закрыть</Button>
+                </div>
+              </div>
             )}
 
             {modal.kind === "win" && (

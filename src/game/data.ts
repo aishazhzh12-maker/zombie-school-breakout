@@ -7,7 +7,7 @@ export type Classroom = {
   id: string;
   x: number;
   name: string;
-  loot: { name: string; emoji: string; hpGain?: number; strengthGain?: number };
+  loot: { name: string; emoji: string; hpGain?: number; strengthGain?: number; foodGain?: number };
 };
 
 export type Zombie = {
@@ -15,6 +15,7 @@ export type Zombie = {
   x: number;
   kind: TaskKind;
   name: string;
+  sleeping?: boolean; // стоит, смотрит в потолок. Услышит — съест.
 };
 
 export type Level = {
@@ -36,16 +37,18 @@ export const levels: Level[] = [
     worldW: 3000,
     exitX: 2850,
     classrooms: [
-      { id: "l1-21", x: 300, name: "Кабинет физики №21", loot: { name: "Бутерброд", emoji: "🥪", hpGain: 20 } },
-      { id: "l1-18", x: 750, name: "Кабинет химии №18", loot: { name: "Аптечка", emoji: "🩹", hpGain: 35 } },
-      { id: "l1-7", x: 1450, name: "Кабинет литературы", loot: { name: "Энергетик", emoji: "⚡", hpGain: 10, strengthGain: 1 } },
+      { id: "l1-21", x: 300, name: "Кабинет физики №21", loot: { name: "Бутерброд", emoji: "🥪", hpGain: 10, foodGain: 35 } },
+      { id: "l1-18", x: 750, name: "Кабинет химии №18", loot: { name: "Аптечка", emoji: "🩹", hpGain: 40 } },
+      { id: "l1-7", x: 1450, name: "Кабинет литературы", loot: { name: "Энергетик", emoji: "⚡", hpGain: 10, strengthGain: 1, foodGain: 20 } },
       { id: "l1-bio", x: 2150, name: "Кабинет биологии", loot: { name: "Швабра", emoji: "🧹", strengthGain: 1 } },
     ],
     zombies: [
       { id: "l1-z1", x: 500, kind: "switches", name: "Зомби-ученик" },
-      { id: "l1-z2", x: 1050, kind: "trash", name: "Зомби-уборщик" },
-      { id: "l1-z3", x: 1750, kind: "wires", name: "Зомби-электрик" },
-      { id: "l1-z4", x: 2450, kind: "quiz", name: "Зомби-учитель" },
+      { id: "l1-z2", x: 950, kind: "trash", name: "Спящий уборщик", sleeping: true },
+      { id: "l1-z3", x: 1050, kind: "trash", name: "Зомби-уборщик" },
+      { id: "l1-z4", x: 1750, kind: "wires", name: "Зомби-электрик" },
+      { id: "l1-z5", x: 2050, kind: "quiz", name: "Спящий учитель", sleeping: true },
+      { id: "l1-z6", x: 2450, kind: "quiz", name: "Зомби-учитель" },
     ],
   },
   {
@@ -54,18 +57,20 @@ export const levels: Level[] = [
     worldW: 3400,
     exitX: 3250,
     classrooms: [
-      { id: "l2-tu", x: 350, name: "Учительская", loot: { name: "Шоколад", emoji: "🍫", hpGain: 15 } },
-      { id: "l2-eng", x: 850, name: "Кабинет английского", loot: { name: "Бинт", emoji: "🩹", hpGain: 25 } },
+      { id: "l2-tu", x: 350, name: "Учительская", loot: { name: "Шоколад", emoji: "🍫", hpGain: 5, foodGain: 30 } },
+      { id: "l2-eng", x: 850, name: "Кабинет английского", loot: { name: "Бинт", emoji: "🩹", hpGain: 30 } },
       { id: "l2-inf", x: 1500, name: "Кабинет информатики", loot: { name: "Флешка", emoji: "💾", strengthGain: 1 } },
       { id: "l2-mus", x: 2100, name: "Музыкальный класс", loot: { name: "Гитара", emoji: "🎸", strengthGain: 2 } },
-      { id: "l2-gym", x: 2700, name: "Спортзал", loot: { name: "Протеин", emoji: "💪", hpGain: 20, strengthGain: 1 } },
+      { id: "l2-gym", x: 2700, name: "Спортзал", loot: { name: "Протеин", emoji: "💪", hpGain: 15, strengthGain: 1, foodGain: 25 } },
     ],
     zombies: [
       { id: "l2-z1", x: 600, kind: "lock", name: "Зомби-завуч" },
-      { id: "l2-z2", x: 1200, kind: "download", name: "Зомби-секретарь" },
-      { id: "l2-z3", x: 1800, kind: "reactor", name: "Зомби-повар" },
-      { id: "l2-z4", x: 2400, kind: "aim", name: "Зомби-физрук" },
-      { id: "l2-z5", x: 2950, kind: "trash", name: "Зомби-уборщик" },
+      { id: "l2-z2", x: 1000, kind: "download", name: "Спящий секретарь", sleeping: true },
+      { id: "l2-z3", x: 1200, kind: "download", name: "Зомби-секретарь" },
+      { id: "l2-z4", x: 1800, kind: "reactor", name: "Зомби-повар" },
+      { id: "l2-z5", x: 2200, kind: "trash", name: "Спящий охранник", sleeping: true },
+      { id: "l2-z6", x: 2400, kind: "aim", name: "Зомби-физрук" },
+      { id: "l2-z7", x: 2950, kind: "trash", name: "Зомби-уборщик" },
     ],
   },
   {
@@ -75,17 +80,20 @@ export const levels: Level[] = [
     exitX: 3450,
     classrooms: [
       { id: "l3-arch", x: 400, name: "Архив", loot: { name: "Учебник физики", emoji: "📕", strengthGain: 1 } },
-      { id: "l3-med", x: 950, name: "Медкабинет", loot: { name: "Большая аптечка", emoji: "💉", hpGain: 50 } },
+      { id: "l3-med", x: 950, name: "Медкабинет", loot: { name: "Большая аптечка", emoji: "💉", hpGain: 60 } },
       { id: "l3-lab", x: 1600, name: "Лаборатория", loot: { name: "Кислота", emoji: "🧪", strengthGain: 2 } },
       { id: "l3-libr", x: 2250, name: "Библиотека", loot: { name: "Том знаний", emoji: "📚", strengthGain: 1, hpGain: 10 } },
-      { id: "l3-canteen", x: 2900, name: "Столовая", loot: { name: "Обед", emoji: "🍲", hpGain: 40 } },
+      { id: "l3-canteen", x: 2900, name: "Столовая", loot: { name: "Обед", emoji: "🍲", hpGain: 20, foodGain: 50 } },
     ],
     zombies: [
       { id: "l3-z1", x: 600, kind: "reactor", name: "Зомби-завкафедрой" },
-      { id: "l3-z2", x: 1200, kind: "quiz", name: "Зомби-психолог" },
-      { id: "l3-z3", x: 1800, kind: "wires", name: "Зомби-электрик" },
-      { id: "l3-z4", x: 2500, kind: "lock", name: "Зомби-охранник" },
-      { id: "l3-z5", x: 3100, kind: "code", name: "Зомби-заместитель" },
+      { id: "l3-z2", x: 1000, kind: "quiz", name: "Спящий психолог", sleeping: true },
+      { id: "l3-z3", x: 1200, kind: "quiz", name: "Зомби-психолог" },
+      { id: "l3-z4", x: 1800, kind: "wires", name: "Зомби-электрик" },
+      { id: "l3-z5", x: 2150, kind: "lock", name: "Спящий охранник", sleeping: true },
+      { id: "l3-z6", x: 2500, kind: "lock", name: "Зомби-охранник" },
+      { id: "l3-z7", x: 2850, kind: "reactor", name: "Спящий завхоз", sleeping: true },
+      { id: "l3-z8", x: 3100, kind: "code", name: "Зомби-заместитель" },
     ],
   },
 ];
