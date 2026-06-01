@@ -81,7 +81,7 @@ export const levels: Level[] = [
       { id: "l3-canteen", x: 2900, name: "Столовая", loot: { name: "Обед", emoji: "🍲", hpGain: 40 } },
     ],
     zombies: [
-      { id: "l3-z1", x: 600, kind: "math", name: "Зомби-завкафедрой" },
+      { id: "l3-z1", x: 600, kind: "reactor", name: "Зомби-завкафедрой" },
       { id: "l3-z2", x: 1200, kind: "quiz", name: "Зомби-психолог" },
       { id: "l3-z3", x: 1800, kind: "wires", name: "Зомби-электрик" },
       { id: "l3-z4", x: 2500, kind: "lock", name: "Зомби-охранник" },
