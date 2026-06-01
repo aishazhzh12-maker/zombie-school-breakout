@@ -10,6 +10,7 @@ import {
   Zap, KeyRound, Download, Flame, Trash2, ToggleRight,
   Calculator, HelpCircle, Lock, Target,
   X, Skull, Heart, DoorClosed, ArrowUp,
+  Lightbulb, Coins, Shirt, ShoppingBag, Crosshair, Swords, Flashlight, Volume2, VolumeX,
 } from "lucide-react";
 
 
@@ -21,6 +22,7 @@ type Modal =
   | { kind: "task"; zombie: Zombie }
   | { kind: "search"; classroom: Classroom }
   | { kind: "exit" }
+  | { kind: "doorTask" }
   | { kind: "nextLevel" }
   | { kind: "win" }
   | { kind: "lose" }
@@ -197,11 +199,112 @@ const PALETTES: Record<string, PixelPalette> = {
   lana: PAL_LANA, "#e84545": PAL_MILA, "#3aa3ff": PAL_ARSENY, "#ffd23a": PAL_VIKA, "#7ad84a": PAL_TIMUR,
 };
 
+// ---- Lana outfits (selectable in menu) ----
+export type Outfit = {
+  id: string; name: string; price: number; palette: PixelPalette;
+};
+const OUTFITS: Outfit[] = [
+  { id: "classic", name: "Школьная форма", price: 0, palette: PAL_LANA },
+  { id: "track", name: "Спортивный костюм", price: 80, palette: {
+    skin: "#f4c8a8", skinShade: "#d49a78",
+    hair: "#c4377a", hairShade: "#7a1e4a",
+    shirt: "#1aa8a8", shirtShade: "#0a5a5a",
+    pants: "#0a0a14", pantsShade: "#000000", shoes: "#ffffff",
+  } },
+  { id: "punk", name: "Панк-куртка", price: 160, palette: {
+    skin: "#f4c8a8", skinShade: "#c8946a",
+    hair: "#ff2a6a", hairShade: "#8a0a3a",
+    shirt: "#1a1a1a", shirtShade: "#000000",
+    pants: "#2a1a2a", pantsShade: "#0a0a0a", shoes: "#3a0a0a",
+  } },
+  { id: "armor", name: "Бронежилет (+10 HP)", price: 300, palette: {
+    skin: "#f4c8a8", skinShade: "#c8946a",
+    hair: "#c4377a", hairShade: "#7a1e4a",
+    shirt: "#3a4a2a", shirtShade: "#1a2410",
+    pants: "#1a1a1a", pantsShade: "#000000", shoes: "#0a0a0a",
+  } },
+  { id: "ninja", name: "Ниндзя (-шум)", price: 420, palette: {
+    skin: "#e0b890", skinShade: "#a87a55",
+    hair: "#000000", hairShade: "#000000",
+    shirt: "#0a0a14", shirtShade: "#000000",
+    pants: "#000000", pantsShade: "#000000", shoes: "#000000",
+    eyes: "#ff3030",
+  } },
+];
+
+// ---- Upgrades (persisted in localStorage) ----
+export type UpgradeId = "bat" | "gun" | "flashlight" | "hp" | "hint";
+export type Upgrade = {
+  id: UpgradeId; name: string; icon: typeof Swords; price: number; desc: string; max?: number;
+};
+const UPGRADES: Upgrade[] = [
+  { id: "bat",        name: "Бейсбольная бита",   icon: Swords,     price: 60,  desc: "1 удар — оглушить зомби без задания.", max: 5 },
+  { id: "gun",        name: "Пистолет",            icon: Crosshair,  price: 220, desc: "Выстрел — мгновенно убивает зомби.", max: 5 },
+  { id: "flashlight", name: "Фонарик",             icon: Flashlight, price: 140, desc: "Освещает тёмные коридоры (2–3 этаж)." },
+  { id: "hp",         name: "Усиленное здоровье",  icon: Heart,      price: 180, desc: "+25 к макс. HP." },
+  { id: "hint",       name: "Дополнительные подсказки", icon: Lightbulb, price: 90, desc: "Подробные подсказки во всех заданиях." },
+];
+
+type Inventory = {
+  bat: number; gun: number;
+  flashlight: boolean; hp: boolean; hint: boolean;
+};
+const EMPTY_INV: Inventory = { bat: 0, gun: 0, flashlight: false, hp: false, hint: false };
+
+const SAVE_KEY = "escape-school-save-v1";
+type SaveData = { coins: number; outfit: string; owned: Inventory };
+const loadSave = (): SaveData => {
+  if (typeof window === "undefined") return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV } };
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV } };
+    const p = JSON.parse(raw);
+    return { coins: p.coins ?? 0, outfit: p.outfit ?? "classic", owned: { ...EMPTY_INV, ...(p.owned ?? {}) } };
+  } catch { return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV } }; }
+};
+const writeSave = (s: SaveData) => {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+};
+
+// ---- Per-task hints ----
+const TASK_HINTS: Record<TaskKind, { short: string; long: string }> = {
+  wires:    { short: "Тяни мышью провод от левой клеммы к правой того же цвета.", long: "Если ошибся — кликни левую клемму ещё раз, чтобы сбросить соединение. Цвета должны совпасть точно." },
+  code:     { short: "На двери математическое выражение — реши его.", long: "1740 + 2331 = 4071. Введи последние 4 цифры — это и есть код." },
+  download: { short: "Удерживай кнопку, не отпускай, пока полоса не достигнет 100%.", long: "Если отпустить — прогресс быстро падает. Не двигай мышью с кнопки." },
+  reactor:  { short: "Запомни цвета в нужном порядке и повтори.", long: "Если ошибся — последовательность покажут заново с начала. Считай вслух." },
+  trash:    { short: "Удерживай рычаг, пока бак не опустеет.", long: "Бак заполняется обратно, если отпустить. Не отвлекайся." },
+  switches: { short: "Включи ВСЕ рубильники (ON).", long: "Просто нажми на каждый OFF — нет ловушек, никаких комбинаций." },
+  quiz:     { short: "Прочитай вопрос внимательно, всего 2 попытки.", long: "Если не уверен — выбирай самый правдоподобный, времени мало." },
+  lock:     { short: "Подбери 3 цифры по подсказкам сбоку.", long: "Сначала зафиксируй последнюю цифру (она дана прямо), потом подбирай первую по чётности, остаток — по сумме." },
+  aim:      { short: "Кликай по красным мишеням как можно быстрее.", long: "Не води мышью — мишень появится случайно. Целься в центр." },
+};
+
+function HintBox({ kind, advanced }: { kind: TaskKind; advanced: boolean }) {
+  const [open, setOpen] = useState(false);
+  const tip = TASK_HINTS[kind];
+  return (
+    <div className="mb-3">
+      <button onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 text-[11px] font-pixel text-amber-300 hover:text-amber-100 bg-black/40 border border-amber-700/40 rounded px-2 py-1">
+        <Lightbulb className="h-3 w-3" />
+        {open ? "Скрыть подсказку" : "Подсказка"}
+      </button>
+      {open && (
+        <div className="mt-2 text-[12px] text-amber-100/90 bg-amber-900/15 border border-amber-700/30 rounded p-2">
+          <div>💡 {tip.short}</div>
+          {advanced && <div className="mt-1 text-amber-300/90">★ {tip.long}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Backwards-compatible API used elsewhere in this file
-function Crewmate({ color, facing = 1, size = 56, dead = false }: { color: string; facing?: 1 | -1; size?: number; dead?: boolean }) {
+function Crewmate({ color, facing = 1, size = 56, dead = false, palette }:
+  { color: string; facing?: 1 | -1; size?: number; dead?: boolean; palette?: PixelPalette }) {
   const isLana = color === "#ff66aa";
-  const palette = isLana ? PAL_LANA : (PALETTES[color] ?? { ...PAL_MILA, shirt: color, shirtShade: color });
-  return <PixelHuman palette={palette} facing={facing} size={size} variant={isLana ? "girl" : "student"} dead={dead} />;
+  const pal = palette ?? (isLana ? PAL_LANA : (PALETTES[color] ?? { ...PAL_MILA, shirt: color, shirtShade: color }));
+  return <PixelHuman palette={pal} facing={facing} size={size} variant={isLana ? "girl" : "student"} dead={dead} />;
 }
 
 function Impostor({ size = 80 }: { size?: number }) {
@@ -688,13 +791,18 @@ function TaskTimer({ seconds, onTimeout }: { seconds: number; onTimeout: () => v
 }
 
 export default function EscapeGame() {
+  // Persisted (menu / shop)
+  const [save, setSave] = useState<SaveData>(() => loadSave());
+  const [menuTab, setMenuTab] = useState<"play" | "outfit" | "shop">("play");
+
   const [started, setStarted] = useState(false);
   const [level, setLevel] = useState(0);
   const [x, setX] = useState(120);
   const [facing, setFacing] = useState<1 | -1>(1);
   const [moving, setMoving] = useState(false);
-  const [hp, setHp] = useState(80);
-  const [maxHp] = useState(100);
+  const baseMaxHp = 100 + (save.owned.hp ? 25 : 0);
+  const [hp, setHp] = useState(baseMaxHp);
+  const [maxHp, setMaxHp] = useState(baseMaxHp);
   const [strength, setStrength] = useState(1);
   const [killed, setKilled] = useState<Set<string>>(new Set());
   const [searched, setSearched] = useState<Set<string>>(new Set());
@@ -705,6 +813,23 @@ export default function EscapeGame() {
   const [inv, setInv] = useState<{ id: string; name: string; emoji: string; hp: number }[]>([]);
   const invRef = useRef(inv); invRef.current = inv;
   const lastBiteRef = useRef(0);
+
+  // Weapons remaining (decreases as used; bought in shop)
+  const [batLeft, setBatLeft] = useState(save.owned.bat);
+  const [gunLeft, setGunLeft] = useState(save.owned.gun);
+  const [coins, setCoins] = useState(save.coins);
+  // Running mode (Shift). Noisy — wakes "sleeping" zombies sooner.
+  const [running, setRunning] = useState(false);
+
+  // Selected outfit
+  const outfit = useMemo(() => OUTFITS.find(o => o.id === save.outfit) ?? OUTFITS[0], [save.outfit]);
+  const lanaPalette = outfit.palette;
+  const isNinja = outfit.id === "ninja";
+
+  // Persist coins + owned weapons left on changes
+  useEffect(() => {
+    writeSave({ ...save, coins });
+  }, [coins]);
 
   const cur = levels[level];
   const zombies = cur.zombies;
@@ -738,14 +863,39 @@ export default function EscapeGame() {
 
   const allKilled = killed.size === zombies.length;
 
-  // interact
+  // interact + weapon
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (modal.kind !== "none") return;
-      if (e.key.toLowerCase() !== "e" && e.key !== "Enter") return;
+      const k = e.key.toLowerCase();
       const px = xRef.current;
+      // Weapon: F = pistol (instant kill), G = bat (stun = win without minigame)
+      if (k === "f" || k === "g") {
+        const z = zombies.find((zz, i) => !killed.has(zz.id) && Math.abs(zx(zz, i) - px) < REACH + 30);
+        if (!z) return;
+        if (k === "f" && gunLeft > 0) {
+          setGunLeft(n => { const nn = n - 1; setSave(s => { const ns = { ...s, owned: { ...s.owned, gun: nn } }; writeSave(ns); return ns; }); return nn; });
+          setKilled(prev => new Set(prev).add(z.id));
+          setCoins(c => c + 25);
+          setToast(`🔫 ${z.name} — выстрел! +25 монет`);
+          setTimeout(() => setToast(""), 1600);
+          return;
+        }
+        if (k === "g" && batLeft > 0) {
+          setBatLeft(n => { const nn = n - 1; setSave(s => { const ns = { ...s, owned: { ...s.owned, bat: nn } }; writeSave(ns); return ns; }); return nn; });
+          setKilled(prev => new Set(prev).add(z.id));
+          setCoins(c => c + 15);
+          setToast(`🏏 ${z.name} — оглушён битой! +15 монет`);
+          setTimeout(() => setToast(""), 1600);
+          return;
+        }
+        setToast(k === "f" ? "🔫 Нет патронов" : "🏏 Нет бит");
+        setTimeout(() => setToast(""), 1200);
+        return;
+      }
+      if (k !== "e" && e.key !== "Enter") return;
       // nearest zombie
-      const z = zombies.find((z, i) => !killed.has(z.id) && Math.abs(zx(z, i) - px) < REACH);
+      const z = zombies.find((zz, i) => !killed.has(zz.id) && Math.abs(zx(zz, i) - px) < REACH);
       if (z) { setModal({ kind: "task", zombie: z }); return; }
       // nearest classroom
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
@@ -755,12 +905,12 @@ export default function EscapeGame() {
         if (!allKilled) {
           setToast("Дверь не откроется — впереди ещё зомби.");
           setTimeout(() => setToast(""), 1800);
-        } else setModal({ kind: "exit" });
+        } else setModal({ kind: isFinalLevel ? "doorTask" : "exit" });
       }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [modal.kind, killed, searched, allKilled, level]);
+  }, [modal.kind, killed, searched, allKilled, level, gunLeft, batLeft, zombies, zx, EXIT_X]);
 
   // game loop — walking + auto-block at zombies
   useEffect(() => {
@@ -773,14 +923,18 @@ export default function EscapeGame() {
       zomPosRef.current = pos;
       setZomTick(t => (t + 1) % 1000000);
 
+      // Run mode (Shift): faster but шумно — пробуждает зомби раньше (увеличивает дистанцию укуса)
+      const isRun = !!(keys.current["shift"]);
+      setRunning(isRun);
+      const speed = isRun ? SPEED * 1.7 : SPEED;
+
       let dx = 0;
       if (keys.current["a"] || keys.current["arrowleft"]) { dx -= 1; setFacing(-1); }
       if (keys.current["d"] || keys.current["arrowright"]) { dx += 1; setFacing(1); }
       if (dx !== 0) {
         setMoving(true);
         setX(p => {
-          let np = clamp(p + dx * SPEED, 80, WORLD_W - 80);
-          // block at undefeated zombies (only when walking towards them) — use live pos
+          let np = clamp(p + dx * speed, 80, WORLD_W - 80);
           const block = zombies.find(z => {
             if (killedRef.current.has(z.id)) return false;
             const zc = pos[z.id];
@@ -792,19 +946,23 @@ export default function EscapeGame() {
         });
       } else setMoving(false);
 
-      // Contact damage — patrolling zombie within bite range
+      // Contact damage — patrolling zombie within bite range.
+      // Бег = шум: радиус укуса больше; ниндзя — на 6px тише.
       const nowT = performance.now();
-      if (nowT - lastBiteRef.current > 700) {
+      const biteCD = isRun ? 500 : 800;
+      const biteRange = (isRun ? 48 : 32) - (isNinja ? 6 : 0);
+      if (nowT - lastBiteRef.current > biteCD) {
         for (let i = 0; i < zombies.length; i++) {
           const z = zombies[i];
           if (killedRef.current.has(z.id)) continue;
-          if (Math.abs(pos[z.id] - xRef.current) < 36) {
+          if (Math.abs(pos[z.id] - xRef.current) < biteRange) {
             lastBiteRef.current = nowT;
-            const dmg = 4 + Math.floor(Math.random() * 5);
+            const base = 4 + Math.floor(Math.random() * 5);
+            const dmg = base + (level * 2) + (isRun ? 3 : 0);
             setHp(h => Math.max(0, h - dmg));
             setShake(true);
             setTimeout(() => setShake(false), 350);
-            setToast(`🩸 ${z.name} кусает! -${dmg} HP`);
+            setToast(`🩸 ${z.name} кусает! -${dmg} HP${isRun ? " (шумно!)" : ""}`);
             setTimeout(() => setToast(""), 1200);
             break;
           }
@@ -844,7 +1002,9 @@ export default function EscapeGame() {
     const z = modal.zombie;
     if (ok) {
       setKilled(prev => new Set(prev).add(z.id));
-      setToast(`💀 ${z.name} повержен! +50 очков`);
+      const reward = 10 + level * 5;
+      setCoins(c => c + reward);
+      setToast(`💀 ${z.name} повержен! +${reward} 🪙`);
     } else {
       const dmg = Math.max(8, 25 - strength * 3);
       setHp(h => {
@@ -871,6 +1031,7 @@ export default function EscapeGame() {
     } else {
       setToast(`Найдено: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} 💪)` : ""}`);
     }
+    setCoins(c => c + 5);
     setSearched(prev => new Set(prev).add(c.id));
     setTimeout(() => setToast(""), 1800);
     setModal({ kind: "none" });
@@ -893,28 +1054,135 @@ export default function EscapeGame() {
     }
   }, [hp, started, modal.kind, maxHp]);
 
+  const beginGame = () => {
+    const mh = 100 + (save.owned.hp ? 25 : 0);
+    setMaxHp(mh); setHp(mh);
+    setBatLeft(save.owned.bat); setGunLeft(save.owned.gun);
+    setLevel(0); setX(120); setStrength(1);
+    setKilled(new Set()); setSearched(new Set()); setInv([]);
+    setModal({ kind: "none" });
+    setStarted(true);
+  };
+
+  const buyOutfit = (o: Outfit) => {
+    if (save.outfit === o.id) return;
+    if (coins < o.price) { setToast("Не хватает монет"); setTimeout(() => setToast(""), 1500); return; }
+    const ns = { ...save, coins: coins - o.price, outfit: o.id };
+    setCoins(ns.coins); setSave(ns); writeSave(ns);
+  };
+  const equipOutfit = (o: Outfit) => {
+    const ns = { ...save, outfit: o.id };
+    setSave(ns); writeSave(ns);
+  };
+  const buyUpgrade = (u: Upgrade) => {
+    if (coins < u.price) { setToast("Не хватает монет"); setTimeout(() => setToast(""), 1500); return; }
+    const owned = { ...save.owned };
+    if (u.id === "bat" || u.id === "gun") {
+      if ((owned[u.id] ?? 0) >= (u.max ?? 99)) return;
+      owned[u.id] = (owned[u.id] ?? 0) + 1;
+    } else {
+      if (owned[u.id]) return;
+      owned[u.id] = true;
+    }
+    const ns = { ...save, coins: coins - u.price, owned };
+    setCoins(ns.coins); setSave(ns); writeSave(ns);
+  };
+
   if (!started) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-red-950 p-6">
-        <div className="max-w-2xl text-center space-y-6">
-          <div className="flex justify-center items-end gap-4 mb-4">
-            <Crewmate color="#ff66aa" />
+      <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-red-950 p-4 overflow-auto">
+        <div className="max-w-3xl w-full space-y-4">
+          <div className="flex justify-center items-end gap-4">
+            <Crewmate color="#ff66aa" palette={lanaPalette} size={72} />
             <PixelZombie />
             <PixelZombie facing={1} />
-            <Impostor size={72} />
+            <Impostor size={80} />
           </div>
-          <h1 className="font-display text-3xl md:text-4xl text-primary">СБЕГИ ИЗ ШКОЛЫ</h1>
-          <p className="text-muted-foreground">
-            Школа захвачена зомби. Лана идёт по коридору, осматривает кабинеты в поисках припасов и
-            сражается с зомби, решая задачи. В конце коридора — дверь на улицу.
-          </p>
-          <div className="text-left text-sm bg-black/40 rounded p-4 space-y-1">
-            <p>🎮 <b>A/D</b> или <b>←/→</b> — идти по коридору</p>
-            <p>⚡ <b>E</b> / <b>Enter</b> — осмотреть кабинет / атаковать зомби</p>
-            <p>🧟 Зомби побеждаются мини-играми (провода, код, рубильники и т.д.)</p>
-            <p>🏫 3 этажа · в конце — бой с директором-зомби</p>
+          <h1 className="font-display text-3xl md:text-4xl text-primary text-center">СБЕГИ ИЗ ШКОЛЫ</h1>
+          <div className="flex items-center justify-center gap-2">
+            <div className="px-3 py-1 bg-amber-900/40 border border-amber-700 rounded font-pixel text-amber-200 flex items-center gap-2">
+              <Coins className="h-4 w-4" /> {coins} монет
+            </div>
           </div>
-          <Button size="lg" onClick={() => setStarted(true)} className="font-display">НАЧАТЬ</Button>
+
+          <div className="flex gap-2 justify-center">
+            {[
+              { id: "play", label: "Игра", icon: ArrowUp },
+              { id: "outfit", label: "Одежда", icon: Shirt },
+              { id: "shop", label: "Магазин", icon: ShoppingBag },
+            ].map(t => (
+              <button key={t.id} onClick={() => setMenuTab(t.id as typeof menuTab)}
+                className={`px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border ${menuTab === t.id ? "bg-primary text-primary-foreground border-primary" : "bg-black/40 border-zinc-700 text-zinc-300"}`}>
+                <t.icon className="h-4 w-4" /> {t.label}
+              </button>
+            ))}
+          </div>
+
+          {menuTab === "play" && (
+            <div className="bg-black/40 rounded p-4 space-y-3">
+              <p className="text-sm text-muted-foreground text-center">
+                Школа захвачена зомби. Лана зачищает 3 этажа, выполняет задания, чтобы открыть выход.
+              </p>
+              <div className="text-left text-[12px] grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                <p>🎮 <b>A/D</b> · <b>←/→</b> — идти</p>
+                <p>🏃 <b>Shift</b> — бежать (шумно — зомби кусают сильнее)</p>
+                <p>⚡ <b>E</b> / <b>Enter</b> — взаимодействие</p>
+                <p>🏏 <b>G</b> — ударить битой (если есть)</p>
+                <p>🔫 <b>F</b> — выстрел (если есть)</p>
+                <p>💡 В заданиях есть кнопка «Подсказка»</p>
+                <p>🪙 За зомби и кабинеты — монеты</p>
+                <p>🌑 На 2–3 этаже темно — нужен фонарик</p>
+              </div>
+              <div className="flex justify-center">
+                <Button size="lg" onClick={beginGame} className="font-display">НАЧАТЬ ИГРУ</Button>
+              </div>
+            </div>
+          )}
+
+          {menuTab === "outfit" && (
+            <div className="bg-black/40 rounded p-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+              {OUTFITS.map(o => {
+                const owned = o.price === 0 || (save.outfit === o.id);
+                const equipped = save.outfit === o.id;
+                return (
+                  <div key={o.id} className={`p-3 rounded border ${equipped ? "border-primary bg-primary/10" : "border-zinc-700 bg-black/40"} flex flex-col items-center gap-2`}>
+                    <PixelHuman palette={o.palette} variant="girl" size={64} />
+                    <div className="text-xs font-pixel text-center">{o.name}</div>
+                    {equipped
+                      ? <div className="text-[10px] text-primary font-pixel">НАДЕТО</div>
+                      : owned
+                        ? <Button size="sm" variant="secondary" onClick={() => equipOutfit(o)}>Надеть</Button>
+                        : <Button size="sm" onClick={() => buyOutfit(o)} disabled={coins < o.price}>
+                            <Coins className="h-3 w-3 mr-1" /> {o.price}
+                          </Button>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {menuTab === "shop" && (
+            <div className="bg-black/40 rounded p-4 space-y-2">
+              {UPGRADES.map(u => {
+                const I = u.icon;
+                const cur = u.id === "bat" || u.id === "gun" ? (save.owned[u.id] as number) : (save.owned[u.id] ? 1 : 0);
+                const maxed = u.id === "bat" || u.id === "gun" ? cur >= (u.max ?? 5) : cur >= 1;
+                return (
+                  <div key={u.id} className="flex items-center gap-3 p-2 border border-zinc-700 rounded bg-black/40">
+                    <I className="h-6 w-6 text-amber-300" />
+                    <div className="flex-1">
+                      <div className="font-pixel text-sm">{u.name} {(u.id === "bat" || u.id === "gun") && <span className="text-amber-300">×{cur}</span>}</div>
+                      <div className="text-[11px] text-muted-foreground">{u.desc}</div>
+                    </div>
+                    <Button size="sm" disabled={maxed || coins < u.price} onClick={() => buyUpgrade(u)}>
+                      {maxed ? "Куплено" : <><Coins className="h-3 w-3 mr-1" /> {u.price}</>}
+                    </Button>
+                  </div>
+                );
+              })}
+              <p className="text-[11px] text-muted-foreground text-center pt-1">Покупки сохраняются между играми.</p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -925,7 +1193,7 @@ export default function EscapeGame() {
       {/* HUD */}
       <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/90 to-transparent p-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Crewmate color="#ff66aa" size={36} />
+          <Crewmate color="#ff66aa" palette={lanaPalette} size={36} />
           <div>
             <div className="font-display text-sm text-primary">ЛАНА</div>
             <div className="text-[10px] text-muted-foreground">{cur.name}</div>
@@ -938,11 +1206,15 @@ export default function EscapeGame() {
           </div>
         </div>
         <div className="text-right text-xs space-y-1">
-          <div className="flex gap-3 justify-end">
+          <div className="flex gap-3 justify-end flex-wrap">
             <span className="text-amber-300">🏫 Этаж {cur.id}/{levels.length}</span>
-            <span>💪 ×{strength}</span>
+            <span className="flex items-center gap-1"><Coins className="h-3 w-3 text-amber-300" />{coins}</span>
+            <span title="Бита (G)">🏏 {batLeft}</span>
+            <span title="Пистолет (F)">🔫 {gunLeft}</span>
+            {save.owned.flashlight && <span title="Фонарик"><Flashlight className="h-3 w-3 inline text-amber-200" /></span>}
             <span>💀 {killed.size}/{zombies.length}</span>
             <span>🔍 {searched.size}/{classrooms.length}</span>
+            <span className={running ? "text-red-400" : "text-zinc-500"} title="Шум">{running ? <Volume2 className="h-3 w-3 inline" /> : <VolumeX className="h-3 w-3 inline" />}</span>
           </div>
           <div className="flex gap-1 justify-end items-center min-h-[18px]">
             <span className="text-[10px] text-muted-foreground mr-1">Рюкзак:</span>
@@ -1154,7 +1426,7 @@ export default function EscapeGame() {
           {/* Lana */}
           <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 }}>
             <div className={moving ? "lana-walk" : "lana-idle"}>
-              <Crewmate color="#ff66aa" facing={facing} size={56} />
+              <Crewmate color="#ff66aa" palette={lanaPalette} facing={facing} size={56} />
             </div>
           </div>
 
@@ -1162,6 +1434,23 @@ export default function EscapeGame() {
           <div className="absolute inset-0 pointer-events-none scanlines" />
         </div>
       </div>
+
+      {/* Darkness overlay — 2-3 этаж. С фонариком — большой светлый конус, без — крошечный кружок. */}
+      {level >= 1 && (
+        <div className="absolute inset-0 pointer-events-none z-20"
+          style={{
+            background: `radial-gradient(circle at ${(x - cam)}px ${FLOOR_Y - 40}px,
+              rgba(0,0,0,0) 0px,
+              rgba(0,0,0,0) ${save.owned.flashlight ? 120 : 50}px,
+              rgba(0,0,0,${level === 1 ? 0.85 : 0.96}) ${save.owned.flashlight ? 280 : 120}px,
+              rgba(0,0,0,${level === 1 ? 0.92 : 0.99}) 100%)`,
+          }} />
+      )}
+      {level >= 1 && !save.owned.flashlight && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 bg-red-900/80 border border-red-500 text-red-100 px-3 py-1 rounded font-pixel text-xs">
+          🌑 Темно! Нужен фонарик из магазина · ходи тихо (без Shift)
+        </div>
+      )}
 
       {/* Hint + toast */}
       {hint && modal.kind === "none" && (
@@ -1197,6 +1486,7 @@ export default function EscapeGame() {
                     </p>
                   </div>
                 </div>
+                <HintBox kind={modal.zombie.kind} advanced={save.owned.hint} />
                 {TIME_LIMITS[modal.zombie.kind] !== null && (
                   <TaskTimer
                     key={modal.zombie.id}
@@ -1257,6 +1547,30 @@ export default function EscapeGame() {
               )
             )}
 
+            {modal.kind === "doorTask" && (
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <DoorClosed className="h-10 w-10 text-amber-400" />
+                  <div>
+                    <h2 className="font-display text-lg text-amber-300">Замок на двери</h2>
+                    <p className="text-xs text-muted-foreground">Подбери код, чтобы открыть путь к директору.</p>
+                  </div>
+                </div>
+                <HintBox kind="lock" advanced={save.owned.hint} />
+                <TaskTimer seconds={30} onTimeout={() => {
+                  setHp(h => Math.max(0, h - 15));
+                  setShake(true); setTimeout(() => setShake(false), 400);
+                  setToast("🩸 Зомби подкрался у двери! -15 HP");
+                  setTimeout(() => setToast(""), 1600);
+                  setModal({ kind: "none" });
+                }} />
+                <LockGame onDone={(ok) => {
+                  if (ok) { setToast("🚪 Дверь открыта!"); setTimeout(() => setToast(""), 1500); setModal({ kind: "boss" }); }
+                  else { setHp(h => Math.max(0, h - 10)); setModal({ kind: "none" }); }
+                }} />
+              </div>
+            )}
+
             {modal.kind === "boss" && (
               <BossFight onWin={() => setModal({ kind: "win" })} onLose={() => setModal({ kind: "lose" })} />
             )}
@@ -1265,11 +1579,12 @@ export default function EscapeGame() {
               <div className="text-center space-y-4">
                 <h2 className="font-display text-2xl text-emerald-400">ПОБЕДА!</h2>
                 <p>Лана выбежала из школы. Солнце. Свобода.</p>
-                <div className="flex justify-center"><Crewmate color="#ff66aa" size={80} /></div>
+                <div className="flex justify-center"><Crewmate color="#ff66aa" palette={lanaPalette} size={80} /></div>
+                <p className="text-amber-300 font-pixel">Бонус за победу: +200 🪙</p>
                 <Button onClick={() => {
-                  setStarted(false); setLevel(0); setX(120); setHp(80); setStrength(1);
-                  setKilled(new Set()); setSearched(new Set()); setInv([]); setModal({ kind: "none" });
-                }}>Снова</Button>
+                  setCoins(c => c + 200);
+                  setStarted(false); setModal({ kind: "none" });
+                }}>В меню</Button>
               </div>
             )}
 
@@ -1277,11 +1592,8 @@ export default function EscapeGame() {
               <div className="text-center space-y-4">
                 <Skull className="h-16 w-16 text-red-500 mx-auto" />
                 <h2 className="font-display text-2xl text-red-400">ПОРАЖЕНИЕ</h2>
-                <p>Зомби оказались сильнее. Попробуй снова.</p>
-                <Button onClick={() => {
-                  setStarted(false); setLevel(0); setX(120); setHp(80); setStrength(1);
-                  setKilled(new Set()); setSearched(new Set()); setInv([]); setModal({ kind: "none" });
-                }}>Начать заново</Button>
+                <p>Зомби оказались сильнее. Купи улучшения и попробуй снова.</p>
+                <Button onClick={() => { setStarted(false); setModal({ kind: "none" }); }}>В меню</Button>
               </div>
             )}
           </div>
