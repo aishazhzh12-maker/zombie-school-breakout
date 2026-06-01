@@ -911,6 +911,7 @@ export default function EscapeGame() {
         setTimeout(() => setToast(""), 1200);
         return;
       }
+      if (k === "b") { setModal({ kind: "backpack" }); return; }
       if (k !== "e" && e.key !== "Enter") return;
       // nearest zombie
       const z = zombies.find((zz, i) => !killed.has(zz.id) && Math.abs(zx(zz, i) - px) < REACH);
