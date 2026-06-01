@@ -344,7 +344,7 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
 
 // 4) REACTOR — Simon
 function ReactorGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const [seq] = useState(() => Array.from({ length: 5 }, () => Math.floor(Math.random() * 4)));
+  const [seq] = useState(() => Array.from({ length: 7 }, () => Math.floor(Math.random() * 4)));
   const [step, setStep] = useState(0);
   const [showing, setShowing] = useState(-1);
   const [phase, setPhase] = useState<"watch" | "input">("watch");
