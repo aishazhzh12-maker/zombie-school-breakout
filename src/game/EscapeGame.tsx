@@ -582,7 +582,7 @@ function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string
   const map: Record<TaskKind, typeof Zap> = {
     wires: Zap, code: KeyRound, download: Download, reactor: Flame,
     trash: Trash2, switches: ToggleRight,
-    math: Calculator, quiz: HelpCircle, lock: Lock, aim: Target,
+    quiz: HelpCircle, lock: Lock, aim: Target,
   };
   const I = map[kind];
   return <I className={className} />;
