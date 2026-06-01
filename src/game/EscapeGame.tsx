@@ -2,13 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  rooms, tasks, crewmates, bossRiddles, ADMIN_CODE, ADMIN_HINT,
-  type Room, type Task, type RoomId,
+  classrooms, zombies, bossRiddles, ADMIN_CODE, ADMIN_HINT,
+  WORLD_W, FLOOR_Y, CEIL_Y, EXIT_X,
+  type Classroom, type Zombie, type TaskKind,
 } from "./data";
 import {
   Zap, KeyRound, Download, Flame, Trash2, ToggleRight, CreditCard,
-  CheckCircle2, X, Skull, Heart, MessageCircle,
+  X, Skull, Heart, DoorClosed,
 } from "lucide-react";
+
 
 const MAP_W = 1200;
 const MAP_H = 700;
