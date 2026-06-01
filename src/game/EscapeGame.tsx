@@ -9,7 +9,8 @@ import {
   type Supply,
 } from "./data";
 import { Button } from "@/components/ui/button";
-import { Heart, Zap, Trophy, Skull, DoorClosed, Search, Brain, Backpack } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Heart, Zap, Trophy, Skull, DoorClosed, Search, Brain, Backpack, KeyRound } from "lucide-react";
 
 type Screen = "intro" | "play" | "win" | "dead";
 type Modal =
