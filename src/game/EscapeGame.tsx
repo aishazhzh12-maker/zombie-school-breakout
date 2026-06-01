@@ -314,7 +314,7 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
   useEffect(() => {
     const tick = () => {
       setProgress(p => {
-        const np = holding.current ? Math.min(100, p + 1) : Math.max(0, p - 0.5);
+        const np = holding.current ? Math.min(100, p + 0.8) : Math.max(0, p - 1.2);
         if (np >= 100) { onDone(true); return 100; }
         return np;
       });
