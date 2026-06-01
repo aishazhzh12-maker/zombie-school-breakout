@@ -541,7 +541,7 @@ export default function EscapeGame() {
   const cameraX = Math.max(0, Math.min(WORLD_WIDTH - VIEWPORT_WIDTH, lanaX - VIEWPORT_WIDTH / 2));
 
   return (
-    <main className="h-screen flex flex-col bg-background">
+    <main className="h-screen flex flex-col bg-background pixel-scene">
       {/* HUD */}
       <header className="bg-card/90 backdrop-blur border-b border-border px-4 py-3 flex items-center gap-4 z-20">
         <div className="flex items-center gap-2 min-w-[200px]">
