@@ -412,10 +412,9 @@ export default function EscapeGame() {
     setModal({ kind: "none" });
   }
 
-  function handleCombatAnswer(i: number) {
+  function handleCombatAnswer(correct: boolean) {
     if (modal.kind !== "combat") return;
-    if (i === modal.puzzle.answer) {
-      // defeat zombie
+    if (correct) {
       setZombies((zs) => zs.map((z) => (z.id === modal.zombieId ? { ...z, defeated: true } : z)));
       setZombiesDefeated((n) => n + 1);
       setScore((s) => s + 25 * strength);
@@ -426,19 +425,16 @@ export default function EscapeGame() {
       setTimeout(() => setWrongFlash(false), 500);
       const dmg = Math.max(5, 20 - strength * 2);
       takeDamage(dmg);
-      // close after damage - second chance? we'll close so they can try later by re-walking? No: keep modal but allow retry
-      // Better: keep zombie blocking, close modal, let player retry by stepping back and forward.
       triggeredZombies.current.delete(modal.zombieId);
       setModal({ kind: "none" });
     }
   }
 
-  function handleExitAnswer(i: number) {
+  function handleExitAnswer(correct: boolean) {
     if (modal.kind !== "exit") return;
     const isBoss = lv.id === "gym";
     const step = modal.bossStep || 0;
-    const puzzle: Puzzle = isBoss && step > 0 ? bossExtraPuzzles[step - 1] : lv.exitPuzzle;
-    if (i === puzzle.answer) {
+    if (correct) {
       if (isBoss) {
         if (step < bossExtraPuzzles.length) {
           setScore((s) => s + 200);
