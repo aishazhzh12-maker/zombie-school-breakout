@@ -734,7 +734,7 @@ export default function EscapeGame() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [started, modal.kind, killed, allKilled]);
+  }, [started, modal.kind, killed, allKilled, level]);
 
   // hint
   useEffect(() => {
