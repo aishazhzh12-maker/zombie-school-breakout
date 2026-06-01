@@ -1151,6 +1151,8 @@ export default function EscapeGame() {
     setBatLeft(save.owned.bat); setGunLeft(save.owned.gun);
     setLevel(0); setX(120); setStrength(1);
     setKilled(new Set()); setSearched(new Set()); setInv([]);
+    setHunger(MAX_HUNGER);
+    wokenRef.current = new Set();
     setModal({ kind: "none" });
     setStarted(true);
   };
