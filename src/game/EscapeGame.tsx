@@ -838,11 +838,14 @@ export default function EscapeGame() {
         </div>
         <div className="text-right text-xs space-y-1">
           <div className="flex gap-3 justify-end">
+            <span className="text-amber-300">🏫 Этаж {cur.id}/{levels.length}</span>
             <span>💪 ×{strength}</span>
             <span>💀 {killed.size}/{zombies.length}</span>
             <span>🔍 {searched.size}/{classrooms.length}</span>
           </div>
-          {allKilled && <div className="text-emerald-400 font-bold animate-pulse">→ Беги к выходу!</div>}
+          {allKilled && <div className="text-emerald-400 font-bold animate-pulse">
+            → {isFinalLevel ? "Беги к директору!" : "Лестница наверх!"}
+          </div>}
         </div>
       </div>
 
