@@ -21,11 +21,13 @@ type Vec = { x: number; y: number };
 
 type Modal =
   | { kind: "none" }
-  | { kind: "task"; task: Task }
-  | { kind: "talk"; name: string; line: string }
+  | { kind: "task"; zombie: Zombie }
+  | { kind: "search"; classroom: Classroom }
+  | { kind: "exit" }
   | { kind: "win" }
   | { kind: "lose" }
   | { kind: "boss" };
+
 
 // ---- helpers ----
 const inRect = (p: Vec, r: { x: number; y: number; w: number; h: number }, pad = 0) =>
