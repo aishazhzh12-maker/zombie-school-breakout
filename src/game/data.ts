@@ -104,7 +104,7 @@ export const levels: Level[] = [
     bgGradient: "linear-gradient(180deg, #1f2a2f 0%, #0e1418 60%, #181214 100%)",
     exitTitle: "Весы поварёнка",
     exitStory: "У кассы — записка.",
-    exitPuzzle: { question: "8 яблок, одно легче. За сколько взвешиваний найдёшь его на чашечных весах?", options: ["1", "2", "3", "4"], answer: 1, hint: "Делим 3-3-2." },
+    exitPuzzle: { question: "8 яблок одинаковы на вид, одно легче. За МИНИМАЛЬНОЕ число взвешиваний на чашечных весах его найдёшь. Введи число.", input: "number", answer: "2", hint: "Дели 3-3-2." },
   },
   {
     id: "library",
