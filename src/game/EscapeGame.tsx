@@ -480,11 +480,32 @@ function SwipeGame({ onDone }: { onDone: (ok: boolean) => void }) {
 }
 
 // ============== TASK ICONS ==============
-function TaskIcon({ kind, className = "" }: { kind: Task["kind"]; className?: string }) {
+function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string }) {
   const map = { wires: Zap, code: KeyRound, download: Download, reactor: Flame, trash: Trash2, switches: ToggleRight, swipe: CreditCard };
   const I = map[kind];
   return <I className={className} />;
 }
+
+// ---- Pixel zombie sprite ----
+function PixelZombie({ size = 56, facing = -1, hurt = false }: { size?: number; facing?: 1 | -1; hurt?: boolean }) {
+  return (
+    <PixelHuman
+      facing={facing}
+      size={size}
+      variant="student"
+      dead={hurt}
+      palette={{
+        skin: "#8fb86a", skinShade: "#4a6a2a",
+        hair: "#2a2a1a", hairShade: "#000000",
+        shirt: "#5a3a2a", shirtShade: "#2a1a0a",
+        pants: "#3a3020", pantsShade: "#1a1410",
+        shoes: "#000000",
+        eyes: "#ffeb3b",
+      }}
+    />
+  );
+}
+
 
 // ============== BOSS RIDDLE ==============
 function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void }) {
