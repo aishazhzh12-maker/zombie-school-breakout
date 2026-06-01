@@ -30,7 +30,8 @@
   --color-blood: var(--blood);
   --color-toxic: var(--toxic);
   --font-sans: "Inter", system-ui, sans-serif;
-  --font-display: "Bangers", system-ui, sans-serif;
+  --font-display: "Press Start 2P", system-ui, sans-serif;
+  --font-pixel: "VT323", "Press Start 2P", monospace;
 }
 
 :root {
