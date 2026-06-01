@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -8,7 +9,6 @@
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -28,32 +28,32 @@
   --color-ring: var(--ring);
   --color-blood: var(--blood);
   --color-toxic: var(--toxic);
-  --font-display: "Creepster", system-ui, sans-serif;
+  --font-pixel: "Press Start 2P", system-ui, monospace;
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.14 0.02 150);
+  --radius: 0.25rem;
+  --background: oklch(0.10 0.02 150);
   --foreground: oklch(0.95 0.02 100);
-  --card: oklch(0.18 0.02 150);
+  --card: oklch(0.14 0.02 150);
   --card-foreground: oklch(0.95 0.02 100);
-  --popover: oklch(0.18 0.02 150);
+  --popover: oklch(0.14 0.02 150);
   --popover-foreground: oklch(0.95 0.02 100);
-  --primary: oklch(0.72 0.22 140);
-  --primary-foreground: oklch(0.12 0.02 150);
-  --secondary: oklch(0.25 0.03 150);
+  --primary: oklch(0.78 0.25 135);
+  --primary-foreground: oklch(0.10 0.02 150);
+  --secondary: oklch(0.22 0.03 150);
   --secondary-foreground: oklch(0.95 0.02 100);
-  --muted: oklch(0.22 0.02 150);
+  --muted: oklch(0.18 0.02 150);
   --muted-foreground: oklch(0.7 0.03 130);
   --accent: oklch(0.65 0.25 30);
   --accent-foreground: oklch(0.98 0 0);
   --destructive: oklch(0.55 0.25 25);
   --destructive-foreground: oklch(0.98 0 0);
   --border: oklch(0.3 0.04 140);
-  --input: oklch(0.25 0.03 150);
-  --ring: oklch(0.72 0.22 140);
-  --blood: oklch(0.45 0.22 25);
-  --toxic: oklch(0.78 0.25 135);
+  --input: oklch(0.22 0.03 150);
+  --ring: oklch(0.78 0.25 135);
+  --blood: oklch(0.5 0.25 25);
+  --toxic: oklch(0.82 0.27 135);
 }
 
 @layer base {
@@ -61,38 +61,25 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    background-image:
-      radial-gradient(circle at 20% 20%, oklch(0.2 0.08 25 / 0.4), transparent 50%),
-      radial-gradient(circle at 80% 70%, oklch(0.2 0.1 140 / 0.4), transparent 50%);
-    background-attachment: fixed;
+    font-family: var(--font-pixel);
+    image-rendering: pixelated;
   }
+}
+
+.pixel-text { font-family: var(--font-pixel); letter-spacing: 0.05em; }
+.pixel-canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 @keyframes flicker {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.85; text-shadow: 0 0 20px var(--toxic); }
+  50% { opacity: 0.7; }
 }
-@keyframes pulse-blood {
-  0%, 100% { box-shadow: 0 0 0 0 oklch(0.55 0.25 25 / 0.6); }
-  50% { box-shadow: 0 0 40px 10px oklch(0.55 0.25 25 / 0.2); }
-}
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  75% { transform: translateX(6px); }
-}
-@keyframes drip {
-  0% { transform: translateY(-10px); opacity: 0; }
-  50% { opacity: 1; }
-  100% { transform: translateY(20px); opacity: 0; }
-}
+.flicker { animation: flicker 2s infinite; }
 
-.title-glow {
-  font-family: var(--font-display);
-  color: var(--toxic);
-  text-shadow: 0 0 10px var(--toxic), 0 0 30px oklch(0.5 0.25 140 / 0.7), 3px 3px 0 var(--blood);
-  animation: flicker 3s infinite;
-  letter-spacing: 0.05em;
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
-.blood-border { animation: pulse-blood 2s infinite; }
-.shake { animation: shake 0.4s; }
+.blink { animation: blink 1s steps(1) infinite; }
