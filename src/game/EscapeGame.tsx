@@ -751,7 +751,7 @@ export default function EscapeGame() {
       setHint("");
     }, 120);
     return () => clearInterval(id);
-  }, [killed, searched, allKilled]);
+  }, [killed, searched, allKilled, level]);
 
   // camera follow
   const cam = useMemo(() => {
