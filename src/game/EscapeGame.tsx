@@ -1519,6 +1519,24 @@ export default function EscapeGame() {
                 </div>
               );
             }
+            const isSleeping = !!z.sleeping && !wokenRef.current.has(z.id);
+            if (isSleeping) {
+              return (
+                <div key={z.id} className="absolute" style={{ left: z.x - 28, top: FLOOR_Y - 70 }}>
+                  {/* tilted up, looking at ceiling */}
+                  <div style={{ transform: "rotate(-18deg)", transformOrigin: "50% 90%" }}>
+                    <PixelZombie size={56} facing={1} />
+                  </div>
+                  {/* Zzz */}
+                  <div className="absolute -top-6 left-10 text-blue-200 font-pixel text-sm animate-pulse drop-shadow">
+                    Zzz
+                  </div>
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-blue-900/80 text-blue-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
+                    😴 {z.name}
+                  </div>
+                </div>
+              );
+            }
             const zCur = zomPosRef.current[z.id] ?? z.x;
             return (
               <div key={z.id} className="absolute zombie-walk" style={{ left: zCur - 28, top: FLOOR_Y - 70, transition: "left 0.08s linear" }}>
@@ -1533,9 +1551,13 @@ export default function EscapeGame() {
 
           {/* Lana */}
           <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 }}>
-            <div className={moving ? "lana-walk" : "lana-idle"}>
+            <div className={moving ? "lana-walk" : "lana-idle"}
+              style={crouching ? { transform: "scaleY(0.7) translateY(18px)", transformOrigin: "50% 100%" } : undefined}>
               <Crewmate color="#ff66aa" palette={lanaPalette} facing={facing} size={56} />
             </div>
+            {crouching && (
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-emerald-900/80 text-emerald-100 text-[9px] px-1 rounded font-pixel">🤫 тихо</div>
+            )}
           </div>
 
           {/* Scanlines */}
