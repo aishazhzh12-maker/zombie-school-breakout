@@ -981,7 +981,7 @@ export default function EscapeGame() {
                 {modal.zombie.kind === "reactor" && <ReactorGame onDone={finishTask} />}
                 {modal.zombie.kind === "trash" && <TrashGame onDone={finishTask} />}
                 {modal.zombie.kind === "switches" && <SwitchesGame onDone={finishTask} />}
-                {modal.zombie.kind === "math" && <MathGame onDone={finishTask} />}
+                
                 {modal.zombie.kind === "quiz" && <QuizGame onDone={finishTask} />}
                 {modal.zombie.kind === "lock" && <LockGame onDone={finishTask} />}
                 {modal.zombie.kind === "aim" && <AimGame onDone={finishTask} />}
