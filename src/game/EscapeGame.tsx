@@ -1707,6 +1707,52 @@ export default function EscapeGame() {
               <BossFight onWin={() => setModal({ kind: "win" })} onLose={() => setModal({ kind: "lose" })} />
             )}
 
+            {modal.kind === "backpack" && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 mb-1">
+                  <Backpack className="h-7 w-7 text-amber-300" />
+                  <div>
+                    <h2 className="font-display text-lg text-amber-300">Рюкзак Ланы</h2>
+                    <p className="text-xs text-muted-foreground">Используй предметы, чтобы лечиться, есть или стать сильнее.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="bg-black/40 border border-red-700/40 rounded p-2 text-center">
+                    <div className="text-red-300">HP</div><div className="font-mono">{hp}/{maxHp}</div>
+                  </div>
+                  <div className="bg-black/40 border border-amber-700/40 rounded p-2 text-center">
+                    <div className="text-amber-300">Сытость</div><div className="font-mono">{hunger}/{MAX_HUNGER}</div>
+                  </div>
+                  <div className="bg-black/40 border border-emerald-700/40 rounded p-2 text-center">
+                    <div className="text-emerald-300">Сила</div><div className="font-mono">×{strength}</div>
+                  </div>
+                </div>
+                {inv.length === 0 ? (
+                  <p className="text-center text-muted-foreground text-sm py-6">Рюкзак пуст. Ищи предметы в кабинетах.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto">
+                    {inv.map((it, idx) => (
+                      <div key={it.id} className="flex items-center gap-2 p-2 bg-black/40 border border-amber-700/40 rounded">
+                        <div className="text-2xl">{it.emoji}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-pixel truncate">{it.name}</div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {it.hp ? `+${it.hp} HP ` : ""}
+                            {it.food ? `+${it.food} 🍴 ` : ""}
+                            {it.strength ? `+${it.strength} 💪` : ""}
+                          </div>
+                        </div>
+                        <Button size="sm" onClick={() => useItem(idx)}>Исп.</Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex justify-end">
+                  <Button variant="secondary" onClick={() => setModal({ kind: "none" })}>Закрыть</Button>
+                </div>
+              </div>
+            )}
+
             {modal.kind === "win" && (
               <div className="text-center space-y-4">
                 <h2 className="font-display text-2xl text-emerald-400">ПОБЕДА!</h2>
