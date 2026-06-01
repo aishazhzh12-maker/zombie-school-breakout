@@ -863,14 +863,39 @@ export default function EscapeGame() {
 
   const allKilled = killed.size === zombies.length;
 
-  // interact
+  // interact + weapon
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (modal.kind !== "none") return;
-      if (e.key.toLowerCase() !== "e" && e.key !== "Enter") return;
+      const k = e.key.toLowerCase();
       const px = xRef.current;
+      // Weapon: F = pistol (instant kill), G = bat (stun = win without minigame)
+      if (k === "f" || k === "g") {
+        const z = zombies.find((zz, i) => !killed.has(zz.id) && Math.abs(zx(zz, i) - px) < REACH + 30);
+        if (!z) return;
+        if (k === "f" && gunLeft > 0) {
+          setGunLeft(n => { const nn = n - 1; setSave(s => { const ns = { ...s, owned: { ...s.owned, gun: nn } }; writeSave(ns); return ns; }); return nn; });
+          setKilled(prev => new Set(prev).add(z.id));
+          setCoins(c => c + 25);
+          setToast(`🔫 ${z.name} — выстрел! +25 монет`);
+          setTimeout(() => setToast(""), 1600);
+          return;
+        }
+        if (k === "g" && batLeft > 0) {
+          setBatLeft(n => { const nn = n - 1; setSave(s => { const ns = { ...s, owned: { ...s.owned, bat: nn } }; writeSave(ns); return ns; }); return nn; });
+          setKilled(prev => new Set(prev).add(z.id));
+          setCoins(c => c + 15);
+          setToast(`🏏 ${z.name} — оглушён битой! +15 монет`);
+          setTimeout(() => setToast(""), 1600);
+          return;
+        }
+        setToast(k === "f" ? "🔫 Нет патронов" : "🏏 Нет бит");
+        setTimeout(() => setToast(""), 1200);
+        return;
+      }
+      if (k !== "e" && e.key !== "Enter") return;
       // nearest zombie
-      const z = zombies.find((z, i) => !killed.has(z.id) && Math.abs(zx(z, i) - px) < REACH);
+      const z = zombies.find((zz, i) => !killed.has(zz.id) && Math.abs(zx(zz, i) - px) < REACH);
       if (z) { setModal({ kind: "task", zombie: z }); return; }
       // nearest classroom
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
@@ -880,12 +905,12 @@ export default function EscapeGame() {
         if (!allKilled) {
           setToast("Дверь не откроется — впереди ещё зомби.");
           setTimeout(() => setToast(""), 1800);
-        } else setModal({ kind: "exit" });
+        } else setModal({ kind: "doorTask" });
       }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [modal.kind, killed, searched, allKilled, level]);
+  }, [modal.kind, killed, searched, allKilled, level, gunLeft, batLeft, zombies, zx, EXIT_X]);
 
   // game loop — walking + auto-block at zombies
   useEffect(() => {
