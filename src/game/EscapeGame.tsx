@@ -707,7 +707,7 @@ export default function EscapeGame() {
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [modal.kind, killed, searched, allKilled]);
+  }, [modal.kind, killed, searched, allKilled, level]);
 
   // game loop — walking + auto-block at zombies
   useEffect(() => {
