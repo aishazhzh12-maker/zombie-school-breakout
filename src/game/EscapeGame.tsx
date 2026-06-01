@@ -206,69 +206,6 @@ function Impostor({ size = 80 }: { size?: number }) {
   return <PixelHuman palette={PAL_BOSS} size={size} variant="boss" />;
 }
 
-// Legacy unused (kept to avoid removing more code)
-function _LegacyCrewmate({ color, facing = 1, size = 56, dead = false }: { color: string; facing?: 1 | -1; size?: number; dead?: boolean }) {
-  return (
-    <svg width={size} height={size * 1.1} viewBox="0 0 100 110" style={{ transform: `scaleX(${facing})` }}>
-      <defs>
-        <radialGradient id={`bd-${color}`} cx="40%" cy="35%" r="70%">
-          <stop offset="0%" stopColor="white" stopOpacity="0.5" />
-          <stop offset="40%" stopColor={color} stopOpacity="0.95" />
-          <stop offset="100%" stopColor="#000" stopOpacity="0.6" />
-        </radialGradient>
-        <linearGradient id="visor" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#cfeaff" />
-          <stop offset="60%" stopColor="#5fa8d3" />
-          <stop offset="100%" stopColor="#1d3a52" />
-        </linearGradient>
-      </defs>
-      {/* shadow */}
-      <ellipse cx="50" cy="102" rx="28" ry="5" fill="#000" opacity="0.35" />
-      {/* legs */}
-      <rect x="28" y="78" width="16" height="22" rx="6" fill={color} stroke="#000" strokeWidth="2" />
-      <rect x="56" y="78" width="16" height="22" rx="6" fill={color} stroke="#000" strokeWidth="2" />
-      {/* body */}
-      <path d="M22,40 C22,18 78,18 78,40 L82,82 C82,92 70,96 50,96 C30,96 18,92 18,82 Z"
-        fill={`url(#bd-${color})`} stroke="#000" strokeWidth="2.5" />
-      {/* backpack */}
-      <path d="M78,38 C90,40 92,60 86,78 L78,78 Z" fill={color} stroke="#000" strokeWidth="2.5" />
-      {/* visor */}
-      <path d="M34,32 C34,22 66,22 66,32 L70,52 C70,60 30,60 30,52 Z"
-        fill="url(#visor)" stroke="#000" strokeWidth="2.5" />
-      {/* visor shine */}
-      <ellipse cx="44" cy="38" rx="8" ry="4" fill="#fff" opacity="0.75" />
-      {dead && <text x="50" y="48" textAnchor="middle" fontSize="22" fill="#fff">✕</text>}
-    </svg>
-  );
-}
-
-function Impostor({ size = 80 }: { size?: number }) {
-  return (
-    <svg width={size} height={size * 1.1} viewBox="0 0 100 110">
-      <defs>
-        <radialGradient id="imp" cx="40%" cy="35%" r="70%">
-          <stop offset="0%" stopColor="#ff8080" />
-          <stop offset="60%" stopColor="#9b1414" />
-          <stop offset="100%" stopColor="#1a0000" />
-        </radialGradient>
-      </defs>
-      <ellipse cx="50" cy="103" rx="32" ry="6" fill="#000" opacity="0.5" />
-      <rect x="26" y="78" width="18" height="24" rx="6" fill="#5a0a0a" stroke="#000" strokeWidth="2" />
-      <rect x="56" y="78" width="18" height="24" rx="6" fill="#5a0a0a" stroke="#000" strokeWidth="2" />
-      <path d="M20,40 C20,16 80,16 80,40 L84,82 C84,94 70,98 50,98 C30,98 16,94 16,82 Z"
-        fill="url(#imp)" stroke="#000" strokeWidth="3" />
-      <path d="M82,40 C94,44 96,62 88,80 L82,78 Z" fill="#7a0a0a" stroke="#000" strokeWidth="2.5" />
-      {/* visor — red */}
-      <path d="M32,32 C32,20 68,20 68,32 L72,54 C72,62 28,62 28,54 Z"
-        fill="#1a0000" stroke="#000" strokeWidth="2.5" />
-      <ellipse cx="44" cy="38" rx="6" ry="3" fill="#ff3030" />
-      <ellipse cx="60" cy="38" rx="6" ry="3" fill="#ff3030" />
-      {/* fangs */}
-      <path d="M40,56 L44,66 L48,56 Z" fill="#fff" stroke="#000" strokeWidth="1" />
-      <path d="M52,56 L56,66 L60,56 Z" fill="#fff" stroke="#000" strokeWidth="1" />
-    </svg>
-  );
-}
 
 // ============== TASK MINI-GAMES ==============
 
