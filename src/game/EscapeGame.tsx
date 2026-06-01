@@ -901,9 +901,11 @@ export default function EscapeGame() {
             <div className={`relative w-24 h-40 border-4 rounded-t-md ${allKilled ? "border-emerald-400 glow-toxic" : "border-red-700"}`}
               style={{ background: allKilled ? "linear-gradient(180deg,#1a3a1a,#0a1a0a)" : "linear-gradient(180deg,#2a0a0a,#1a0505)" }}>
               <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/90 text-[10px] text-emerald-300 px-2 py-0.5 rounded whitespace-nowrap font-pixel">
-                {allKilled ? "ВЫХОД ОТКРЫТ" : "ВЫХОД ⛔"}
+                {allKilled ? (isFinalLevel ? "ВЫХОД ОТКРЫТ" : "ЛЕСТНИЦА ▲") : (isFinalLevel ? "ВЫХОД ⛔" : "ЛЕСТНИЦА ⛔")}
               </div>
-              <DoorClosed className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-white/60" />
+              {isFinalLevel
+                ? <DoorClosed className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-white/60" />
+                : <ArrowUp className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-emerald-300" />}
             </div>
           </div>
 
