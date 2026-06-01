@@ -647,6 +647,46 @@ const SPEED = 3.5;
 const VIEW_H = 520;
 const REACH = 70;
 
+// Task time limits (seconds). aim has its own timer.
+const TIME_LIMITS: Record<TaskKind, number | null> = {
+  wires: 14, code: 18, download: 10, reactor: 22,
+  trash: 12, switches: 10, quiz: 10, lock: 25, aim: null,
+};
+
+// Countdown above each task — calls onTimeout when 0.
+function TaskTimer({ seconds, onTimeout }: { seconds: number; onTimeout: () => void }) {
+  const [left, setLeft] = useState(seconds);
+  const firedRef = useRef(false);
+  useEffect(() => {
+    const t0 = performance.now();
+    const id = setInterval(() => {
+      const elapsed = (performance.now() - t0) / 1000;
+      const remaining = Math.max(0, seconds - elapsed);
+      setLeft(remaining);
+      if (remaining <= 0 && !firedRef.current) {
+        firedRef.current = true;
+        clearInterval(id);
+        onTimeout();
+      }
+    }, 50);
+    return () => clearInterval(id);
+  }, [seconds, onTimeout]);
+  const pct = (left / seconds) * 100;
+  const danger = left < seconds * 0.3;
+  return (
+    <div className="mb-3">
+      <div className="flex justify-between text-[11px] font-pixel mb-1">
+        <span className={danger ? "text-red-400 animate-pulse" : "text-amber-300"}>⏱ Время на задание</span>
+        <span className={`font-mono ${danger ? "text-red-400" : "text-amber-200"}`}>{left.toFixed(1)}s</span>
+      </div>
+      <div className="h-2 bg-black/70 rounded overflow-hidden border border-amber-700/40">
+        <div className={`h-full transition-[width] ${danger ? "bg-red-500" : "bg-gradient-to-r from-amber-400 to-red-500"}`}
+          style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 export default function EscapeGame() {
   const [started, setStarted] = useState(false);
   const [level, setLevel] = useState(0);
