@@ -198,11 +198,112 @@ const PALETTES: Record<string, PixelPalette> = {
   lana: PAL_LANA, "#e84545": PAL_MILA, "#3aa3ff": PAL_ARSENY, "#ffd23a": PAL_VIKA, "#7ad84a": PAL_TIMUR,
 };
 
+// ---- Lana outfits (selectable in menu) ----
+export type Outfit = {
+  id: string; name: string; price: number; palette: PixelPalette;
+};
+const OUTFITS: Outfit[] = [
+  { id: "classic", name: "Школьная форма", price: 0, palette: PAL_LANA },
+  { id: "track", name: "Спортивный костюм", price: 80, palette: {
+    skin: "#f4c8a8", skinShade: "#d49a78",
+    hair: "#c4377a", hairShade: "#7a1e4a",
+    shirt: "#1aa8a8", shirtShade: "#0a5a5a",
+    pants: "#0a0a14", pantsShade: "#000000", shoes: "#ffffff",
+  } },
+  { id: "punk", name: "Панк-куртка", price: 160, palette: {
+    skin: "#f4c8a8", skinShade: "#c8946a",
+    hair: "#ff2a6a", hairShade: "#8a0a3a",
+    shirt: "#1a1a1a", shirtShade: "#000000",
+    pants: "#2a1a2a", pantsShade: "#0a0a0a", shoes: "#3a0a0a",
+  } },
+  { id: "armor", name: "Бронежилет (+10 HP)", price: 300, palette: {
+    skin: "#f4c8a8", skinShade: "#c8946a",
+    hair: "#c4377a", hairShade: "#7a1e4a",
+    shirt: "#3a4a2a", shirtShade: "#1a2410",
+    pants: "#1a1a1a", pantsShade: "#000000", shoes: "#0a0a0a",
+  } },
+  { id: "ninja", name: "Ниндзя (-шум)", price: 420, palette: {
+    skin: "#e0b890", skinShade: "#a87a55",
+    hair: "#000000", hairShade: "#000000",
+    shirt: "#0a0a14", shirtShade: "#000000",
+    pants: "#000000", pantsShade: "#000000", shoes: "#000000",
+    eyes: "#ff3030",
+  } },
+];
+
+// ---- Upgrades (persisted in localStorage) ----
+export type UpgradeId = "bat" | "gun" | "flashlight" | "hp" | "hint";
+export type Upgrade = {
+  id: UpgradeId; name: string; icon: typeof Swords; price: number; desc: string; max?: number;
+};
+const UPGRADES: Upgrade[] = [
+  { id: "bat",        name: "Бейсбольная бита",   icon: Swords,     price: 60,  desc: "1 удар — оглушить зомби без задания.", max: 5 },
+  { id: "gun",        name: "Пистолет",            icon: Crosshair,  price: 220, desc: "Выстрел — мгновенно убивает зомби.", max: 5 },
+  { id: "flashlight", name: "Фонарик",             icon: Flashlight, price: 140, desc: "Освещает тёмные коридоры (2–3 этаж)." },
+  { id: "hp",         name: "Усиленное здоровье",  icon: Heart,      price: 180, desc: "+25 к макс. HP." },
+  { id: "hint",       name: "Дополнительные подсказки", icon: Lightbulb, price: 90, desc: "Подробные подсказки во всех заданиях." },
+];
+
+type Inventory = {
+  bat: number; gun: number;
+  flashlight: boolean; hp: boolean; hint: boolean;
+};
+const EMPTY_INV: Inventory = { bat: 0, gun: 0, flashlight: false, hp: false, hint: false };
+
+const SAVE_KEY = "escape-school-save-v1";
+type SaveData = { coins: number; outfit: string; owned: Inventory };
+const loadSave = (): SaveData => {
+  if (typeof window === "undefined") return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV } };
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV } };
+    const p = JSON.parse(raw);
+    return { coins: p.coins ?? 0, outfit: p.outfit ?? "classic", owned: { ...EMPTY_INV, ...(p.owned ?? {}) } };
+  } catch { return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV } }; }
+};
+const writeSave = (s: SaveData) => {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+};
+
+// ---- Per-task hints ----
+const TASK_HINTS: Record<TaskKind, { short: string; long: string }> = {
+  wires:    { short: "Тяни мышью провод от левой клеммы к правой того же цвета.", long: "Если ошибся — кликни левую клемму ещё раз, чтобы сбросить соединение. Цвета должны совпасть точно." },
+  code:     { short: "На двери математическое выражение — реши его.", long: "1740 + 2331 = 4071. Введи последние 4 цифры — это и есть код." },
+  download: { short: "Удерживай кнопку, не отпускай, пока полоса не достигнет 100%.", long: "Если отпустить — прогресс быстро падает. Не двигай мышью с кнопки." },
+  reactor:  { short: "Запомни цвета в нужном порядке и повтори.", long: "Если ошибся — последовательность покажут заново с начала. Считай вслух." },
+  trash:    { short: "Удерживай рычаг, пока бак не опустеет.", long: "Бак заполняется обратно, если отпустить. Не отвлекайся." },
+  switches: { short: "Включи ВСЕ рубильники (ON).", long: "Просто нажми на каждый OFF — нет ловушек, никаких комбинаций." },
+  quiz:     { short: "Прочитай вопрос внимательно, всего 2 попытки.", long: "Если не уверен — выбирай самый правдоподобный, времени мало." },
+  lock:     { short: "Подбери 3 цифры по подсказкам сбоку.", long: "Сначала зафиксируй последнюю цифру (она дана прямо), потом подбирай первую по чётности, остаток — по сумме." },
+  aim:      { short: "Кликай по красным мишеням как можно быстрее.", long: "Не води мышью — мишень появится случайно. Целься в центр." },
+};
+
+function HintBox({ kind, advanced }: { kind: TaskKind; advanced: boolean }) {
+  const [open, setOpen] = useState(false);
+  const tip = TASK_HINTS[kind];
+  return (
+    <div className="mb-3">
+      <button onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 text-[11px] font-pixel text-amber-300 hover:text-amber-100 bg-black/40 border border-amber-700/40 rounded px-2 py-1">
+        <Lightbulb className="h-3 w-3" />
+        {open ? "Скрыть подсказку" : "Подсказка"}
+      </button>
+      {open && (
+        <div className="mt-2 text-[12px] text-amber-100/90 bg-amber-900/15 border border-amber-700/30 rounded p-2">
+          <div>💡 {tip.short}</div>
+          {advanced && <div className="mt-1 text-amber-300/90">★ {tip.long}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Backwards-compatible API used elsewhere in this file
-function Crewmate({ color, facing = 1, size = 56, dead = false }: { color: string; facing?: 1 | -1; size?: number; dead?: boolean }) {
+function Crewmate({ color, facing = 1, size = 56, dead = false, palette }:
+  { color: string; facing?: 1 | -1; size?: number; dead?: boolean; palette?: PixelPalette }) {
   const isLana = color === "#ff66aa";
-  const palette = isLana ? PAL_LANA : (PALETTES[color] ?? { ...PAL_MILA, shirt: color, shirtShade: color });
-  return <PixelHuman palette={palette} facing={facing} size={size} variant={isLana ? "girl" : "student"} dead={dead} />;
+  const pal = palette ?? (isLana ? PAL_LANA : (PALETTES[color] ?? { ...PAL_MILA, shirt: color, shirtShade: color }));
+  return <PixelHuman palette={pal} facing={facing} size={size} variant={isLana ? "girl" : "student"} dead={dead} />;
 }
 
 function Impostor({ size = 80 }: { size?: number }) {
