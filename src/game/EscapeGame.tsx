@@ -988,6 +988,114 @@ export default function EscapeGame() {
             }} />
           ))}
 
+          {/* === SCARY DECOR === */}
+          {/* Broken windows on the back wall */}
+          {Array.from({ length: Math.floor(WORLD_W / 360) }).map((_, i) => {
+            const left = 140 + i * 360;
+            return (
+              <div key={`win-${i}`} className="absolute" style={{ left, top: CEIL_Y + 6, width: 90, height: 70 }}>
+                <div className="absolute inset-0 border-2 border-zinc-700 bg-gradient-to-b from-slate-900 to-slate-950" />
+                <div className="absolute inset-1 bg-[radial-gradient(circle_at_30%_40%,#1a2a3a_0%,#070a14_70%)] opacity-80" />
+                {/* Glass cracks */}
+                <svg className="absolute inset-0" viewBox="0 0 90 70" preserveAspectRatio="none">
+                  <polygon points="0,0 30,25 0,30" fill="#0a0a14" stroke="#6a7a8a" strokeWidth="0.6" />
+                  <line x1="20" y1="10" x2="70" y2="60" stroke="#a0a8b0" strokeWidth="0.4" opacity="0.7" />
+                  <line x1="55" y1="5" x2="35" y2="65" stroke="#a0a8b0" strokeWidth="0.4" opacity="0.7" />
+                  <line x1="10" y1="40" x2="80" y2="35" stroke="#a0a8b0" strokeWidth="0.4" opacity="0.7" />
+                  <polygon points="60,20 80,10 85,30 70,40" fill="#000" stroke="#6a7a8a" strokeWidth="0.4" />
+                </svg>
+                {/* Window frame cross */}
+                <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-zinc-700" />
+                <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-zinc-700" />
+              </div>
+            );
+          })}
+
+          {/* Wall blood smears */}
+          {Array.from({ length: Math.floor(WORLD_W / 280) }).map((_, i) => {
+            const left = 60 + i * 280 + (i % 3) * 35;
+            return (
+              <svg key={`blood-${i}`} className="absolute pointer-events-none" viewBox="0 0 80 120"
+                style={{ left, top: CEIL_Y + 80 + ((i * 17) % 60), width: 80, height: 120, opacity: 0.85 }}>
+                <path d={`M 40 ${10 + (i % 4) * 6} C 30 30, 55 40, 38 55 S 25 80, 35 ${100 + (i % 3) * 5}`}
+                  stroke="#7a0a0a" strokeWidth="6" fill="none" strokeLinecap="round" />
+                <circle cx="42" cy={100 + (i % 3) * 5} r="6" fill="#7a0a0a" />
+                <circle cx="48" cy="115" r="3" fill="#5a0505" />
+              </svg>
+            );
+          })}
+
+          {/* Floor trash + glass shards + papers */}
+          {Array.from({ length: Math.floor(WORLD_W / 90) }).map((_, i) => {
+            const left = 30 + i * 90 + ((i * 53) % 50);
+            const kind = i % 5;
+            const top = FLOOR_Y + 18 + ((i * 13) % 25);
+            if (kind === 0) {
+              // crumpled paper
+              return <div key={`tr-${i}`} className="absolute" style={{ left, top, width: 14, height: 10, background: "#c9bfa8", boxShadow: "inset -2px -2px 0 #6a5a3a", transform: `rotate(${(i * 37) % 360}deg)` }} />;
+            }
+            if (kind === 1) {
+              // broken bottle/glass shards
+              return (
+                <svg key={`tr-${i}`} className="absolute" viewBox="0 0 20 10" style={{ left, top: top + 6, width: 20, height: 10 }}>
+                  <polygon points="0,8 6,2 8,8" fill="#7ec8d8" opacity="0.7" stroke="#fff" strokeWidth="0.3" />
+                  <polygon points="9,8 13,3 16,8" fill="#7ec8d8" opacity="0.6" stroke="#fff" strokeWidth="0.3" />
+                  <polygon points="14,8 18,5 20,8" fill="#7ec8d8" opacity="0.5" stroke="#fff" strokeWidth="0.3" />
+                </svg>
+              );
+            }
+            if (kind === 2) {
+              // blood puddle
+              return <div key={`tr-${i}`} className="absolute rounded-full" style={{ left, top: top + 8, width: 28 + ((i * 7) % 16), height: 8, background: "radial-gradient(ellipse, #6a0a0a 0%, #3a0505 70%, transparent 100%)" }} />;
+            }
+            if (kind === 3) {
+              // scattered book
+              return (
+                <div key={`tr-${i}`} className="absolute" style={{ left, top: top + 4, width: 18, height: 12, background: "#3a5a8a", border: "1px solid #1a2a4a", transform: `rotate(${(i * 23) % 90 - 45}deg)` }}>
+                  <div className="h-full w-full" style={{ background: "repeating-linear-gradient(180deg,#f2e8c8 0 2px, transparent 2px 4px)" }} />
+                </div>
+              );
+            }
+            // trash bag / debris
+            return (
+              <div key={`tr-${i}`} className="absolute rounded-t-full" style={{
+                left, top: top + 2, width: 24, height: 14,
+                background: "linear-gradient(180deg,#1a1a1a,#0a0a0a)",
+                boxShadow: "inset 2px 2px 0 #2a2a2a"
+              }} />
+            );
+          })}
+
+          {/* Wall cracks */}
+          {Array.from({ length: Math.floor(WORLD_W / 240) }).map((_, i) => {
+            const left = 90 + i * 240;
+            return (
+              <svg key={`crk-${i}`} className="absolute pointer-events-none"
+                viewBox="0 0 60 200" style={{ left, top: CEIL_Y, width: 60, height: 200, opacity: 0.55 }}>
+                <path d={`M 30 0 L ${20 + (i % 5)} 40 L ${35 + (i % 4)} 80 L ${15 + (i % 6)} 130 L ${28 + (i % 3)} 200`}
+                  stroke="#000" strokeWidth="1.2" fill="none" />
+                <path d={`M ${24 + (i % 3)} 30 L 10 60`} stroke="#000" strokeWidth="0.8" />
+                <path d={`M ${32 + (i % 4)} 90 L 50 120`} stroke="#000" strokeWidth="0.8" />
+              </svg>
+            );
+          })}
+
+          {/* Hanging cobweb at top corners */}
+          {Array.from({ length: Math.floor(WORLD_W / 500) }).map((_, i) => (
+            <svg key={`web-${i}`} className="absolute pointer-events-none"
+              viewBox="0 0 60 60" style={{ left: 40 + i * 500, top: CEIL_Y + 4, width: 60, height: 60, opacity: 0.35 }}>
+              <path d="M 0 0 L 60 0 L 30 50 Z" fill="none" stroke="#dcdcdc" strokeWidth="0.4" />
+              <path d="M 0 0 L 30 50 M 60 0 L 30 50 M 15 0 L 30 50 M 45 0 L 30 50" stroke="#dcdcdc" strokeWidth="0.3" />
+              <path d="M 5 8 L 55 8 M 10 18 L 50 18 M 15 28 L 45 28 M 22 40 L 38 40" stroke="#dcdcdc" strokeWidth="0.3" />
+            </svg>
+          ))}
+
+          {/* Dark red horror tint */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: "radial-gradient(ellipse at center, transparent 30%, rgba(40,0,0,0.45) 100%)" }} />
+
+
+
           {/* Classroom doors */}
           {classrooms.map(c => {
             const isDone = searched.has(c.id);
