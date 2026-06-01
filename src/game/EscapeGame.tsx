@@ -1435,6 +1435,23 @@ export default function EscapeGame() {
         </div>
       </div>
 
+      {/* Darkness overlay — 2-3 этаж. С фонариком — большой светлый конус, без — крошечный кружок. */}
+      {level >= 1 && (
+        <div className="absolute inset-0 pointer-events-none z-20"
+          style={{
+            background: `radial-gradient(circle at ${(x - cam)}px ${FLOOR_Y - 40}px,
+              rgba(0,0,0,0) 0px,
+              rgba(0,0,0,0) ${save.owned.flashlight ? 120 : 50}px,
+              rgba(0,0,0,${level === 1 ? 0.85 : 0.96}) ${save.owned.flashlight ? 280 : 120}px,
+              rgba(0,0,0,${level === 1 ? 0.92 : 0.99}) 100%)`,
+          }} />
+      )}
+      {level >= 1 && !save.owned.flashlight && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 bg-red-900/80 border border-red-500 text-red-100 px-3 py-1 rounded font-pixel text-xs">
+          🌑 Темно! Нужен фонарик из магазина · ходи тихо (без Shift)
+        </div>
+      )}
+
       {/* Hint + toast */}
       {hint && modal.kind === "none" && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-black/85 border border-primary/50 px-4 py-2 rounded font-display text-sm text-primary animate-pulse">
