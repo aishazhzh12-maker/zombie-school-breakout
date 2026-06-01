@@ -1,7 +1,9 @@
 export type Puzzle = {
   question: string;
-  options: string[];
-  answer: number;
+  options?: string[];          // если есть — вариант выбора
+  answer: number | string;     // index для options; строка для input/code
+  input?: "number" | "text" | "code"; // тип ввода если нет options
+  codeLength?: number;         // для input=code: длина кода
   hint?: string;
 };
 
