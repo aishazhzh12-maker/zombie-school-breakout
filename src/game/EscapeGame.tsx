@@ -11,6 +11,7 @@ import {
   Calculator, HelpCircle, Lock, Target,
   X, Skull, Heart, DoorClosed, ArrowUp,
   Lightbulb, Coins, Shirt, ShoppingBag, Crosshair, Swords, Flashlight, Volume2, VolumeX,
+  Backpack, Utensils, ArrowDown,
 } from "lucide-react";
 
 
