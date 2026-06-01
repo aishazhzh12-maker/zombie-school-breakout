@@ -745,7 +745,7 @@ export default function EscapeGame() {
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
       if (c) { setHint(`[E] Осмотреть · ${c.name}`); return; }
       if (Math.abs(EXIT_X - px) < REACH) {
-        setHint(allKilled ? "[E] СБЕЖАТЬ из школы!" : "Дверь заблокирована");
+        setHint(allKilled ? (isFinalLevel ? "[E] К директору!" : "[E] Подняться на этаж выше") : "Путь заблокирован");
         return;
       }
       setHint("");
