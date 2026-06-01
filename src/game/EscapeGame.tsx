@@ -976,7 +976,10 @@ export default function EscapeGame() {
                 {modal.zombie.kind === "reactor" && <ReactorGame onDone={finishTask} />}
                 {modal.zombie.kind === "trash" && <TrashGame onDone={finishTask} />}
                 {modal.zombie.kind === "switches" && <SwitchesGame onDone={finishTask} />}
-                {modal.zombie.kind === "swipe" && <SwipeGame onDone={finishTask} />}
+                {modal.zombie.kind === "math" && <MathGame onDone={finishTask} />}
+                {modal.zombie.kind === "quiz" && <QuizGame onDone={finishTask} />}
+                {modal.zombie.kind === "lock" && <LockGame onDone={finishTask} />}
+                {modal.zombie.kind === "aim" && <AimGame onDone={finishTask} />}
               </div>
             )}
 
@@ -994,12 +997,30 @@ export default function EscapeGame() {
             )}
 
             {modal.kind === "exit" && (
-              <div className="flex flex-col items-center gap-4 text-center max-w-md">
-                <Impostor size={80} />
-                <h3 className="font-display text-lg text-red-400">У выхода ждёт Директор</h3>
-                <p>«Лана… последний рубеж. Ответь на три загадки — и ты свободна.»</p>
-                <Button onClick={() => setModal({ kind: "boss" })}>Принять бой</Button>
-              </div>
+              isFinalLevel ? (
+                <div className="flex flex-col items-center gap-4 text-center max-w-md">
+                  <Impostor size={80} />
+                  <h3 className="font-display text-lg text-red-400">У выхода ждёт Директор</h3>
+                  <p>«Лана… последний рубеж. Ответь на загадки — и ты свободна.»</p>
+                  <Button onClick={() => setModal({ kind: "boss" })}>Принять бой</Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-4 text-center max-w-md">
+                  <ArrowUp className="h-12 w-12 text-emerald-400" />
+                  <h3 className="font-display text-lg text-emerald-400">Лестница на следующий этаж</h3>
+                  <p>Этаж {cur.id} зачищен. Поднимайся выше — там ещё опаснее.</p>
+                  <Button onClick={() => {
+                    setLevel(level + 1);
+                    setX(120);
+                    setKilled(new Set());
+                    setSearched(new Set());
+                    setHp(h => Math.min(maxHp, h + 20));
+                    setModal({ kind: "none" });
+                    setToast(`▲ Этаж ${cur.id + 1}`);
+                    setTimeout(() => setToast(""), 1800);
+                  }}>Подняться ▲</Button>
+                </div>
+              )
             )}
 
             {modal.kind === "boss" && (
@@ -1012,7 +1033,7 @@ export default function EscapeGame() {
                 <p>Лана выбежала из школы. Солнце. Свобода.</p>
                 <div className="flex justify-center"><Crewmate color="#ff66aa" size={80} /></div>
                 <Button onClick={() => {
-                  setStarted(false); setX(120); setHp(80); setMaxHp(100); setStrength(1);
+                  setStarted(false); setLevel(0); setX(120); setHp(80); setStrength(1);
                   setKilled(new Set()); setSearched(new Set()); setModal({ kind: "none" });
                 }}>Снова</Button>
               </div>
@@ -1024,7 +1045,7 @@ export default function EscapeGame() {
                 <h2 className="font-display text-2xl text-red-400">ПОРАЖЕНИЕ</h2>
                 <p>Зомби оказались сильнее. Попробуй снова.</p>
                 <Button onClick={() => {
-                  setStarted(false); setX(120); setHp(80); setMaxHp(100); setStrength(1);
+                  setStarted(false); setLevel(0); setX(120); setHp(80); setStrength(1);
                   setKilled(new Set()); setSearched(new Set()); setModal({ kind: "none" });
                 }}>Начать заново</Button>
               </div>
