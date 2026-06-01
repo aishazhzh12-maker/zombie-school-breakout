@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  classrooms, zombies, bossRiddles, ADMIN_CODE, ADMIN_HINT,
-  WORLD_W, FLOOR_Y, CEIL_Y, EXIT_X,
+  levels, bossRiddles, ADMIN_CODE, ADMIN_HINT,
+  FLOOR_Y, CEIL_Y,
   type Classroom, type Zombie, type TaskKind,
 } from "./data";
 import {
-  Zap, KeyRound, Download, Flame, Trash2, ToggleRight, CreditCard,
-  X, Skull, Heart, DoorClosed,
+  Zap, KeyRound, Download, Flame, Trash2, ToggleRight,
+  Calculator, HelpCircle, Lock, Target,
+  X, Skull, Heart, DoorClosed, ArrowUp,
 } from "lucide-react";
 
 
@@ -20,6 +21,7 @@ type Modal =
   | { kind: "task"; zombie: Zombie }
   | { kind: "search"; classroom: Classroom }
   | { kind: "exit" }
+  | { kind: "nextLevel" }
   | { kind: "win" }
   | { kind: "lose" }
   | { kind: "boss" };
@@ -440,44 +442,148 @@ function SwitchesGame({ onDone }: { onDone: (ok: boolean) => void }) {
   );
 }
 
-// 7) SWIPE — drag a card horizontally at proper speed
-function SwipeGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const [x, setX] = useState(0);
-  const drag = useRef<{ start: number; t: number } | null>(null);
-  const [msg, setMsg] = useState("Проведи карту →");
-  const slot = useRef<HTMLDivElement>(null);
+// 7) MATH — solve arithmetic
+function MathGame({ onDone }: { onDone: (ok: boolean) => void }) {
+  const problem = useMemo(() => {
+    const a = 12 + Math.floor(Math.random() * 80);
+    const b = 7 + Math.floor(Math.random() * 40);
+    const ops = ["+", "-", "×"] as const;
+    const op = ops[Math.floor(Math.random() * 3)];
+    const ans = op === "+" ? a + b : op === "-" ? a - b : a * b;
+    return { a, b, op, ans };
+  }, []);
+  const [val, setVal] = useState("");
+  const [err, setErr] = useState(false);
+  const submit = () => {
+    if (parseInt(val, 10) === problem.ans) onDone(true);
+    else { setErr(true); setTimeout(() => setErr(false), 400); }
+  };
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <p className="text-sm text-muted-foreground">Реши пример, чтобы оглушить зомби.</p>
+      <div className={`text-4xl font-display text-primary ${err ? "shake" : ""}`}>
+        {problem.a} {problem.op} {problem.b} = ?
+      </div>
+      <Input autoFocus inputMode="numeric" value={val}
+        onChange={(e) => setVal(e.target.value.replace(/[^\d-]/g, "").slice(0, 6))}
+        onKeyDown={(e) => e.key === "Enter" && submit()}
+        className="text-center w-40 text-2xl font-mono" />
+      <Button onClick={submit} disabled={!val}>
+        <Calculator className="mr-2 h-4 w-4" /> Ответить
+      </Button>
+    </div>
+  );
+}
 
-  const finish = (speed: number) => {
-    if (x < 250) { setMsg("Слишком коротко"); setX(0); return; }
-    if (speed < 0.4) setMsg("Слишком медленно — повтори");
-    else if (speed > 2.2) setMsg("Слишком быстро — повтори");
-    else { setMsg("✓ Принято"); onDone(true); return; }
-    setX(0);
+// 8) QUIZ — school question
+const QUIZ_POOL = [
+  { q: "Столица Австралии?", o: ["Сидней", "Канберра", "Мельбурн", "Перт"], a: 1 },
+  { q: "Сколько планет в Солнечной системе?", o: ["7", "8", "9", "10"], a: 1 },
+  { q: "Автор «Войны и мира»?", o: ["Достоевский", "Чехов", "Толстой", "Пушкин"], a: 2 },
+  { q: "Химический символ золота?", o: ["Go", "Gd", "Au", "Ag"], a: 2 },
+  { q: "Сколько хромосом у человека?", o: ["23", "44", "46", "48"], a: 2 },
+  { q: "Самая длинная река мира?", o: ["Амазонка", "Нил", "Янцзы", "Волга"], a: 1 },
+  { q: "Кто открыл закон тяготения?", o: ["Эйнштейн", "Ньютон", "Галилей", "Кеплер"], a: 1 },
+];
+function QuizGame({ onDone }: { onDone: (ok: boolean) => void }) {
+  const item = useMemo(() => QUIZ_POOL[Math.floor(Math.random() * QUIZ_POOL.length)], []);
+  const [tries, setTries] = useState(2);
+  const pick = (i: number) => {
+    if (i === item.a) onDone(true);
+    else {
+      const t = tries - 1;
+      setTries(t);
+      if (t <= 0) onDone(false);
+    }
+  };
+  return (
+    <div className="flex flex-col items-center gap-4 max-w-md">
+      <p className="text-sm text-muted-foreground">Школьный вопрос. Попыток: {tries}</p>
+      <h3 className="text-lg font-display text-center">{item.q}</h3>
+      <div className="grid grid-cols-2 gap-2 w-full">
+        {item.o.map((o, i) => (
+          <Button key={i} variant="secondary" onClick={() => pick(i)}>{o}</Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 9) LOCK — find code from hints
+function LockGame({ onDone }: { onDone: (ok: boolean) => void }) {
+  const target = useMemo(() => Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)), []);
+  const [dials, setDials] = useState([0, 0, 0]);
+  useEffect(() => {
+    if (dials.every((d, i) => d === target[i])) setTimeout(() => onDone(true), 300);
+  }, [dials, target, onDone]);
+  const hints = [
+    `Сумма цифр = ${target.reduce((a, b) => a + b, 0)}`,
+    `Первая цифра ${target[0] % 2 === 0 ? "чётная" : "нечётная"}`,
+    `Последняя цифра = ${target[2]}`,
+  ];
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <p className="text-sm text-muted-foreground">Подбери код по подсказкам:</p>
+      <ul className="text-xs text-amber-300 list-disc list-inside">
+        {hints.map((h, i) => <li key={i}>{h}</li>)}
+      </ul>
+      <div className="flex gap-3 bg-black/60 p-4 rounded border-2 border-amber-700">
+        {dials.map((d, i) => (
+          <div key={i} className="flex flex-col items-center gap-1">
+            <button onClick={() => setDials(p => p.map((v, j) => j === i ? (v + 1) % 10 : v))}
+              className="text-amber-300 hover:text-amber-100 text-xl">▲</button>
+            <div className="w-12 h-14 bg-zinc-900 border border-amber-600 rounded flex items-center justify-center text-3xl font-mono text-amber-200">
+              {d}
+            </div>
+            <button onClick={() => setDials(p => p.map((v, j) => j === i ? (v + 9) % 10 : v))}
+              className="text-amber-300 hover:text-amber-100 text-xl">▼</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 10) AIM — click 5 targets fast
+function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
+  const [hits, setHits] = useState(0);
+  const [pos, setPos] = useState({ x: 50, y: 50 });
+  const [time, setTime] = useState(8);
+  useEffect(() => {
+    const id = setInterval(() => setTime(t => {
+      if (t <= 0.1) { clearInterval(id); onDone(false); return 0; }
+      return +(t - 0.1).toFixed(1);
+    }), 100);
+    return () => clearInterval(id);
+  }, [onDone]);
+  const respawn = () => setPos({ x: 10 + Math.random() * 80, y: 10 + Math.random() * 80 });
+  const hit = () => {
+    const n = hits + 1;
+    setHits(n);
+    if (n >= 5) onDone(true); else respawn();
   };
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">Проведи плавно — не слишком быстро и не медленно.</p>
-      <div ref={slot} className="relative w-80 h-24 bg-black/70 border-2 border-primary/50 rounded overflow-hidden">
-        <div className="absolute top-0 bottom-0 right-0 w-2 bg-primary/60" />
-        <div
-          className="absolute top-2 bottom-2 w-20 rounded bg-gradient-to-br from-amber-300 to-amber-600 border-2 border-amber-900 cursor-grab active:cursor-grabbing flex items-center justify-center text-xs font-bold text-amber-950"
-          style={{ left: x + 4 }}
-          onMouseDown={(e) => { drag.current = { start: e.clientX - x, t: performance.now() }; }}
-          onMouseMove={(e) => { if (drag.current) setX(clamp(e.clientX - drag.current.start, 0, 280)); }}
-          onMouseUp={() => { if (drag.current) { const dt = (performance.now() - drag.current.t) / 1000; finish(x / 200 / Math.max(dt, 0.05)); drag.current = null; } }}
-          onMouseLeave={() => { if (drag.current) { setX(0); drag.current = null; setMsg("Не отрывай"); } }}
-        >
-          <CreditCard className="h-6 w-6" />
-        </div>
+      <p className="text-sm text-muted-foreground">Попади 5 раз. Осталось: <b className="text-red-400">{time}s</b></p>
+      <div className="relative w-80 h-64 bg-black/70 rounded border-2 border-red-500/50 overflow-hidden">
+        <button onClick={hit}
+          className="absolute w-10 h-10 rounded-full bg-red-500 hover:bg-red-400 border-2 border-red-200 transition-all"
+          style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: "translate(-50%, -50%)" }}>
+          <Target className="h-5 w-5 mx-auto text-white" />
+        </button>
       </div>
-      <p className="text-sm text-primary font-bold">{msg}</p>
+      <p className="font-mono text-primary">Попаданий: {hits}/5</p>
     </div>
   );
 }
 
 // ============== TASK ICONS ==============
 function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string }) {
-  const map = { wires: Zap, code: KeyRound, download: Download, reactor: Flame, trash: Trash2, switches: ToggleRight, swipe: CreditCard };
+  const map: Record<TaskKind, typeof Zap> = {
+    wires: Zap, code: KeyRound, download: Download, reactor: Flame,
+    trash: Trash2, switches: ToggleRight,
+    math: Calculator, quiz: HelpCircle, lock: Lock, aim: Target,
+  };
   const I = map[kind];
   return <I className={className} />;
 }
@@ -543,11 +649,12 @@ const REACH = 70;
 
 export default function EscapeGame() {
   const [started, setStarted] = useState(false);
+  const [level, setLevel] = useState(0);
   const [x, setX] = useState(120);
   const [facing, setFacing] = useState<1 | -1>(1);
   const [moving, setMoving] = useState(false);
   const [hp, setHp] = useState(80);
-  const [maxHp, setMaxHp] = useState(100);
+  const [maxHp] = useState(100);
   const [strength, setStrength] = useState(1);
   const [killed, setKilled] = useState<Set<string>>(new Set());
   const [searched, setSearched] = useState<Set<string>>(new Set());
@@ -555,6 +662,13 @@ export default function EscapeGame() {
   const [hint, setHint] = useState("");
   const [shake, setShake] = useState(false);
   const [toast, setToast] = useState<string>("");
+
+  const cur = levels[level];
+  const zombies = cur.zombies;
+  const classrooms = cur.classrooms;
+  const EXIT_X = cur.exitX;
+  const WORLD_W = cur.worldW;
+  const isFinalLevel = level === levels.length - 1;
 
   const keys = useRef<Record<string, boolean>>({});
   const xRef = useRef(x); xRef.current = x;
@@ -593,7 +707,7 @@ export default function EscapeGame() {
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [modal.kind, killed, searched, allKilled]);
+  }, [modal.kind, killed, searched, allKilled, level]);
 
   // game loop — walking + auto-block at zombies
   useEffect(() => {
@@ -620,7 +734,7 @@ export default function EscapeGame() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [started, modal.kind, killed, allKilled]);
+  }, [started, modal.kind, killed, allKilled, level]);
 
   // hint
   useEffect(() => {
@@ -631,13 +745,13 @@ export default function EscapeGame() {
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
       if (c) { setHint(`[E] Осмотреть · ${c.name}`); return; }
       if (Math.abs(EXIT_X - px) < REACH) {
-        setHint(allKilled ? "[E] СБЕЖАТЬ из школы!" : "Дверь заблокирована");
+        setHint(allKilled ? (isFinalLevel ? "[E] К директору!" : "[E] Подняться на этаж выше") : "Путь заблокирован");
         return;
       }
       setHint("");
     }, 120);
     return () => clearInterval(id);
-  }, [killed, searched, allKilled]);
+  }, [killed, searched, allKilled, level]);
 
   // camera follow
   const cam = useMemo(() => {
@@ -697,7 +811,7 @@ export default function EscapeGame() {
             <p>🎮 <b>A/D</b> или <b>←/→</b> — идти по коридору</p>
             <p>⚡ <b>E</b> / <b>Enter</b> — осмотреть кабинет / атаковать зомби</p>
             <p>🧟 Зомби побеждаются мини-играми (провода, код, рубильники и т.д.)</p>
-            <p>🚪 Дверь выхода откроется, когда все зомби в коридоре повержены.</p>
+            <p>🏫 3 этажа · в конце — бой с директором-зомби</p>
           </div>
           <Button size="lg" onClick={() => setStarted(true)} className="font-display">НАЧАТЬ</Button>
         </div>
@@ -713,7 +827,7 @@ export default function EscapeGame() {
           <Crewmate color="#ff66aa" size={36} />
           <div>
             <div className="font-display text-sm text-primary">ЛАНА</div>
-            <div className="text-[10px] text-muted-foreground">Школа №7 · Коридор</div>
+            <div className="text-[10px] text-muted-foreground">{cur.name}</div>
           </div>
         </div>
         <div className="flex-1 max-w-md">
@@ -724,11 +838,14 @@ export default function EscapeGame() {
         </div>
         <div className="text-right text-xs space-y-1">
           <div className="flex gap-3 justify-end">
+            <span className="text-amber-300">🏫 Этаж {cur.id}/{levels.length}</span>
             <span>💪 ×{strength}</span>
             <span>💀 {killed.size}/{zombies.length}</span>
             <span>🔍 {searched.size}/{classrooms.length}</span>
           </div>
-          {allKilled && <div className="text-emerald-400 font-bold animate-pulse">→ Беги к выходу!</div>}
+          {allKilled && <div className="text-emerald-400 font-bold animate-pulse">
+            → {isFinalLevel ? "Беги к директору!" : "Лестница наверх!"}
+          </div>}
         </div>
       </div>
 
@@ -784,9 +901,11 @@ export default function EscapeGame() {
             <div className={`relative w-24 h-40 border-4 rounded-t-md ${allKilled ? "border-emerald-400 glow-toxic" : "border-red-700"}`}
               style={{ background: allKilled ? "linear-gradient(180deg,#1a3a1a,#0a1a0a)" : "linear-gradient(180deg,#2a0a0a,#1a0505)" }}>
               <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/90 text-[10px] text-emerald-300 px-2 py-0.5 rounded whitespace-nowrap font-pixel">
-                {allKilled ? "ВЫХОД ОТКРЫТ" : "ВЫХОД ⛔"}
+                {allKilled ? (isFinalLevel ? "ВЫХОД ОТКРЫТ" : "ЛЕСТНИЦА ▲") : (isFinalLevel ? "ВЫХОД ⛔" : "ЛЕСТНИЦА ⛔")}
               </div>
-              <DoorClosed className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-white/60" />
+              {isFinalLevel
+                ? <DoorClosed className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-white/60" />
+                : <ArrowUp className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-emerald-300" />}
             </div>
           </div>
 
@@ -862,7 +981,10 @@ export default function EscapeGame() {
                 {modal.zombie.kind === "reactor" && <ReactorGame onDone={finishTask} />}
                 {modal.zombie.kind === "trash" && <TrashGame onDone={finishTask} />}
                 {modal.zombie.kind === "switches" && <SwitchesGame onDone={finishTask} />}
-                {modal.zombie.kind === "swipe" && <SwipeGame onDone={finishTask} />}
+                {modal.zombie.kind === "math" && <MathGame onDone={finishTask} />}
+                {modal.zombie.kind === "quiz" && <QuizGame onDone={finishTask} />}
+                {modal.zombie.kind === "lock" && <LockGame onDone={finishTask} />}
+                {modal.zombie.kind === "aim" && <AimGame onDone={finishTask} />}
               </div>
             )}
 
@@ -880,12 +1002,30 @@ export default function EscapeGame() {
             )}
 
             {modal.kind === "exit" && (
-              <div className="flex flex-col items-center gap-4 text-center max-w-md">
-                <Impostor size={80} />
-                <h3 className="font-display text-lg text-red-400">У выхода ждёт Директор</h3>
-                <p>«Лана… последний рубеж. Ответь на три загадки — и ты свободна.»</p>
-                <Button onClick={() => setModal({ kind: "boss" })}>Принять бой</Button>
-              </div>
+              isFinalLevel ? (
+                <div className="flex flex-col items-center gap-4 text-center max-w-md">
+                  <Impostor size={80} />
+                  <h3 className="font-display text-lg text-red-400">У выхода ждёт Директор</h3>
+                  <p>«Лана… последний рубеж. Ответь на загадки — и ты свободна.»</p>
+                  <Button onClick={() => setModal({ kind: "boss" })}>Принять бой</Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-4 text-center max-w-md">
+                  <ArrowUp className="h-12 w-12 text-emerald-400" />
+                  <h3 className="font-display text-lg text-emerald-400">Лестница на следующий этаж</h3>
+                  <p>Этаж {cur.id} зачищен. Поднимайся выше — там ещё опаснее.</p>
+                  <Button onClick={() => {
+                    setLevel(level + 1);
+                    setX(120);
+                    setKilled(new Set());
+                    setSearched(new Set());
+                    setHp(h => Math.min(maxHp, h + 20));
+                    setModal({ kind: "none" });
+                    setToast(`▲ Этаж ${cur.id + 1}`);
+                    setTimeout(() => setToast(""), 1800);
+                  }}>Подняться ▲</Button>
+                </div>
+              )
             )}
 
             {modal.kind === "boss" && (
@@ -898,7 +1038,7 @@ export default function EscapeGame() {
                 <p>Лана выбежала из школы. Солнце. Свобода.</p>
                 <div className="flex justify-center"><Crewmate color="#ff66aa" size={80} /></div>
                 <Button onClick={() => {
-                  setStarted(false); setX(120); setHp(80); setMaxHp(100); setStrength(1);
+                  setStarted(false); setLevel(0); setX(120); setHp(80); setStrength(1);
                   setKilled(new Set()); setSearched(new Set()); setModal({ kind: "none" });
                 }}>Снова</Button>
               </div>
@@ -910,7 +1050,7 @@ export default function EscapeGame() {
                 <h2 className="font-display text-2xl text-red-400">ПОРАЖЕНИЕ</h2>
                 <p>Зомби оказались сильнее. Попробуй снова.</p>
                 <Button onClick={() => {
-                  setStarted(false); setX(120); setHp(80); setMaxHp(100); setStrength(1);
+                  setStarted(false); setLevel(0); setX(120); setHp(80); setStrength(1);
                   setKilled(new Set()); setSearched(new Set()); setModal({ kind: "none" });
                 }}>Начать заново</Button>
               </div>
