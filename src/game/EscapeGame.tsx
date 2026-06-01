@@ -1292,10 +1292,21 @@ export default function EscapeGame() {
             <div className="text-[10px] text-muted-foreground">{cur.name}</div>
           </div>
         </div>
-        <div className="flex-1 max-w-md">
-          <div className="flex justify-between text-xs mb-1"><span>HP</span><span className="font-mono">{hp} / {maxHp}</span></div>
-          <div className="h-3 bg-black/60 rounded border border-red-400/40 overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-red-600 to-rose-400 transition-all" style={{ width: `${(hp / maxHp) * 100}%` }} />
+        <div className="flex-1 max-w-md space-y-1">
+          <div>
+            <div className="flex justify-between text-xs mb-1"><span>HP</span><span className="font-mono">{hp} / {maxHp}</span></div>
+            <div className="h-3 bg-black/60 rounded border border-red-400/40 overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-red-600 to-rose-400 transition-all" style={{ width: `${(hp / maxHp) * 100}%` }} />
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-[11px] mb-1">
+              <span className="flex items-center gap-1"><Utensils className="h-3 w-3 text-amber-300" /> Сытость</span>
+              <span className={`font-mono ${hunger < 25 ? "text-red-400 animate-pulse" : "text-amber-200"}`}>{hunger}</span>
+            </div>
+            <div className="h-2 bg-black/60 rounded border border-amber-700/40 overflow-hidden">
+              <div className={`h-full transition-all ${hunger < 25 ? "bg-red-500" : "bg-gradient-to-r from-amber-500 to-yellow-300"}`} style={{ width: `${(hunger / MAX_HUNGER) * 100}%` }} />
+            </div>
           </div>
         </div>
         <div className="text-right text-xs space-y-1">
@@ -1307,19 +1318,22 @@ export default function EscapeGame() {
             {save.owned.flashlight && <span title="Фонарик"><Flashlight className="h-3 w-3 inline text-amber-200" /></span>}
             <span>💀 {killed.size}/{zombies.length}</span>
             <span>🔍 {searched.size}/{classrooms.length}</span>
-            <span className={running ? "text-red-400" : "text-zinc-500"} title="Шум">{running ? <Volume2 className="h-3 w-3 inline" /> : <VolumeX className="h-3 w-3 inline" />}</span>
+            <span className={crouching ? "text-emerald-400" : (running ? "text-red-400" : "text-zinc-500")} title={crouching ? "Сидит — тихо" : (running ? "Бежит — шумно" : "Идёт")}>
+              {crouching ? <ArrowDown className="h-3 w-3 inline" /> : (running ? <Volume2 className="h-3 w-3 inline" /> : <VolumeX className="h-3 w-3 inline" />)}
+            </span>
           </div>
           <div className="flex gap-1 justify-end items-center min-h-[18px]">
-            <span className="text-[10px] text-muted-foreground mr-1">Рюкзак:</span>
-            {inv.length === 0
-              ? <span className="text-[10px] text-zinc-600">пусто</span>
-              : inv.slice(0, 6).map((it, i) => (
-                <span key={it.id + i} title={`${it.name} +${it.hp} HP`}
-                  className="bg-black/60 border border-amber-700/60 rounded px-1 text-sm leading-none">
-                  {it.emoji}
-                </span>
-              ))}
-            {inv.length > 6 && <span className="text-[10px] text-amber-300">+{inv.length - 6}</span>}
+            <button onClick={() => setModal({ kind: "backpack" })}
+              className="flex items-center gap-1 text-[10px] text-amber-200 hover:text-amber-100 bg-black/60 border border-amber-700/60 rounded px-2 py-0.5 font-pixel">
+              <Backpack className="h-3 w-3" /> Рюкзак [B] · {inv.length}
+            </button>
+            {inv.slice(0, 5).map((it, i) => (
+              <span key={it.id + i} title={`${it.name}${it.hp ? ` +${it.hp} HP` : ""}${it.food ? ` +${it.food} 🍴` : ""}`}
+                className="bg-black/60 border border-amber-700/60 rounded px-1 text-sm leading-none">
+                {it.emoji}
+              </span>
+            ))}
+            {inv.length > 5 && <span className="text-[10px] text-amber-300">+{inv.length - 5}</span>}
           </div>
           {allKilled && <div className="text-emerald-400 font-bold animate-pulse">
             → {isFinalLevel ? "Беги к директору!" : "Лестница наверх!"}
