@@ -33,8 +33,181 @@ const dist = (a: Vec, b: Vec) => Math.hypot(a.x - b.x, a.y - b.y);
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
-// ---- Crewmate SVG (Among-Us style, more detailed) ----
+// ---- Pixel-art human sprites ----
+// Grid 16x20 px-units, rendered crisp via shape-rendering crispEdges.
+type PixelPalette = {
+  skin: string; skinShade: string;
+  hair: string; hairShade: string;
+  shirt: string; shirtShade: string;
+  pants: string; pantsShade: string;
+  shoes: string;
+  eyes?: string;
+};
+
+function PixelHuman({ palette, facing = 1, size = 56, variant = "student", dead = false }:
+  { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
+  // Build grid using cells (x,y,color). Use rectangles for crisp pixels.
+  // 16 columns x 20 rows
+  const px = (x: number, y: number, c: string, w = 1, h = 1) =>
+    <rect key={`${x}-${y}-${c}`} x={x} y={y} width={w} height={h} fill={c} />;
+
+  const isGirl = variant === "girl";
+  const isBoss = variant === "boss";
+  const cells: React.ReactNode[] = [];
+
+  // Hair back (girl: long hair behind body)
+  if (isGirl) {
+    cells.push(px(4, 11, palette.hairShade, 8, 5));
+    cells.push(px(3, 12, palette.hairShade, 1, 3));
+    cells.push(px(12, 12, palette.hairShade, 1, 3));
+  }
+
+  // Head (rows 2..6)
+  // skin block
+  cells.push(px(6, 2, palette.skin, 4, 5));
+  cells.push(px(5, 3, palette.skin, 6, 3));
+  // skin shading right side
+  cells.push(px(10, 3, palette.skinShade, 1, 3));
+  cells.push(px(9, 6, palette.skinShade, 1, 1));
+  // hair top
+  cells.push(px(5, 1, palette.hair, 6, 1));
+  cells.push(px(4, 2, palette.hair, 8, 1));
+  cells.push(px(4, 3, palette.hair, 1, 2));
+  cells.push(px(11, 3, palette.hair, 1, 2));
+  if (isGirl) {
+    // bangs
+    cells.push(px(5, 3, palette.hair, 2, 1));
+    cells.push(px(9, 3, palette.hair, 2, 1));
+  }
+  if (isBoss) {
+    // bald with side gray
+    cells.push(px(5, 2, palette.skin, 6, 1));
+    cells.push(px(4, 2, palette.hair, 1, 2));
+    cells.push(px(11, 2, palette.hair, 1, 2));
+  }
+  // eyes
+  cells.push(px(6, 4, palette.eyes ?? "#1b1b1b", 1, 1));
+  cells.push(px(9, 4, palette.eyes ?? "#1b1b1b", 1, 1));
+  // mouth
+  if (isBoss) {
+    cells.push(px(7, 6, "#5a0a0a", 2, 1));
+  } else {
+    cells.push(px(7, 6, "#8a3a3a", 2, 1));
+  }
+  // neck
+  cells.push(px(7, 7, palette.skinShade, 2, 1));
+
+  // Body / shirt (rows 8..13)
+  cells.push(px(4, 8, palette.shirt, 8, 5));
+  cells.push(px(3, 9, palette.shirt, 1, 3));
+  cells.push(px(12, 9, palette.shirt, 1, 3));
+  // shirt shading
+  cells.push(px(11, 8, palette.shirtShade, 1, 5));
+  cells.push(px(4, 12, palette.shirtShade, 8, 1));
+  if (isGirl) {
+    // collar / detail
+    cells.push(px(7, 8, "#ffffff", 2, 1));
+  }
+  if (isBoss) {
+    // tie
+    cells.push(px(7, 8, "#1b1b1b", 2, 4));
+    cells.push(px(7, 12, "#1b1b1b", 2, 1));
+  }
+  // arms
+  cells.push(px(3, 8, palette.shirt, 1, 1));
+  cells.push(px(12, 8, palette.shirt, 1, 1));
+  // hands
+  cells.push(px(3, 12, palette.skin, 1, 1));
+  cells.push(px(12, 12, palette.skin, 1, 1));
+
+  // Pants / legs (rows 13..17)
+  cells.push(px(5, 13, palette.pants, 6, 4));
+  cells.push(px(5, 13, palette.pants, 2, 4));
+  cells.push(px(9, 13, palette.pants, 2, 4));
+  cells.push(px(7, 13, palette.pantsShade, 2, 4));
+  // shoes
+  cells.push(px(4, 17, palette.shoes, 3, 1));
+  cells.push(px(9, 17, palette.shoes, 3, 1));
+
+  // Girl: hair down sides
+  if (isGirl) {
+    cells.push(px(4, 7, palette.hair, 1, 3));
+    cells.push(px(11, 7, palette.hair, 1, 3));
+  }
+
+  return (
+    <svg width={size} height={size * 1.25} viewBox="0 0 16 20"
+      style={{ transform: `scaleX(${facing})`, imageRendering: "pixelated", shapeRendering: "crispEdges" }}>
+      {/* shadow */}
+      <ellipse cx="8" cy="19" rx="4" ry="0.6" fill="#000" opacity="0.5" />
+      {cells}
+      {dead && <text x="8" y="6" textAnchor="middle" fontSize="3" fill="red">X</text>}
+    </svg>
+  );
+}
+
+// Palettes
+const PAL_LANA: PixelPalette = {
+  skin: "#f4c8a8", skinShade: "#d49a78",
+  hair: "#c4377a", hairShade: "#7a1e4a",
+  shirt: "#ff6aa8", shirtShade: "#a83a6a",
+  pants: "#3a3a55", pantsShade: "#1f1f33",
+  shoes: "#1a1a1a",
+};
+const PAL_MILA: PixelPalette = {
+  skin: "#f0c098", skinShade: "#c89070",
+  hair: "#6b3a1a", hairShade: "#3a1f0a",
+  shirt: "#e84545", shirtShade: "#8a2222",
+  pants: "#2a2a3a", pantsShade: "#15151f",
+  shoes: "#1a1a1a",
+};
+const PAL_ARSENY: PixelPalette = {
+  skin: "#e8b890", skinShade: "#b8855f",
+  hair: "#1a1a1a", hairShade: "#000000",
+  shirt: "#3aa3ff", shirtShade: "#1f5a8a",
+  pants: "#2a2a3a", pantsShade: "#15151f",
+  shoes: "#3a2a1a",
+};
+const PAL_VIKA: PixelPalette = {
+  skin: "#f8d0b0", skinShade: "#d49a78",
+  hair: "#e8c038", hairShade: "#8a6a1a",
+  shirt: "#ffd23a", shirtShade: "#a87a1f",
+  pants: "#3a2a4a", pantsShade: "#1f1530",
+  shoes: "#2a1a1a",
+};
+const PAL_TIMUR: PixelPalette = {
+  skin: "#d8a878", skinShade: "#a87850",
+  hair: "#2a1a0a", hairShade: "#000000",
+  shirt: "#7ad84a", shirtShade: "#3a7a22",
+  pants: "#2a2a2a", pantsShade: "#0a0a0a",
+  shoes: "#1a1a1a",
+};
+const PAL_BOSS: PixelPalette = {
+  skin: "#c8a890", skinShade: "#8a5a3a",
+  hair: "#8a8a8a", hairShade: "#3a3a3a",
+  shirt: "#1f1f2a", shirtShade: "#0a0a14",
+  pants: "#0a0a0a", pantsShade: "#000000",
+  shoes: "#000000",
+  eyes: "#ff3030",
+};
+
+const PALETTES: Record<string, PixelPalette> = {
+  lana: PAL_LANA, "#e84545": PAL_MILA, "#3aa3ff": PAL_ARSENY, "#ffd23a": PAL_VIKA, "#7ad84a": PAL_TIMUR,
+};
+
+// Backwards-compatible API used elsewhere in this file
 function Crewmate({ color, facing = 1, size = 56, dead = false }: { color: string; facing?: 1 | -1; size?: number; dead?: boolean }) {
+  const isLana = color === "#ff66aa";
+  const palette = isLana ? PAL_LANA : (PALETTES[color] ?? { ...PAL_MILA, shirt: color, shirtShade: color });
+  return <PixelHuman palette={palette} facing={facing} size={size} variant={isLana ? "girl" : "student"} dead={dead} />;
+}
+
+function Impostor({ size = 80 }: { size?: number }) {
+  return <PixelHuman palette={PAL_BOSS} size={size} variant="boss" />;
+}
+
+// Legacy unused (kept to avoid removing more code)
+function _LegacyCrewmate({ color, facing = 1, size = 56, dead = false }: { color: string; facing?: 1 | -1; size?: number; dead?: boolean }) {
   return (
     <svg width={size} height={size * 1.1} viewBox="0 0 100 110" style={{ transform: `scaleX(${facing})` }}>
       <defs>
