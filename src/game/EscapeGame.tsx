@@ -1426,7 +1426,7 @@ export default function EscapeGame() {
           {/* Lana */}
           <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 }}>
             <div className={moving ? "lana-walk" : "lana-idle"}>
-              <Crewmate color="#ff66aa" facing={facing} size={56} />
+              <Crewmate color="#ff66aa" palette={lanaPalette} facing={facing} size={56} />
             </div>
           </div>
 
