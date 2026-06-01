@@ -21,6 +21,7 @@ type Modal =
   | { kind: "task"; zombie: Zombie }
   | { kind: "search"; classroom: Classroom }
   | { kind: "exit" }
+  | { kind: "nextLevel" }
   | { kind: "win" }
   | { kind: "lose" }
   | { kind: "boss" };
