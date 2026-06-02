@@ -919,15 +919,12 @@ function SpotEl({ spot, taken, lit, hasKey, onClick }:
   );
 }
 
-// Детерминированный квест для класса: какая точка прячет ключ + 4-значный код двери.
+// Детерминированный квест для класса: определяет, какая точка прячет ключ.
 function getClassroomQuest(classroom: Classroom) {
   let h = 0;
   for (let i = 0; i < classroom.id.length; i++) h = (h * 31 + classroom.id.charCodeAt(i)) >>> 0;
   const keyIdx = h % classroom.spots.length;
-  const code = String(1000 + (h % 9000)).padStart(4, "0");
-  // Тип задания: 0 = только ключ, 1 = ключ + код-фонарь, 2 = ключ + код-фонарь
-  const variant = h % 3 === 0 ? "key-only" : "key-code";
-  return { keyIdx, code, variant: variant as "key-only" | "key-code" };
+  return { keyIdx };
 }
 
 const KEY_ITEM: LootItem = { name: "Ключ от двери", emoji: "🗝", strengthGain: 0 };
