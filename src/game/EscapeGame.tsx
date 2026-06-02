@@ -1122,11 +1122,6 @@ function ClassroomScene({
         <span className={keyFound ? "text-emerald-300" : "text-amber-200"}>
           {keyFound ? "✓ Ключ 🗝" : "✗ Найди ключ 🗝"}
         </span>
-        {!noCodeNeeded && (
-          <span className={doorOpen ? "text-emerald-300" : "text-amber-200"}>
-            · {doorOpen ? "✓ Код" : `Введи код двери`}
-          </span>
-        )}
         <span className="text-zinc-400">· Точек: {remaining}/{classroom.spots.length}</span>
       </div>
 
