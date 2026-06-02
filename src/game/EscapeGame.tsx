@@ -896,10 +896,11 @@ const BAT_ITEM: LootItem = { name: "Бейсбольная бита", emoji: "�
 
 // ====== Сцена внутри класса ======
 function ClassroomScene({
-  classroom, hasFlashlight, batteryPct, onCollect, onLeave,
+  classroom, levelId, hasFlashlight, batteryPct, onCollect, onLeave,
   lanaPalette, onConsumeBattery, onToast,
 }: {
   classroom: Classroom;
+  levelId: number;
   hasFlashlight: boolean;
   batteryPct: number;
   onCollect: (item: LootItem, spot: SearchSpot) => void;
