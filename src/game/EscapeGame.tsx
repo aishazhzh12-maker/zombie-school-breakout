@@ -383,34 +383,6 @@ function WiresGame({ onDone }: { onDone: (ok: boolean) => void }) {
   );
 }
 
-// 2) CODE
-function CodeGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const [val, setVal] = useState("");
-  const [err, setErr] = useState(false);
-  const submit = () => {
-    if (val === ADMIN_CODE) onDone(true);
-    else { setErr(true); setTimeout(() => setErr(false), 400); }
-  };
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground text-center">{ADMIN_HINT}</p>
-      <div className={`flex gap-2 ${err ? "shake" : ""}`}>
-        {[0, 1, 2, 3].map(i => (
-          <div key={i} className="w-12 h-14 border-2 border-primary/60 bg-black/50 rounded flex items-center justify-center text-2xl font-display">
-            {val[i] ?? ""}
-          </div>
-        ))}
-      </div>
-      <Input autoFocus inputMode="numeric" maxLength={4} value={val}
-        onChange={(e) => setVal(e.target.value.replace(/\D/g, "").slice(0, 4))}
-        onKeyDown={(e) => e.key === "Enter" && submit()}
-        className="text-center w-40 tracking-[0.5em] font-mono" />
-      <Button onClick={submit} disabled={val.length !== 4}>
-        <KeyRound className="mr-2 h-4 w-4" /> Подтвердить
-      </Button>
-    </div>
-  );
-}
 
 // 3) DOWNLOAD — hold button
 function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
