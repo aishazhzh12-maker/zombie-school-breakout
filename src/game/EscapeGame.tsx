@@ -1076,6 +1076,7 @@ function ClassroomScene({
 }
 
 
+export default function EscapeGame() {
   // Persisted (menu / shop)
   const [save, setSave] = useState<SaveData>(() => loadSave());
   const [menuTab, setMenuTab] = useState<"play" | "outfit" | "shop">("play");
