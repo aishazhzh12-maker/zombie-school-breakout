@@ -2041,6 +2041,23 @@ export default function EscapeGame() {
             <div className={moving ? "lana-walk" : "lana-idle"}
               style={crouching ? { transform: "scaleY(0.7) translateY(18px)", transformOrigin: "50% 100%" } : undefined}>
               <Crewmate color="#ff66aa" palette={lanaPalette} facing={facing} size={56} />
+              {batLeft > 0 && (
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    top: 26,
+                    left: facing === 1 ? 36 : -14,
+                    fontSize: 26,
+                    lineHeight: 1,
+                    transform: `scaleX(${facing}) rotate(${facing === 1 ? -25 : 25}deg)`,
+                    transformOrigin: "50% 100%",
+                    filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.8))",
+                  }}
+                  title="Бита — 1 удар (G)"
+                >
+                  🏏
+                </div>
+              )}
             </div>
             {crouching && (
               <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-emerald-900/80 text-emerald-100 text-[9px] px-1 rounded font-pixel">🤫 тихо</div>
