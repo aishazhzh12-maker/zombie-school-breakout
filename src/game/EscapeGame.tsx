@@ -1664,7 +1664,7 @@ export default function EscapeGame() {
           {menuTab === "outfit" && (
             <div className="bg-black/40 rounded p-4 grid grid-cols-2 md:grid-cols-3 gap-3">
               {OUTFITS.map(o => {
-                const owned = o.price === 0 || (save.outfit === o.id);
+                const owned = o.price === 0 || save.ownedOutfits.includes(o.id);
                 const equipped = save.outfit === o.id;
                 return (
                   <div key={o.id} className={`p-3 rounded border ${equipped ? "border-primary bg-primary/10" : "border-zinc-700 bg-black/40"} flex flex-col items-center gap-2`}>
