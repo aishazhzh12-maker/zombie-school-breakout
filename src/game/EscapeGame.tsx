@@ -2328,9 +2328,24 @@ export default function EscapeGame() {
                 <p>Лана выбежала из школы. Солнце. Свобода.</p>
                 <div className="flex justify-center"><Crewmate color="#ff66aa" palette={lanaPalette} size={80} /></div>
                 <p className="text-amber-300 font-pixel">Бонус за победу: +200 🪙</p>
+                <div className="flex items-center gap-2 justify-center">
+                  <Input
+                    value={playerName}
+                    maxLength={24}
+                    onChange={(e) => setPlayerName(e.target.value)}
+                    className="h-8 text-sm max-w-[180px]"
+                    placeholder="Твоё имя"
+                    disabled={scoreSubmitted}
+                  />
+                  <Button size="sm" variant="secondary" disabled={scoreSubmitted || submittingScore}
+                    onClick={() => submitMyScore(true)}>
+                    <Trophy className="h-3 w-3 mr-1" />
+                    {scoreSubmitted ? "Отправлено" : "В рекорды"}
+                  </Button>
+                </div>
                 <Button onClick={() => {
                   setCoins(c => c + 200);
-                  setStarted(false); setModal({ kind: "none" });
+                  setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" });
                 }}>В меню</Button>
               </div>
             )}
@@ -2340,7 +2355,23 @@ export default function EscapeGame() {
                 <Skull className="h-16 w-16 text-red-500 mx-auto" />
                 <h2 className="font-display text-2xl text-red-400">ПОРАЖЕНИЕ</h2>
                 <p>Зомби оказались сильнее. Купи улучшения и попробуй снова.</p>
-                <Button onClick={() => { setStarted(false); setModal({ kind: "none" }); }}>В меню</Button>
+                <p className="text-xs text-zinc-400">Этажей пройдено: {level} · Монет: {coins}</p>
+                <div className="flex items-center gap-2 justify-center">
+                  <Input
+                    value={playerName}
+                    maxLength={24}
+                    onChange={(e) => setPlayerName(e.target.value)}
+                    className="h-8 text-sm max-w-[180px]"
+                    placeholder="Твоё имя"
+                    disabled={scoreSubmitted}
+                  />
+                  <Button size="sm" variant="secondary" disabled={scoreSubmitted || submittingScore}
+                    onClick={() => submitMyScore(false)}>
+                    <Trophy className="h-3 w-3 mr-1" />
+                    {scoreSubmitted ? "Отправлено" : "В рекорды"}
+                  </Button>
+                </div>
+                <Button onClick={() => { setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" }); }}>В меню</Button>
               </div>
             )}
           </div>
