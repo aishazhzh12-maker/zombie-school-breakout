@@ -2242,10 +2242,10 @@ export default function EscapeGame() {
                   <DoorClosed className="h-10 w-10 text-amber-400" />
                   <div>
                     <h2 className="font-display text-lg text-amber-300">Замок на двери</h2>
-                    <p className="text-xs text-muted-foreground">Подбери код, чтобы открыть путь к директору.</p>
+                    <p className="text-xs text-muted-foreground">Соедини провода, чтобы открыть путь к директору.</p>
                   </div>
                 </div>
-                <HintBox kind="lock" advanced={save.owned.hint} />
+                <HintBox kind="wires" advanced={save.owned.hint} />
                 <TaskTimer seconds={30} onTimeout={() => {
                   setHp(h => Math.max(0, h - 15));
                   setShake(true); setTimeout(() => setShake(false), 400);
@@ -2253,7 +2253,7 @@ export default function EscapeGame() {
                   setTimeout(() => setToast(""), 1600);
                   setModal({ kind: "none" });
                 }} />
-                <LockGame onDone={(ok) => {
+                <WiresGame onDone={(ok) => {
                   if (ok) { setToast("🚪 Дверь открыта!"); setTimeout(() => setToast(""), 1500); setModal({ kind: "boss" }); }
                   else { setHp(h => Math.max(0, h - 10)); setModal({ kind: "none" }); }
                 }} />
