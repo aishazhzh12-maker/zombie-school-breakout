@@ -1124,9 +1124,11 @@ function ClassroomScene({
         <span className={keyFound ? "text-emerald-300" : "text-amber-200"}>
           {keyFound ? "✓ Ключ 🗝" : "✗ Найди ключ 🗝"}
         </span>
-        <span className={batFound ? "text-emerald-300" : "text-amber-200"}>
-          {batFound ? "✓ Бита 🏏" : "✗ Найди биту 🏏"}
-        </span>
+        {quest.hasBat && (
+          <span className={batFound ? "text-emerald-300" : "text-amber-200"}>
+            {batFound ? "✓ Бита 🏏" : "✗ Найди биту 🏏"}
+          </span>
+        )}
         <span className="text-zinc-400">· Точек: {remaining}/{classroom.spots.length}</span>
       </div>
 
