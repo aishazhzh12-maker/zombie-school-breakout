@@ -912,9 +912,9 @@ function ClassroomScene({
   const [taken, setTaken] = useState<Set<string>>(new Set());
   const lit = hasFlashlight && batteryPct > 0;
   const remaining = classroom.spots.filter(s => !taken.has(s.id)).length;
-  const quest = useMemo(() => getClassroomQuest(classroom), [classroom]);
+  const quest = useMemo(() => getClassroomQuest(classroom, levelId), [classroom, levelId]);
   const keySpotId = classroom.spots[quest.keyIdx]?.id;
-  const batSpotId = classroom.spots[quest.batIdx]?.id;
+  const batSpotId = quest.hasBat && quest.batIdx >= 0 ? classroom.spots[quest.batIdx]?.id : undefined;
 
   const [keyFound, setKeyFound] = useState(false);
   const [batFound, setBatFound] = useState(false);
