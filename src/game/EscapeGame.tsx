@@ -1769,6 +1769,29 @@ export default function EscapeGame() {
               <p className="text-[11px] text-muted-foreground text-center pt-1">Покупки сохраняются между играми.</p>
             </div>
           )}
+
+          {menuTab === "leaderboard" && (
+            <div className="bg-black/40 rounded p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-zinc-400 font-pixel shrink-0">Имя:</label>
+                <Input
+                  value={playerName}
+                  maxLength={24}
+                  onChange={(e) => {
+                    setPlayerName(e.target.value);
+                    if (typeof window !== "undefined") localStorage.setItem("lana_player_name", e.target.value);
+                  }}
+                  className="h-8 text-sm"
+                  placeholder="Лана"
+                />
+                <Button size="sm" variant="secondary" onClick={() => setLeaderboardKey(k => k + 1)}>↻</Button>
+              </div>
+              <Leaderboard refreshKey={leaderboardKey} />
+              <p className="text-[10px] text-muted-foreground text-center">
+                Топ-20 игроков по монетам. Рекорд отправляется после победы или поражения.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
