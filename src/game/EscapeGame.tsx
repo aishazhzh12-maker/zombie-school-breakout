@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  levels, bossRiddles, ADMIN_CODE, ADMIN_HINT,
+  levels, bossRiddles,
   FLOOR_Y, CEIL_Y,
   type Classroom, type Zombie, type TaskKind, type LootItem, type SearchSpot,
 } from "./data";
