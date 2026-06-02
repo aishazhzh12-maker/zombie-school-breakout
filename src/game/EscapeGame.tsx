@@ -1128,25 +1128,8 @@ function ClassroomScene({
       {/* Панель двери — управление квестом */}
       <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2 z-10">
         <div className="flex items-center gap-2 bg-black/85 border border-amber-700/60 rounded p-2">
-          {!noCodeNeeded && !doorOpen && (
-            <>
-              <Input
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="код"
-                className="h-8 w-20 text-center font-mono text-base"
-                inputMode="numeric"
-              />
-              <Button size="sm" onClick={submitPin} disabled={!keyFound || pin.length !== 4}>
-                Открыть 🔓
-              </Button>
-              <Button size="sm" variant="secondary" onClick={tryShine} disabled={!lit}>
-                <Flashlight className="h-3 w-3 mr-1" /> Посветить (−10%)
-              </Button>
-            </>
-          )}
-          {noCodeNeeded && !doorOpen && (
-            <Button size="sm" onClick={submitPin} disabled={!keyFound}>
+          {!doorOpen && (
+            <Button size="sm" onClick={openDoor} disabled={!keyFound}>
               {keyFound ? "🗝 Открыть дверь" : "🔒 Нужен ключ"}
             </Button>
           )}
