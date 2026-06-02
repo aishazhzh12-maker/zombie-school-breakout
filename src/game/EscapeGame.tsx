@@ -1112,6 +1112,13 @@ export default function EscapeGame() {
   // Спящие зомби, которых уже разбудили (после этого ведут себя как обычные).
   const wokenRef = useRef<Set<string>>(new Set());
 
+  // ===== Фонарик и батарея =====
+  const MAX_BATTERY = 100;
+  const [foundFlashlight, setFoundFlashlight] = useState(false);
+  const [battery, setBattery] = useState(MAX_BATTERY);
+  const hasFlashlight = save.owned.flashlight || foundFlashlight;
+  const flashlightOn = hasFlashlight && battery > 0;
+
   // Weapons remaining (decreases as used; bought in shop)
   const [batLeft, setBatLeft] = useState(save.owned.bat);
   const [gunLeft, setGunLeft] = useState(save.owned.gun);
