@@ -1437,6 +1437,18 @@ export default function EscapeGame() {
 
   // Подобрать предмет внутри сцены класса.
   const collectSpotItem = useCallback((loot: LootItem, _spot: SearchSpot) => {
+    // Found bat — give a single-use stun weapon, hold it in hand.
+    if (loot.name === "Бейсбольная бита") {
+      setBatLeft(n => {
+        const nn = n + 1;
+        setSave(s => { const ns = { ...s, owned: { ...s.owned, bat: nn } }; writeSave(ns); return ns; });
+        return nn;
+      });
+      setToast("🏏 Лана подобрала биту! 1 удар — нажми G рядом с зомби.");
+      setTimeout(() => setToast(""), 2200);
+      setCoins(c => c + 10);
+      return;
+    }
     if (loot.strengthGain) setStrength(s => s + loot.strengthGain!);
     if (loot.givesFlashlight) {
       setFoundFlashlight(true);
