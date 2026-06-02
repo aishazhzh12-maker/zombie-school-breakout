@@ -1024,7 +1024,7 @@ function ClassroomScene({
       <div className="absolute" style={{ left: 24, top: 28, width: 180, height: 90 }}>
         <div className="absolute inset-0 bg-[#0a2a1a] border-4 border-[#3a2a1a]" />
         <div className="absolute inset-2 text-[10px] font-pixel text-red-400 leading-tight">
-          ВЫХОДА НЕТ...<br/>НАЙДИ КЛЮЧ 🗝<br/>{!noCodeNeeded && "И КОД ОТ ДВЕРИ"}
+          ВЫХОДА НЕТ...<br/>НАЙДИ КЛЮЧ 🗝
         </div>
       </div>
 
@@ -1044,16 +1044,12 @@ function ClassroomScene({
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 bg-[#1a1a1a] border-2 border-[#5a5a5a] rounded-full">
           {doorOpen ? "🔓" : "🔒"}
         </div>
-        {/* код на двери (виден только при подсветке) */}
+        {/* статус двери */}
         <div className="absolute -bottom-1 left-0 right-0 text-center text-[10px] font-pixel">
           {doorOpen ? (
             <span className="text-emerald-300">✓ ОТКРЫТО</span>
-          ) : noCodeNeeded ? (
-            <span className="text-amber-200">{keyFound ? "Поверни ключ →" : "🔒 нужен ключ"}</span>
-          ) : codeVisible ? (
-            <span className="text-amber-200">КОД: <b className="text-yellow-300 tracking-widest">{quest.code}</b></span>
           ) : (
-            <span className="text-zinc-500">??-??-?? (посвети)</span>
+            <span className="text-amber-200">{keyFound ? "Поверни ключ →" : "🔒 нужен ключ"}</span>
           )}
         </div>
       </div>
