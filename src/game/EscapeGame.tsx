@@ -1355,34 +1355,48 @@ export default function EscapeGame() {
     setModal({ kind: "none" });
   }, [modal, strength]);
 
-  const finishSearch = useCallback(() => {
-    if (modal.kind !== "search") { setModal({ kind: "none" }); return; }
-    const c = modal.classroom;
-    const loot = c.loot;
+  // Подобрать предмет внутри сцены класса.
+  const collectSpotItem = useCallback((loot: LootItem, _spot: SearchSpot) => {
     if (loot.strengthGain) setStrength(s => s + loot.strengthGain!);
+    if (loot.givesFlashlight) {
+      setFoundFlashlight(true);
+      setBattery(b => Math.max(b, loot.battery ?? MAX_BATTERY));
+      setToast(`🔦 Найден ${loot.name}! Теперь Лана видит в темноте.`);
+      setTimeout(() => setToast(""), 1800);
+      setCoins(c => c + 8);
+      return;
+    }
     const item: InvItem = {
-      id: `${c.id}-${Date.now()}`,
+      id: `${loot.name}-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
       name: loot.name,
       emoji: loot.emoji,
       hp: loot.hpGain ?? 0,
       food: loot.foodGain ?? 0,
       strength: loot.strengthGain ?? 0,
+      battery: loot.battery,
     };
-    if (item.hp || item.food) {
+    if (item.hp || item.food || item.battery) {
       setInv(prev => [...prev, item]);
       const bonus = [
         item.hp ? `+${item.hp} HP` : null,
         item.food ? `+${item.food} 🍴` : null,
+        item.battery ? `+${item.battery}% 🔋` : null,
       ].filter(Boolean).join(", ");
-      setToast(`🎒 В рюкзаке: ${loot.emoji} ${loot.name} (${bonus})`);
+      setToast(`🎒 ${loot.emoji} ${loot.name}${bonus ? ` (${bonus})` : ""}`);
     } else {
       setToast(`Найдено: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} 💪)` : ""}`);
     }
-    setCoins(c => c + 5);
+    setCoins(c => c + 3);
+    setTimeout(() => setToast(""), 1600);
+  }, []);
+
+  // Закрыть комнату — пометить как обысканную.
+  const leaveClassroom = useCallback(() => {
+    if (modal.kind !== "search") { setModal({ kind: "none" }); return; }
+    const c = modal.classroom;
     setSearched(prev => new Set(prev).add(c.id));
-    setTimeout(() => setToast(""), 1800);
     setModal({ kind: "none" });
-  }, [modal, maxHp]);
+  }, [modal]);
 
   // Use a specific item from the backpack.
   const useItem = useCallback((idx: number) => {
@@ -1392,9 +1406,18 @@ export default function EscapeGame() {
     if (it.hp) setHp(h => Math.min(maxHp, h + it.hp));
     if (it.food) setHunger(h => Math.min(MAX_HUNGER, h + it.food));
     if (it.strength) setStrength(s => s + it.strength);
-    setToast(`💊 ${it.emoji} ${it.name} использовано`);
+    if (it.battery) {
+      if (!hasFlashlight) {
+        setToast(`🪫 ${it.emoji} ${it.name}: нет фонарика — батарейка не нужна сейчас.`);
+      } else {
+        setBattery(b => Math.min(MAX_BATTERY, b + it.battery!));
+        setToast(`🔋 ${it.emoji} +${it.battery}% заряда фонаря`);
+      }
+    } else {
+      setToast(`💊 ${it.emoji} ${it.name} использовано`);
+    }
     setTimeout(() => setToast(""), 1400);
-  }, [maxHp]);
+  }, [maxHp, hasFlashlight]);
 
   // Auto-emergency-heal только при критическом HP.
   useEffect(() => {
