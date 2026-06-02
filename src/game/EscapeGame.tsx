@@ -2186,6 +2186,15 @@ export default function EscapeGame() {
                       setCoins(c => c + 5);
                       return;
                     }
+                    if (loot.emoji === "🏏") {
+                      // бита — +1 удар (одноразовый)
+                      setBatLeft(n => {
+                        const nn = n + 1;
+                        setSave(s => { const ns = { ...s, owned: { ...s.owned, bat: nn } }; writeSave(ns); return ns; });
+                        return nn;
+                      });
+                      return;
+                    }
                     collectSpotItem(loot, spot);
                   }}
                   onLeave={leaveClassroom}
