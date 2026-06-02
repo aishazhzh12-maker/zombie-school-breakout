@@ -1651,7 +1651,13 @@ export default function EscapeGame() {
             <span className="flex items-center gap-1"><Coins className="h-3 w-3 text-amber-300" />{coins}</span>
             <span title="Бита (G)">🏏 {batLeft}</span>
             <span title="Пистолет (F)">🔫 {gunLeft}</span>
-            {save.owned.flashlight && <span title="Фонарик"><Flashlight className="h-3 w-3 inline text-amber-200" /></span>}
+            {hasFlashlight && (
+              <span title={`Фонарик · батарея ${battery}%`} className={`flex items-center gap-1 ${battery === 0 ? "text-red-400 animate-pulse" : (battery < 25 ? "text-amber-400" : "text-amber-200")}`}>
+                <Flashlight className="h-3 w-3 inline" />
+                {battery > 25 ? <BatteryFull className="h-3 w-3 inline" /> : <BatteryLow className="h-3 w-3 inline" />}
+                {battery}%
+              </span>
+            )}
             <span>💀 {killed.size}/{zombies.length}</span>
             <span>🔍 {searched.size}/{classrooms.length}</span>
             <span className={crouching ? "text-emerald-400" : (running ? "text-red-400" : "text-zinc-500")} title={crouching ? "Сидит — тихо" : (running ? "Бежит — шумно" : "Идёт")}>
