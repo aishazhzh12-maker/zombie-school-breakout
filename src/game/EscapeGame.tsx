@@ -1972,15 +1972,33 @@ export default function EscapeGame() {
             )}
 
             {modal.kind === "search" && (
-              <div className="flex flex-col items-center gap-4 text-center">
-                <h3 className="font-display text-lg text-primary">{modal.classroom.name}</h3>
-                <div className="text-6xl">{modal.classroom.loot.emoji}</div>
-                <p>Лана находит: <b>{modal.classroom.loot.name}</b></p>
-                <p className="text-xs text-muted-foreground">
-                  {modal.classroom.loot.hpGain ? `+${modal.classroom.loot.hpGain} HP  ` : ""}
-                  {modal.classroom.loot.strengthGain ? `+${modal.classroom.loot.strengthGain} 💪` : ""}
-                </p>
-                <Button onClick={finishSearch}>Забрать</Button>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-display text-lg text-primary">{modal.classroom.name}</h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      Внутри класса. Ищи фонарик, батарейки, еду и аптечки. За окном — зомби.
+                    </p>
+                  </div>
+                  <div className="text-[11px] font-pixel text-amber-200 flex items-center gap-2">
+                    {hasFlashlight ? (
+                      <span className={`flex items-center gap-1 ${battery > 0 ? "text-amber-200" : "text-red-400 animate-pulse"}`}>
+                        {battery > 25 ? <BatteryFull className="h-4 w-4" /> : <BatteryLow className="h-4 w-4" />}
+                        🔦 {battery}%
+                      </span>
+                    ) : (
+                      <span className="text-red-300">🔦 нет фонарика</span>
+                    )}
+                  </div>
+                </div>
+                <ClassroomScene
+                  classroom={modal.classroom}
+                  hasFlashlight={hasFlashlight}
+                  batteryPct={battery}
+                  onCollect={collectSpotItem}
+                  onLeave={leaveClassroom}
+                  lanaPalette={lanaPalette}
+                />
               </div>
             )}
 
