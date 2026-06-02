@@ -1109,9 +1109,9 @@ function ClassroomScene({
         }} />
       ))}
 
-      {/* Лана у входа */}
-      <div className="absolute" style={{ left: 6, bottom: 28 }}>
-        <PixelHuman palette={lanaPalette} facing={1} size={64} variant="girl" />
+      {/* Лана — ходит по классу (A/D или ← →) */}
+      <div className="absolute transition-none" style={{ left: lanaX, bottom: 28 }}>
+        <PixelHuman palette={lanaPalette} facing={facing} size={64} variant="girl" />
       </div>
 
       {/* Точки поиска */}
