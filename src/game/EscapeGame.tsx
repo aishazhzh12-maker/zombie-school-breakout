@@ -919,15 +919,12 @@ function SpotEl({ spot, taken, lit, hasKey, onClick }:
   );
 }
 
-// Детерминированный квест для класса: какая точка прячет ключ + 4-значный код двери.
+// Детерминированный квест для класса: определяет, какая точка прячет ключ.
 function getClassroomQuest(classroom: Classroom) {
   let h = 0;
   for (let i = 0; i < classroom.id.length; i++) h = (h * 31 + classroom.id.charCodeAt(i)) >>> 0;
   const keyIdx = h % classroom.spots.length;
-  const code = String(1000 + (h % 9000)).padStart(4, "0");
-  // Тип задания: 0 = только ключ, 1 = ключ + код-фонарь, 2 = ключ + код-фонарь
-  const variant = h % 3 === 0 ? "key-only" : "key-code";
-  return { keyIdx, code, variant: variant as "key-only" | "key-code" };
+  return { keyIdx };
 }
 
 const KEY_ITEM: LootItem = { name: "Ключ от двери", emoji: "🗝", strengthGain: 0 };
@@ -954,34 +951,12 @@ function ClassroomScene({
 
   const [keyFound, setKeyFound] = useState(false);
   const [doorOpen, setDoorOpen] = useState(false);
-  const [pin, setPin] = useState("");
-  const [codeRevealedUntil, setCodeRevealedUntil] = useState(0);
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    if (codeRevealedUntil === 0) return;
-    const id = setInterval(() => setNow(Date.now()), 200);
-    return () => clearInterval(id);
-  }, [codeRevealedUntil]);
-  const codeVisible = now < codeRevealedUntil;
 
-  const noCodeNeeded = quest.variant === "key-only";
-
-  const tryShine = () => {
-    if (!lit) { onToast("🔦 Нужен фонарик с зарядом"); return; }
-    if (!onConsumeBattery(10)) { onToast("🪫 Не хватает заряда"); return; }
-    setCodeRevealedUntil(Date.now() + 5000);
-    onToast(`🔦 Код виден ${5}с (−10% батареи)`);
-  };
-
-  const submitPin = () => {
+  const openDoor = () => {
     if (!keyFound) { onToast("🔒 Сначала найди ключ"); return; }
-    if (noCodeNeeded || pin === quest.code) {
-      setDoorOpen(true);
-      onToast("🚪 Дверь открыта! +15 монет");
-      onCollect({ name: "Открытая дверь", emoji: "🚪", hpGain: 0 }, classroom.spots[0]); // не используется, просто триггер
-    } else {
-      onToast("❌ Неверный код");
-    }
+    setDoorOpen(true);
+    onToast("🚪 Дверь открыта! +15 монет");
+    onCollect({ name: "Открытая дверь", emoji: "🚪", hpGain: 0 }, classroom.spots[0]);
   };
 
   const tryLeave = () => {
@@ -1049,7 +1024,7 @@ function ClassroomScene({
       <div className="absolute" style={{ left: 24, top: 28, width: 180, height: 90 }}>
         <div className="absolute inset-0 bg-[#0a2a1a] border-4 border-[#3a2a1a]" />
         <div className="absolute inset-2 text-[10px] font-pixel text-red-400 leading-tight">
-          ВЫХОДА НЕТ...<br/>НАЙДИ КЛЮЧ 🗝<br/>{!noCodeNeeded && "И КОД ОТ ДВЕРИ"}
+          ВЫХОДА НЕТ...<br/>НАЙДИ КЛЮЧ 🗝
         </div>
       </div>
 
@@ -1069,16 +1044,12 @@ function ClassroomScene({
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 bg-[#1a1a1a] border-2 border-[#5a5a5a] rounded-full">
           {doorOpen ? "🔓" : "🔒"}
         </div>
-        {/* код на двери (виден только при подсветке) */}
+        {/* статус двери */}
         <div className="absolute -bottom-1 left-0 right-0 text-center text-[10px] font-pixel">
           {doorOpen ? (
             <span className="text-emerald-300">✓ ОТКРЫТО</span>
-          ) : noCodeNeeded ? (
-            <span className="text-amber-200">{keyFound ? "Поверни ключ →" : "🔒 нужен ключ"}</span>
-          ) : codeVisible ? (
-            <span className="text-amber-200">КОД: <b className="text-yellow-300 tracking-widest">{quest.code}</b></span>
           ) : (
-            <span className="text-zinc-500">??-??-?? (посвети)</span>
+            <span className="text-amber-200">{keyFound ? "Поверни ключ →" : "🔒 нужен ключ"}</span>
           )}
         </div>
       </div>
@@ -1151,36 +1122,14 @@ function ClassroomScene({
         <span className={keyFound ? "text-emerald-300" : "text-amber-200"}>
           {keyFound ? "✓ Ключ 🗝" : "✗ Найди ключ 🗝"}
         </span>
-        {!noCodeNeeded && (
-          <span className={doorOpen ? "text-emerald-300" : "text-amber-200"}>
-            · {doorOpen ? "✓ Код" : `Введи код двери`}
-          </span>
-        )}
         <span className="text-zinc-400">· Точек: {remaining}/{classroom.spots.length}</span>
       </div>
 
       {/* Панель двери — управление квестом */}
       <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2 z-10">
         <div className="flex items-center gap-2 bg-black/85 border border-amber-700/60 rounded p-2">
-          {!noCodeNeeded && !doorOpen && (
-            <>
-              <Input
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="код"
-                className="h-8 w-20 text-center font-mono text-base"
-                inputMode="numeric"
-              />
-              <Button size="sm" onClick={submitPin} disabled={!keyFound || pin.length !== 4}>
-                Открыть 🔓
-              </Button>
-              <Button size="sm" variant="secondary" onClick={tryShine} disabled={!lit}>
-                <Flashlight className="h-3 w-3 mr-1" /> Посветить (−10%)
-              </Button>
-            </>
-          )}
-          {noCodeNeeded && !doorOpen && (
-            <Button size="sm" onClick={submitPin} disabled={!keyFound}>
+          {!doorOpen && (
+            <Button size="sm" onClick={openDoor} disabled={!keyFound}>
               {keyFound ? "🗝 Открыть дверь" : "🔒 Нужен ключ"}
             </Button>
           )}
