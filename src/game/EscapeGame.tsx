@@ -919,15 +919,19 @@ function SpotEl({ spot, taken, lit, hasKey, onClick }:
   );
 }
 
-// Детерминированный квест для класса: определяет, какая точка прячет ключ.
+// Детерминированный квест для класса: определяет, какая точка прячет ключ и биту.
 function getClassroomQuest(classroom: Classroom) {
   let h = 0;
   for (let i = 0; i < classroom.id.length; i++) h = (h * 31 + classroom.id.charCodeAt(i)) >>> 0;
-  const keyIdx = h % classroom.spots.length;
-  return { keyIdx };
+  const n = classroom.spots.length;
+  const keyIdx = h % n;
+  let batIdx = (h * 7 + 3) % n;
+  if (batIdx === keyIdx) batIdx = (batIdx + 1) % n;
+  return { keyIdx, batIdx };
 }
 
 const KEY_ITEM: LootItem = { name: "Ключ от двери", emoji: "🗝", strengthGain: 0 };
+const BAT_ITEM: LootItem = { name: "Бейсбольная бита", emoji: "🏏", strengthGain: 0 };
 
 // ====== Сцена внутри класса ======
 function ClassroomScene({
