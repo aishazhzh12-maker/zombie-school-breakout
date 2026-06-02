@@ -824,8 +824,8 @@ function ZombieHand({ delay = 0 }: { delay?: number }) {
 }
 
 // ====== Точка поиска в комнате ======
-function SpotEl({ spot, taken, lit, hasKey, onClick }:
-  { spot: SearchSpot; taken: boolean; lit: boolean; hasKey?: boolean; onClick: () => void }) {
+function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
+  { spot: SearchSpot; taken: boolean; lit: boolean; hasKey?: boolean; hasBat?: boolean; onClick: () => void }) {
   const x = spot.x;
   let body: React.ReactNode = null;
   let labelTop = 0;
