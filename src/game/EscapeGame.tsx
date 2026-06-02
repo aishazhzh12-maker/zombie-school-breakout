@@ -1932,7 +1932,7 @@ export default function EscapeGame() {
       {/* Modals */}
       {modal.kind !== "none" && (
         <div className="absolute inset-0 z-40 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border-2 border-primary/60 rounded-lg max-w-2xl w-full p-6 relative">
+          <div className={`bg-zinc-900 border-2 border-primary/60 rounded-lg w-full p-6 relative ${modal.kind === "search" ? "max-w-4xl" : "max-w-2xl"}`}>
             {modal.kind !== "win" && modal.kind !== "lose" && modal.kind !== "boss" && (
               <button onClick={() => setModal({ kind: "none" })} className="absolute top-2 right-2 text-zinc-400 hover:text-white">
                 <X className="h-5 w-5" />
