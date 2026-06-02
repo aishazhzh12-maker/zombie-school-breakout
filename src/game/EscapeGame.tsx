@@ -1132,21 +1132,16 @@ function ClassroomScene({
         );
       })}
 
-      {/* Темнота если нет фонаря или села батарея */}
-      {!lit && (
-        <div className="absolute inset-0 pointer-events-none"
-          style={{
-            background: "radial-gradient(circle at 8% 80%, rgba(0,0,0,0) 60px, rgba(0,0,0,0.94) 220px, rgba(0,0,0,0.98) 100%)",
-          }}>
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[11px] font-pixel text-red-300 animate-pulse">
-            🌑 темно — без фонарика не разглядеть точки и код
-          </div>
-        </div>
-      )}
+      {/* Лёгкий лунный полумрак — видно весь класс, но с атмосферой */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse 600px 320px at 65% 25%, rgba(180,200,255,0.10) 0%, rgba(0,0,0,0) 60%), linear-gradient(180deg, rgba(10,10,30,0.18), rgba(0,0,0,0.32))",
+        }} />
       {lit && (
         <div className="absolute inset-0 pointer-events-none"
           style={{
-            background: "radial-gradient(ellipse 420px 280px at 30% 75%, rgba(255,240,180,0.0) 0%, rgba(0,0,0,0.0) 40%, rgba(0,0,0,0.55) 95%)",
+            background: "radial-gradient(ellipse 460px 300px at 30% 75%, rgba(255,240,180,0.28) 0%, rgba(255,240,180,0.08) 40%, rgba(0,0,0,0) 75%)",
+            mixBlendMode: "screen",
           }} />
       )}
 
