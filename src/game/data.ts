@@ -145,7 +145,7 @@ export const levels: Level[] = [
       ]},
     ],
     zombies: [
-      { id: "l2-z1", x: 600, kind: "lock", name: "Зомби-завуч" },
+      { id: "l2-z1", x: 600, kind: "switches", name: "Зомби-завуч" },
       { id: "l2-z2", x: 1000, kind: "download", name: "Спящий секретарь", sleeping: true },
       { id: "l2-z3", x: 1200, kind: "download", name: "Зомби-секретарь" },
       { id: "l2-z4", x: 1800, kind: "reactor", name: "Зомби-повар" },
@@ -196,10 +196,10 @@ export const levels: Level[] = [
       { id: "l3-z2", x: 1000, kind: "quiz", name: "Спящий психолог", sleeping: true },
       { id: "l3-z3", x: 1200, kind: "quiz", name: "Зомби-психолог" },
       { id: "l3-z4", x: 1800, kind: "wires", name: "Зомби-электрик" },
-      { id: "l3-z5", x: 2150, kind: "lock", name: "Спящий охранник", sleeping: true },
-      { id: "l3-z6", x: 2500, kind: "lock", name: "Зомби-охранник" },
+      { id: "l3-z5", x: 2150, kind: "switches", name: "Спящий охранник", sleeping: true },
+      { id: "l3-z6", x: 2500, kind: "switches", name: "Зомби-охранник" },
       { id: "l3-z7", x: 2850, kind: "reactor", name: "Спящий завхоз", sleeping: true },
-      { id: "l3-z8", x: 3100, kind: "code", name: "Зомби-заместитель" },
+      { id: "l3-z8", x: 3100, kind: "download", name: "Зомби-заместитель" },
     ],
   },
 ];
