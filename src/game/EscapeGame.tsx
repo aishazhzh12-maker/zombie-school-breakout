@@ -896,15 +896,21 @@ function SpotEl({ spot, taken, lit, hasKey, onClick }:
           <div className="absolute inset-0 border border-amber-300/0 group-hover:border-amber-300/60 group-hover:bg-amber-200/5 rounded" />
         </div>
         {!taken && (
-          <div className="absolute font-pixel text-amber-200 text-[10px] bg-black/80 border border-amber-400/50 rounded px-1 animate-pulse"
+          <div className={`absolute font-pixel text-[10px] rounded px-1 animate-pulse border ${lit ? "text-amber-200 bg-black/80 border-amber-400/50" : "text-zinc-400 bg-black/80 border-zinc-700"}`}
             style={{ left: x - 24, bottom: 130 + labelTop }}>
-            🔍 искать
+            {lit ? "🔍 искать" : "???"}
           </div>
         )}
         {taken && spot.item && (
           <div className="absolute font-pixel text-emerald-300 text-[11px]"
             style={{ left: x - 14, bottom: 135 + labelTop }}>
-            ✓ {spot.item.emoji}
+            ✓ {hasKey ? "🗝" : spot.item.emoji}
+          </div>
+        )}
+        {taken && !spot.item && (
+          <div className="absolute font-pixel text-zinc-500 text-[10px]"
+            style={{ left: x - 14, bottom: 135 + labelTop }}>
+            ✗ пусто
           </div>
         )}
       </div>
