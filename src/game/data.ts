@@ -248,8 +248,8 @@ export const levels: Level[] = [
     ],
   },
   {
-    id: 3,
-    name: "3 этаж · Кабинет директора",
+    id: 5,
+    name: "5 этаж · Кабинет директора",
     worldW: 3600,
     exitX: 3450,
     classrooms: [
