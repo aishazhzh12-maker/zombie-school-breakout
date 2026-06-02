@@ -520,38 +520,6 @@ function SwitchesGame({ onDone }: { onDone: (ok: boolean) => void }) {
   );
 }
 
-// 7) MATH — solve arithmetic
-function MathGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const problem = useMemo(() => {
-    const a = 12 + Math.floor(Math.random() * 80);
-    const b = 7 + Math.floor(Math.random() * 40);
-    const ops = ["+", "-", "×"] as const;
-    const op = ops[Math.floor(Math.random() * 3)];
-    const ans = op === "+" ? a + b : op === "-" ? a - b : a * b;
-    return { a, b, op, ans };
-  }, []);
-  const [val, setVal] = useState("");
-  const [err, setErr] = useState(false);
-  const submit = () => {
-    if (parseInt(val, 10) === problem.ans) onDone(true);
-    else { setErr(true); setTimeout(() => setErr(false), 400); }
-  };
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">Реши пример, чтобы оглушить зомби.</p>
-      <div className={`text-4xl font-display text-primary ${err ? "shake" : ""}`}>
-        {problem.a} {problem.op} {problem.b} = ?
-      </div>
-      <Input autoFocus inputMode="numeric" value={val}
-        onChange={(e) => setVal(e.target.value.replace(/[^\d-]/g, "").slice(0, 6))}
-        onKeyDown={(e) => e.key === "Enter" && submit()}
-        className="text-center w-40 text-2xl font-mono" />
-      <Button onClick={submit} disabled={!val}>
-        <Calculator className="mr-2 h-4 w-4" /> Ответить
-      </Button>
-    </div>
-  );
-}
 
 // 8) QUIZ — school question
 const QUIZ_POOL = [
