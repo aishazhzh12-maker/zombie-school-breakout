@@ -905,7 +905,7 @@ function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
         {taken && spot.item && (
           <div className="absolute font-pixel text-emerald-300 text-[11px]"
             style={{ left: x - 14, bottom: 135 + labelTop }}>
-            ✓ {hasKey ? "🗝" : spot.item.emoji}
+            ✓ {hasKey ? "🗝" : hasBat ? "🏏" : spot.item.emoji}
           </div>
         )}
         {taken && !spot.item && (
