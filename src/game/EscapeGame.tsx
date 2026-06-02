@@ -1694,6 +1694,7 @@ export default function EscapeGame() {
               { id: "play", label: "Игра", icon: ArrowUp },
               { id: "outfit", label: "Одежда", icon: Shirt },
               { id: "shop", label: "Магазин", icon: ShoppingBag },
+              { id: "leaderboard", label: "Рекорды", icon: Trophy },
             ].map(t => (
               <button key={t.id} onClick={() => setMenuTab(t.id as typeof menuTab)}
                 className={`px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border ${menuTab === t.id ? "bg-primary text-primary-foreground border-primary" : "bg-black/40 border-zinc-700 text-zinc-300"}`}>
