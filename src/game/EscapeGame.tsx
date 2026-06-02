@@ -1582,12 +1582,15 @@ export default function EscapeGame() {
   };
 
   const buyOutfit = (o: Outfit) => {
-    if (save.outfit === o.id) return;
+    if (save.ownedOutfits.includes(o.id)) return;
     if (coins < o.price) { setToast("Не хватает монет"); setTimeout(() => setToast(""), 1500); return; }
-    const ns = { ...save, coins: coins - o.price, outfit: o.id };
+    const ownedOutfits = Array.from(new Set([...save.ownedOutfits, o.id]));
+    const ns = { ...save, coins: coins - o.price, outfit: o.id, ownedOutfits };
     setCoins(ns.coins); setSave(ns); writeSave(ns);
+    setToast(`Куплено: ${o.name}`); setTimeout(() => setToast(""), 1500);
   };
   const equipOutfit = (o: Outfit) => {
+    if (!save.ownedOutfits.includes(o.id)) return;
     const ns = { ...save, outfit: o.id };
     setSave(ns); writeSave(ns);
   };
