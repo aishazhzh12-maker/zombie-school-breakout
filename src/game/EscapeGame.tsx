@@ -7,8 +7,8 @@ import {
   type Classroom, type Zombie, type TaskKind, type LootItem, type SearchSpot,
 } from "./data";
 import {
-  Zap, KeyRound, Download, Flame, Trash2, ToggleRight,
-  Calculator, HelpCircle, Lock, Target,
+  Zap, Download, Flame, Trash2, ToggleRight,
+  HelpCircle, Target,
   X, Skull, Heart, DoorClosed, ArrowUp,
   Lightbulb, Coins, Shirt, ShoppingBag, Crosshair, Swords, Flashlight, Volume2, VolumeX,
   Backpack, Utensils, ArrowDown, BatteryFull, BatteryLow, Trophy,
