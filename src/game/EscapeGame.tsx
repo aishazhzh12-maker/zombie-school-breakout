@@ -824,8 +824,8 @@ function ZombieHand({ delay = 0 }: { delay?: number }) {
 }
 
 // ====== Точка поиска в комнате ======
-function SpotEl({ spot, taken, lit, hasKey, onClick }:
-  { spot: SearchSpot; taken: boolean; lit: boolean; hasKey?: boolean; onClick: () => void }) {
+function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
+  { spot: SearchSpot; taken: boolean; lit: boolean; hasKey?: boolean; hasBat?: boolean; onClick: () => void }) {
   const x = spot.x;
   let body: React.ReactNode = null;
   let labelTop = 0;
@@ -905,7 +905,7 @@ function SpotEl({ spot, taken, lit, hasKey, onClick }:
         {taken && spot.item && (
           <div className="absolute font-pixel text-emerald-300 text-[11px]"
             style={{ left: x - 14, bottom: 135 + labelTop }}>
-            ✓ {hasKey ? "🗝" : spot.item.emoji}
+            ✓ {hasKey ? "🗝" : hasBat ? "🏏" : spot.item.emoji}
           </div>
         )}
         {taken && !spot.item && (
@@ -919,15 +919,19 @@ function SpotEl({ spot, taken, lit, hasKey, onClick }:
   );
 }
 
-// Детерминированный квест для класса: определяет, какая точка прячет ключ.
+// Детерминированный квест для класса: определяет, какая точка прячет ключ и биту.
 function getClassroomQuest(classroom: Classroom) {
   let h = 0;
   for (let i = 0; i < classroom.id.length; i++) h = (h * 31 + classroom.id.charCodeAt(i)) >>> 0;
-  const keyIdx = h % classroom.spots.length;
-  return { keyIdx };
+  const n = classroom.spots.length;
+  const keyIdx = h % n;
+  let batIdx = (h * 7 + 3) % n;
+  if (batIdx === keyIdx) batIdx = (batIdx + 1) % n;
+  return { keyIdx, batIdx };
 }
 
 const KEY_ITEM: LootItem = { name: "Ключ от двери", emoji: "🗝", strengthGain: 0 };
+const BAT_ITEM: LootItem = { name: "Бейсбольная бита", emoji: "🏏", strengthGain: 0 };
 
 // ====== Сцена внутри класса ======
 function ClassroomScene({
@@ -948,8 +952,10 @@ function ClassroomScene({
   const remaining = classroom.spots.filter(s => !taken.has(s.id)).length;
   const quest = useMemo(() => getClassroomQuest(classroom), [classroom]);
   const keySpotId = classroom.spots[quest.keyIdx]?.id;
+  const batSpotId = classroom.spots[quest.batIdx]?.id;
 
   const [keyFound, setKeyFound] = useState(false);
+  const [batFound, setBatFound] = useState(false);
   const [doorOpen, setDoorOpen] = useState(false);
 
   // Передвижение Ланы по классу (A/D или стрелки)
@@ -1117,8 +1123,9 @@ function ClassroomScene({
       {/* Точки поиска */}
       {classroom.spots.map(spot => {
         const isKeySpot = spot.id === keySpotId;
+        const isBatSpot = spot.id === batSpotId;
         return (
-          <SpotEl key={spot.id} spot={spot} taken={taken.has(spot.id)} lit={lit} hasKey={isKeySpot}
+          <SpotEl key={spot.id} spot={spot} taken={taken.has(spot.id)} lit={lit} hasKey={isKeySpot} hasBat={isBatSpot}
             onClick={() => {
               if (taken.has(spot.id)) return;
               setTaken(prev => new Set(prev).add(spot.id));
@@ -1126,8 +1133,13 @@ function ClassroomScene({
                 setKeyFound(true);
                 onCollect(KEY_ITEM, spot);
                 onToast("🗝 Ключ от двери найден!");
+              } else if (isBatSpot) {
+                setBatFound(true);
+                onCollect(BAT_ITEM, spot);
+                onToast("🏏 Бита найдена! Удар по зомби — клавиша G");
+              } else if (spot.item) {
+                onCollect(spot.item, spot);
               }
-              if (spot.item) onCollect(spot.item, spot);
             }} />
         );
       })}
@@ -1149,6 +1161,9 @@ function ClassroomScene({
       <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-pixel bg-black/85 px-3 py-1 rounded border border-amber-400/40 flex items-center gap-3 z-10">
         <span className={keyFound ? "text-emerald-300" : "text-amber-200"}>
           {keyFound ? "✓ Ключ 🗝" : "✗ Найди ключ 🗝"}
+        </span>
+        <span className={batFound ? "text-emerald-300" : "text-amber-200"}>
+          {batFound ? "✓ Бита 🏏" : "✗ Найди биту 🏏"}
         </span>
         <span className="text-zinc-400">· Точек: {remaining}/{classroom.spots.length}</span>
       </div>
@@ -2169,6 +2184,15 @@ export default function EscapeGame() {
                     if (loot.emoji === "🗝") {
                       // ключ — не кладём в рюкзак, просто бонус
                       setCoins(c => c + 5);
+                      return;
+                    }
+                    if (loot.emoji === "🏏") {
+                      // бита — +1 удар (одноразовый)
+                      setBatLeft(n => {
+                        const nn = n + 1;
+                        setSave(s => { const ns = { ...s, owned: { ...s.owned, bat: nn } }; writeSave(ns); return ns; });
+                        return nn;
+                      });
                       return;
                     }
                     collectSpotItem(loot, spot);
