@@ -1200,7 +1200,15 @@ function ClassroomScene({
 export default function EscapeGame() {
   // Persisted (menu / shop)
   const [save, setSave] = useState<SaveData>(() => loadSave());
-  const [menuTab, setMenuTab] = useState<"play" | "outfit" | "shop">("play");
+  const [menuTab, setMenuTab] = useState<"play" | "outfit" | "shop" | "leaderboard">("play");
+  const [playerName, setPlayerName] = useState<string>(() => {
+    if (typeof window === "undefined") return "Лана";
+    return localStorage.getItem("lana_player_name") || "Лана";
+  });
+  const [leaderboardKey, setLeaderboardKey] = useState(0);
+  const startTimeRef = useRef<number>(0);
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [submittingScore, setSubmittingScore] = useState(false);
 
   const [started, setStarted] = useState(false);
   const [level, setLevel] = useState(0);
