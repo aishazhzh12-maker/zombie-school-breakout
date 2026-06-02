@@ -686,9 +686,9 @@ function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
 // ============== TASK ICONS ==============
 function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string }) {
   const map: Record<TaskKind, typeof Zap> = {
-    wires: Zap, code: KeyRound, download: Download, reactor: Flame,
+    wires: Zap, download: Download, reactor: Flame,
     trash: Trash2, switches: ToggleRight,
-    quiz: HelpCircle, lock: Lock, aim: Target,
+    quiz: HelpCircle, aim: Target,
   };
   const I = map[kind];
   return <I className={className} />;
@@ -755,8 +755,8 @@ const REACH = 70;
 
 // Task time limits (seconds). aim has its own timer.
 const TIME_LIMITS: Record<TaskKind, number | null> = {
-  wires: 14, code: 18, download: 10, reactor: 22,
-  trash: 12, switches: 10, quiz: 10, lock: 25, aim: null,
+  wires: 14, download: 10, reactor: 22,
+  trash: 12, switches: 10, quiz: 10, aim: null,
 };
 
 // Countdown above each task — calls onTimeout when 0.
