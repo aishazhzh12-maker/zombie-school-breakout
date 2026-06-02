@@ -952,8 +952,10 @@ function ClassroomScene({
   const remaining = classroom.spots.filter(s => !taken.has(s.id)).length;
   const quest = useMemo(() => getClassroomQuest(classroom), [classroom]);
   const keySpotId = classroom.spots[quest.keyIdx]?.id;
+  const batSpotId = classroom.spots[quest.batIdx]?.id;
 
   const [keyFound, setKeyFound] = useState(false);
+  const [batFound, setBatFound] = useState(false);
   const [doorOpen, setDoorOpen] = useState(false);
 
   // Передвижение Ланы по классу (A/D или стрелки)
