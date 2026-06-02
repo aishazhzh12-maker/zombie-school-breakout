@@ -2123,9 +2123,27 @@ export default function EscapeGame() {
                   classroom={modal.classroom}
                   hasFlashlight={hasFlashlight}
                   batteryPct={battery}
-                  onCollect={collectSpotItem}
+                  onCollect={(loot, spot) => {
+                    if (loot.emoji === "🚪") {
+                      // триггер "дверь открыта" — даём награду
+                      setCoins(c => c + 15);
+                      return;
+                    }
+                    if (loot.emoji === "🗝") {
+                      // ключ — не кладём в рюкзак, просто бонус
+                      setCoins(c => c + 5);
+                      return;
+                    }
+                    collectSpotItem(loot, spot);
+                  }}
                   onLeave={leaveClassroom}
                   lanaPalette={lanaPalette}
+                  onConsumeBattery={(n) => {
+                    if (battery < n) return false;
+                    setBattery(b => Math.max(0, b - n));
+                    return true;
+                  }}
+                  onToast={(m) => { setToast(m); setTimeout(() => setToast(""), 1600); }}
                 />
               </div>
             )}
