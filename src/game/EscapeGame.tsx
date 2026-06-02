@@ -837,19 +837,37 @@ function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
         <div className="absolute" style={{ left: x - 50, bottom: 18, width: 100, height: 110 }}>
           <div className="absolute inset-0 border border-amber-300/0 group-hover:border-amber-300/60 group-hover:bg-amber-200/5 rounded" />
         </div>
+        {!taken && lit && (spot.item || hasKey || hasBat) && (
+          <div
+            className="absolute flex items-center justify-center animate-pulse pointer-events-none"
+            style={{
+              left: x - 24,
+              bottom: 108 + labelTop,
+              width: 48,
+              height: 48,
+              fontSize: 36,
+              lineHeight: 1,
+              textShadow: "0 0 10px rgba(255,220,120,0.95), 0 2px 4px rgba(0,0,0,0.9)",
+              filter: "drop-shadow(0 0 6px rgba(255,200,80,0.8))",
+            }}
+            title={hasKey ? "Ключ" : hasBat ? "Бита" : spot.item?.name}
+          >
+            {hasKey ? "🗝" : hasBat ? "🏏" : spot.item!.emoji}
+          </div>
+        )}
         {!taken && (
           <div className={`absolute font-pixel text-[10px] rounded px-1 animate-pulse border ${lit ? "text-amber-200 bg-black/80 border-amber-400/50" : "text-zinc-400 bg-black/80 border-zinc-700"}`}
-            style={{ left: x - 24, bottom: 130 + labelTop }}>
+            style={{ left: x - 24, bottom: 160 + labelTop }}>
             {lit ? "🔍 искать" : "???"}
           </div>
         )}
-        {taken && spot.item && (
-          <div className="absolute font-pixel text-emerald-300 text-[11px]"
+        {taken && (spot.item || hasKey || hasBat) && (
+          <div className="absolute font-pixel text-emerald-300 text-[13px]"
             style={{ left: x - 14, bottom: 135 + labelTop }}>
-            ✓ {hasKey ? "🗝" : hasBat ? "🏏" : spot.item.emoji}
+            ✓ {hasKey ? "🗝" : hasBat ? "🏏" : spot.item!.emoji}
           </div>
         )}
-        {taken && !spot.item && (
+        {taken && !spot.item && !hasKey && !hasBat && (
           <div className="absolute font-pixel text-zinc-500 text-[10px]"
             style={{ left: x - 14, bottom: 135 + labelTop }}>
             ✗ пусто
