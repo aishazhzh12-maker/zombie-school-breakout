@@ -2030,6 +2030,7 @@ export default function EscapeGame() {
                     setSearched(new Set());
                     setInv([]);
                     setHunger(MAX_HUNGER);
+                    setBattery(b => Math.min(MAX_BATTERY, b + 40));
                     wokenRef.current = new Set();
                     setHp(h => Math.min(maxHp, h + 20));
                     setModal({ kind: "none" });
