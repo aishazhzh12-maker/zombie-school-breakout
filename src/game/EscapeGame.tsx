@@ -1123,8 +1123,9 @@ function ClassroomScene({
       {/* Точки поиска */}
       {classroom.spots.map(spot => {
         const isKeySpot = spot.id === keySpotId;
+        const isBatSpot = spot.id === batSpotId;
         return (
-          <SpotEl key={spot.id} spot={spot} taken={taken.has(spot.id)} lit={lit} hasKey={isKeySpot}
+          <SpotEl key={spot.id} spot={spot} taken={taken.has(spot.id)} lit={lit} hasKey={isKeySpot} hasBat={isBatSpot}
             onClick={() => {
               if (taken.has(spot.id)) return;
               setTaken(prev => new Set(prev).add(spot.id));
@@ -1132,8 +1133,13 @@ function ClassroomScene({
                 setKeyFound(true);
                 onCollect(KEY_ITEM, spot);
                 onToast("🗝 Ключ от двери найден!");
+              } else if (isBatSpot) {
+                setBatFound(true);
+                onCollect(BAT_ITEM, spot);
+                onToast("🏏 Бита найдена! Удар по зомби — клавиша G");
+              } else if (spot.item) {
+                onCollect(spot.item, spot);
               }
-              if (spot.item) onCollect(spot.item, spot);
             }} />
         );
       })}
