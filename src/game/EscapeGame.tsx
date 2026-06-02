@@ -1618,7 +1618,34 @@ export default function EscapeGame() {
     setFoundFlashlight(false);
     wokenRef.current = new Set();
     setModal({ kind: "none" });
+    startTimeRef.current = Date.now();
+    setScoreSubmitted(false);
     setStarted(true);
+  };
+
+  const submitMyScore = async (won: boolean) => {
+    if (scoreSubmitted || submittingScore) return;
+    setSubmittingScore(true);
+    try {
+      const name = (playerName || "Лана").trim().slice(0, 24) || "Лана";
+      if (typeof window !== "undefined") localStorage.setItem("lana_player_name", name);
+      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      await submitScore({
+        name,
+        coins: coins + (won ? 200 : 0),
+        levels_completed: won ? levels.length : level,
+        time_seconds: elapsed,
+        won,
+      });
+      setScoreSubmitted(true);
+      setLeaderboardKey(k => k + 1);
+      setToast("Рекорд отправлен!");
+    } catch (e: any) {
+      setToast("Ошибка отправки: " + (e?.message ?? "неизвестно"));
+    } finally {
+      setSubmittingScore(false);
+      setTimeout(() => setToast(""), 2000);
+    }
   };
 
   const buyOutfit = (o: Outfit) => {
