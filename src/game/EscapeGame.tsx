@@ -794,7 +794,288 @@ function TaskTimer({ seconds, onTimeout }: { seconds: number; onTimeout: () => v
   );
 }
 
-export default function EscapeGame() {
+// ====== Зомби-рука, тянущаяся через окно ======
+function ZombieHand({ delay = 0 }: { delay?: number }) {
+  return (
+    <svg viewBox="0 0 40 70" width={40} height={70}
+      style={{ animation: `lana-walk 1.8s ease-in-out infinite`, animationDelay: `${delay}s`, transformOrigin: "50% 0%" }}>
+      {/* предплечье */}
+      <rect x="14" y="20" width="12" height="38" fill="#5a7a4a" stroke="#1a2a14" strokeWidth="1.5" />
+      <rect x="14" y="30" width="12" height="3" fill="#3a5a2a" opacity="0.7" />
+      <rect x="14" y="45" width="12" height="3" fill="#3a5a2a" opacity="0.7" />
+      {/* кровавые царапины */}
+      <line x1="16" y1="25" x2="22" y2="35" stroke="#7a0a0a" strokeWidth="1.2" />
+      <line x1="20" y1="40" x2="24" y2="50" stroke="#7a0a0a" strokeWidth="1.2" />
+      {/* ладонь */}
+      <rect x="12" y="6" width="16" height="16" fill="#6a8a5a" stroke="#1a2a14" strokeWidth="1.5" />
+      {/* пальцы */}
+      <rect x="11" y="0" width="3" height="10" fill="#6a8a5a" stroke="#1a2a14" strokeWidth="1" />
+      <rect x="15" y="-2" width="3" height="12" fill="#6a8a5a" stroke="#1a2a14" strokeWidth="1" />
+      <rect x="19" y="-2" width="3" height="12" fill="#6a8a5a" stroke="#1a2a14" strokeWidth="1" />
+      <rect x="23" y="0" width="3" height="10" fill="#6a8a5a" stroke="#1a2a14" strokeWidth="1" />
+      {/* ногти */}
+      <rect x="11" y="0" width="3" height="2" fill="#3a0a0a" />
+      <rect x="15" y="-2" width="3" height="2" fill="#3a0a0a" />
+      <rect x="19" y="-2" width="3" height="2" fill="#3a0a0a" />
+      <rect x="23" y="0" width="3" height="2" fill="#3a0a0a" />
+    </svg>
+  );
+}
+
+// ====== Точка поиска в комнате ======
+function SpotEl({ spot, taken, onClick }:
+  { spot: SearchSpot; taken: boolean; onClick: () => void }) {
+  const x = spot.x;
+  let body: React.ReactNode = null;
+  let labelTop = 0;
+  if (spot.where === "desk") {
+    // парта
+    body = (
+      <div className="absolute" style={{ left: x - 50, bottom: 24, width: 100, height: 56 }}>
+        <div className="absolute left-0 right-0 top-0 h-3 bg-[#8a6a3a] border-2 border-[#3a2a14]" />
+        <div className="absolute left-2 top-3 bottom-0 w-3 bg-[#5a3a1a] border-2 border-[#1a0a00]" />
+        <div className="absolute right-2 top-3 bottom-0 w-3 bg-[#5a3a1a] border-2 border-[#1a0a00]" />
+        <div className="absolute left-12 top-1 w-5 h-2 bg-[#c9bfa8]" title="бумаги" />
+      </div>
+    );
+    labelTop = 8;
+  } else if (spot.where === "underDesk") {
+    // под партой — щель
+    body = (
+      <div className="absolute" style={{ left: x - 50, bottom: 24, width: 100, height: 56 }}>
+        <div className="absolute left-0 right-0 top-0 h-3 bg-[#7a5a2a] border-2 border-[#2a1a08]" />
+        <div className="absolute left-2 top-3 bottom-0 w-3 bg-[#4a2a14] border-2 border-[#1a0a00]" />
+        <div className="absolute right-2 top-3 bottom-0 w-3 bg-[#4a2a14] border-2 border-[#1a0a00]" />
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-2 text-[9px] font-pixel text-amber-200/70">↓ под партой</div>
+      </div>
+    );
+    labelTop = 56;
+  } else if (spot.where === "shelf") {
+    body = (
+      <div className="absolute" style={{ left: x - 40, bottom: 100, width: 80, height: 80 }}>
+        <div className="absolute inset-0 bg-[#3a2a1a] border-2 border-[#1a0a00]" />
+        <div className="absolute left-1 right-1 top-3 h-1 bg-[#1a0a00]" />
+        <div className="absolute left-1 right-1 top-1/2 h-1 bg-[#1a0a00]" />
+        <div className="absolute left-2 top-5 w-3 h-6 bg-red-900" />
+        <div className="absolute left-7 top-5 w-3 h-6 bg-blue-900" />
+        <div className="absolute left-12 top-5 w-3 h-6 bg-yellow-900" />
+      </div>
+    );
+    labelTop = -8;
+  } else if (spot.where === "drawer") {
+    body = (
+      <div className="absolute" style={{ left: x - 32, bottom: 30, width: 64, height: 50 }}>
+        <div className="absolute inset-0 bg-[#4a3a2a] border-2 border-[#1a0a00]" />
+        <div className="absolute left-2 right-2 top-2 h-3 bg-[#2a1a08]" />
+        <div className="absolute left-2 right-2 top-7 h-3 bg-[#2a1a08]" />
+        <div className="absolute left-1/2 -translate-x-1/2 top-12 w-3 h-1 bg-[#c9a868]" />
+      </div>
+    );
+    labelTop = -8;
+  } else {
+    // trash
+    body = (
+      <div className="absolute" style={{ left: x - 22, bottom: 24, width: 44, height: 50 }}>
+        <div className="absolute inset-x-0 bottom-0 h-12 bg-[#3a3a3a] border-2 border-black" style={{ clipPath: "polygon(8% 0,92% 0,100% 100%,0 100%)" }} />
+        <div className="absolute inset-x-0 top-0 h-2 bg-[#5a5a5a] border border-black" />
+      </div>
+    );
+    labelTop = -10;
+  }
+  return (
+    <button
+      onClick={onClick}
+      disabled={taken}
+      className={`group ${taken ? "opacity-40 cursor-default" : "hover:brightness-125 cursor-pointer"}`}
+      style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%", background: "transparent", border: 0, pointerEvents: "none" }}
+    >
+      <div style={{ pointerEvents: taken ? "none" : "auto", position: "absolute", inset: 0 }}>
+        {body}
+        {/* кликабельная подсветка зоны */}
+        <div className="absolute" style={{ left: x - 50, bottom: 18, width: 100, height: 110 }}>
+          <div className="absolute inset-0 border border-amber-300/0 group-hover:border-amber-300/60 group-hover:bg-amber-200/5 rounded" />
+        </div>
+        {!taken && (
+          <div className="absolute font-pixel text-amber-200 text-[10px] bg-black/80 border border-amber-400/50 rounded px-1 animate-pulse"
+            style={{ left: x - 24, bottom: 130 + labelTop }}>
+            🔍 искать
+          </div>
+        )}
+        {taken && spot.item && (
+          <div className="absolute font-pixel text-emerald-300 text-[11px]"
+            style={{ left: x - 14, bottom: 135 + labelTop }}>
+            ✓ {spot.item.emoji}
+          </div>
+        )}
+      </div>
+    </button>
+  );
+}
+
+// ====== Сцена внутри класса ======
+function ClassroomScene({
+  classroom, hasFlashlight, batteryPct, onCollect, onLeave,
+  lanaPalette,
+}: {
+  classroom: Classroom;
+  hasFlashlight: boolean;
+  batteryPct: number;
+  onCollect: (item: LootItem, spot: SearchSpot) => void;
+  onLeave: () => void;
+  lanaPalette: PixelPalette;
+}) {
+  const [taken, setTaken] = useState<Set<string>>(new Set());
+  const lit = hasFlashlight && batteryPct > 0;
+  const remaining = classroom.spots.filter(s => !taken.has(s.id)).length;
+  return (
+    <div className="relative w-full overflow-hidden border-2 border-zinc-800 rounded bg-[#0a0610]"
+      style={{ height: 360 }}>
+      {/* задняя стена */}
+      <div className="absolute inset-x-0 top-0" style={{
+        height: 220,
+        background: "linear-gradient(180deg,#1a1018,#0d0610 70%,#080308)",
+      }} />
+      {/* трещины на стене */}
+      <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 800 360" preserveAspectRatio="none">
+        <path d="M 40 60 L 80 100 L 60 140 L 110 180" stroke="#1a0a0a" strokeWidth="1.5" fill="none" />
+        <path d="M 700 30 L 750 80 L 720 130 L 770 180" stroke="#1a0a0a" strokeWidth="1.5" fill="none" />
+      </svg>
+      {/* потеки крови */}
+      <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 800 360" preserveAspectRatio="none">
+        <path d="M 250 20 C 240 70, 270 110, 245 160" stroke="#5a0a0a" strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.85" />
+        <circle cx="245" cy="160" r="6" fill="#5a0a0a" />
+        <path d="M 580 0 C 575 40, 600 70, 585 110" stroke="#5a0a0a" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.8" />
+      </svg>
+
+      {/* ОКНО с луной и зомби-руками */}
+      <div className="absolute" style={{ left: 460, top: 18, width: 200, height: 140 }}>
+        {/* небо за окном */}
+        <div className="absolute inset-0 border-4 border-zinc-700 overflow-hidden"
+          style={{ background: "linear-gradient(180deg,#0d1a3a 0%,#1a2550 40%,#0a1530 100%)" }}>
+          {/* звёзды */}
+          {Array.from({ length: 18 }).map((_, i) => (
+            <div key={i} className="absolute bg-white rounded-full" style={{
+              left: `${(i * 53) % 100}%`, top: `${(i * 37) % 75}%`,
+              width: 2, height: 2, opacity: 0.3 + ((i * 11) % 7) / 10,
+            }} />
+          ))}
+          {/* луна */}
+          <div className="absolute" style={{
+            top: 16, right: 16, width: 56, height: 56, borderRadius: "50%",
+            background: "radial-gradient(circle at 35% 35%, #fef9d4 0%, #e8dca0 55%, #a89c60 100%)",
+            boxShadow: "0 0 40px 10px rgba(254,249,212,0.45), 0 0 80px 20px rgba(254,249,212,0.18)",
+          }}>
+            {/* кратеры */}
+            <div className="absolute bg-[#a89c60]/60 rounded-full" style={{ left: 14, top: 18, width: 6, height: 6 }} />
+            <div className="absolute bg-[#a89c60]/60 rounded-full" style={{ left: 30, top: 30, width: 4, height: 4 }} />
+            <div className="absolute bg-[#a89c60]/60 rounded-full" style={{ left: 22, top: 38, width: 5, height: 5 }} />
+          </div>
+          {/* облако перед луной */}
+          <div className="absolute bg-zinc-700/40 rounded-full blur-md" style={{ top: 40, right: 4, width: 80, height: 12 }} />
+          {/* силуэты школы вдалеке */}
+          <div className="absolute bottom-0 left-0 right-0 h-6 bg-[#050810]" style={{
+            clipPath: "polygon(0 100%,0 60%,8% 50%,15% 60%,22% 30%,32% 40%,42% 20%,52% 35%,62% 25%,72% 45%,82% 35%,92% 55%,100% 45%,100% 100%)",
+          }} />
+        </div>
+        {/* рама-крест */}
+        <div className="absolute top-0 bottom-0 w-[3px] bg-zinc-700" style={{ left: "50%" }} />
+        <div className="absolute left-0 right-0 h-[3px] bg-zinc-700" style={{ top: "50%" }} />
+        {/* трещины на стекле */}
+        <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 200 140" preserveAspectRatio="none">
+          <line x1="0" y1="0" x2="80" y2="50" stroke="#cfd6dc" strokeWidth="0.6" opacity="0.6" />
+          <line x1="200" y1="20" x2="120" y2="90" stroke="#cfd6dc" strokeWidth="0.6" opacity="0.6" />
+          <line x1="30" y1="140" x2="100" y2="80" stroke="#cfd6dc" strokeWidth="0.6" opacity="0.6" />
+        </svg>
+        {/* зомби-руки тянутся внутрь */}
+        <div className="absolute" style={{ left: 6, bottom: -34, transform: "rotate(-12deg)" }}>
+          <ZombieHand delay={0} />
+        </div>
+        <div className="absolute" style={{ left: 100, bottom: -38, transform: "rotate(8deg)" }}>
+          <ZombieHand delay={0.4} />
+        </div>
+        <div className="absolute" style={{ right: -6, bottom: -28, transform: "rotate(20deg) scaleX(-1)" }}>
+          <ZombieHand delay={0.8} />
+        </div>
+        {/* кровь у подоконника */}
+        <div className="absolute -bottom-1 left-2 right-2 h-2 bg-[#5a0a0a] opacity-80" />
+        {/* подпись */}
+        <div className="absolute -top-4 left-2 text-[9px] font-pixel text-red-300 animate-pulse">⚠ они снаружи</div>
+      </div>
+
+      {/* Доска */}
+      <div className="absolute" style={{ left: 24, top: 28, width: 200, height: 100 }}>
+        <div className="absolute inset-0 bg-[#0a2a1a] border-4 border-[#3a2a1a]" />
+        <div className="absolute inset-2 text-[11px] font-pixel text-red-400 leading-tight">
+          ВЫХОДА<br/>НЕТ...<br/>БЕГИ
+        </div>
+      </div>
+      {/* Шкаф / батарея отопления для атмосферы */}
+      <div className="absolute" style={{ left: 250, top: 100, width: 70, height: 60 }}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="absolute top-0 bottom-0 w-2 bg-[#5a5a5a] border border-black" style={{ left: i * 11 }} />
+        ))}
+      </div>
+
+      {/* Пол */}
+      <div className="absolute inset-x-0 bottom-0" style={{
+        height: 140,
+        background: "repeating-linear-gradient(90deg,#2a1f1a 0 50px,#1f1612 50px 100px)",
+        boxShadow: "inset 0 4px 0 #0a0606",
+      }} />
+      {/* мусор на полу */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="absolute" style={{
+          left: 40 + i * 90, bottom: 6 + ((i * 7) % 12),
+          width: 12, height: 8,
+          background: i % 2 ? "#c9bfa8" : "#5a3a1a",
+          transform: `rotate(${(i * 47) % 360}deg)`, opacity: 0.7,
+        }} />
+      ))}
+
+      {/* Лана у входа */}
+      <div className="absolute" style={{ left: 6, bottom: 18 }}>
+        <PixelHuman palette={lanaPalette} facing={1} size={64} variant="girl" />
+      </div>
+
+      {/* Точки поиска */}
+      {classroom.spots.map(spot => (
+        <SpotEl key={spot.id} spot={spot} taken={taken.has(spot.id)} onClick={() => {
+          if (taken.has(spot.id)) return;
+          setTaken(prev => new Set(prev).add(spot.id));
+          if (spot.item) onCollect(spot.item, spot);
+        }} />
+      ))}
+
+      {/* Темнота если нет фонаря или села батарея */}
+      {!lit && (
+        <div className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(circle at 8% 80%, rgba(0,0,0,0) 60px, rgba(0,0,0,0.92) 220px, rgba(0,0,0,0.98) 100%)",
+          }}>
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[11px] font-pixel text-red-300 animate-pulse">
+            🌑 темно — нужен фонарик с зарядом
+          </div>
+        </div>
+      )}
+      {lit && (
+        <div className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse 380px 260px at 30% 75%, rgba(255,240,180,0.0) 0%, rgba(0,0,0,0.0) 40%, rgba(0,0,0,0.55) 95%)",
+          }} />
+      )}
+
+      {/* Подпись */}
+      <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-pixel text-amber-200/90 bg-black/70 px-2 py-0.5 rounded border border-amber-400/40">
+        🔍 Осталось точек: {remaining}/{classroom.spots.length} · кликай по партам, шкафам, ящикам
+      </div>
+      <div className="absolute bottom-2 right-2">
+        <Button size="sm" variant="secondary" onClick={onLeave}>← Выйти в коридор</Button>
+      </div>
+    </div>
+  );
+}
+
+
   // Persisted (menu / shop)
   const [save, setSave] = useState<SaveData>(() => loadSave());
   const [menuTab, setMenuTab] = useState<"play" | "outfit" | "shop">("play");
