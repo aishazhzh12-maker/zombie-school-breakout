@@ -3,11 +3,32 @@ export type TaskKind =
   | "wires" | "code" | "download" | "reactor" | "trash" | "switches"
   | "quiz" | "lock" | "aim";
 
+export type LootItem = {
+  name: string;
+  emoji: string;
+  hpGain?: number;
+  strengthGain?: number;
+  foodGain?: number;
+  battery?: number;     // заряжает фонарь на N% при использовании
+  givesFlashlight?: boolean; // даёт фонарик, если его не было
+};
+
+export type SearchSpot = {
+  id: string;
+  // относительное место в комнате
+  where: "desk" | "underDesk" | "shelf" | "drawer" | "trash";
+  x: number; // px относительно сцены 800px
+  item?: LootItem; // если undefined — пусто
+};
+
 export type Classroom = {
   id: string;
   x: number;
   name: string;
-  loot: { name: string; emoji: string; hpGain?: number; strengthGain?: number; foodGain?: number };
+  // legacy — оставляем как «главную» находку (для совместимости)
+  loot: LootItem;
+  // новые точки поиска внутри класса
+  spots: SearchSpot[];
 };
 
 export type Zombie = {
@@ -15,7 +36,7 @@ export type Zombie = {
   x: number;
   kind: TaskKind;
   name: string;
-  sleeping?: boolean; // стоит, смотрит в потолок. Услышит — съест.
+  sleeping?: boolean;
 };
 
 export type Level = {
@@ -30,6 +51,21 @@ export type Level = {
 export const FLOOR_Y = 410;
 export const CEIL_Y = 90;
 
+// --- helpers ---
+const FLASHLIGHT: LootItem = { name: "Фонарик", emoji: "🔦", givesFlashlight: true, battery: 100 };
+const BATTERY_S: LootItem = { name: "Батарейка АА", emoji: "🔋", battery: 35 };
+const BATTERY_M: LootItem = { name: "Батарейка Крона", emoji: "🪫", battery: 60 };
+const APTECHKA:  LootItem = { name: "Аптечка", emoji: "🩹", hpGain: 40 };
+const BANDAGE:   LootItem = { name: "Бинт", emoji: "🩹", hpGain: 25 };
+const SANDWICH:  LootItem = { name: "Бутерброд", emoji: "🥪", hpGain: 8, foodGain: 35 };
+const CHOCO:     LootItem = { name: "Шоколад", emoji: "🍫", hpGain: 5, foodGain: 30 };
+const ENERGY:    LootItem = { name: "Энергетик", emoji: "⚡", hpGain: 10, strengthGain: 1, foodGain: 20 };
+const SOUP:      LootItem = { name: "Обед", emoji: "🍲", hpGain: 20, foodGain: 50 };
+const PROTEIN:   LootItem = { name: "Протеин", emoji: "💪", hpGain: 15, strengthGain: 1, foodGain: 25 };
+const BOOK:      LootItem = { name: "Учебник", emoji: "📕", strengthGain: 1 };
+const ACID:      LootItem = { name: "Кислота", emoji: "🧪", strengthGain: 2 };
+const MOP:       LootItem = { name: "Швабра", emoji: "🧹", strengthGain: 1 };
+
 export const levels: Level[] = [
   {
     id: 1,
@@ -37,10 +73,30 @@ export const levels: Level[] = [
     worldW: 3000,
     exitX: 2850,
     classrooms: [
-      { id: "l1-21", x: 300, name: "Кабинет физики №21", loot: { name: "Бутерброд", emoji: "🥪", hpGain: 10, foodGain: 35 } },
-      { id: "l1-18", x: 750, name: "Кабинет химии №18", loot: { name: "Аптечка", emoji: "🩹", hpGain: 40 } },
-      { id: "l1-7", x: 1450, name: "Кабинет литературы", loot: { name: "Энергетик", emoji: "⚡", hpGain: 10, strengthGain: 1, foodGain: 20 } },
-      { id: "l1-bio", x: 2150, name: "Кабинет биологии", loot: { name: "Швабра", emoji: "🧹", strengthGain: 1 } },
+      { id: "l1-21", x: 300, name: "Кабинет физики №21", loot: SANDWICH, spots: [
+        { id: "s1", where: "desk", x: 200, item: SANDWICH },
+        { id: "s2", where: "underDesk", x: 380, item: BATTERY_S },
+        { id: "s3", where: "shelf", x: 560, item: BOOK },
+        { id: "s4", where: "drawer", x: 680 },
+      ]},
+      { id: "l1-18", x: 750, name: "Кабинет химии №18", loot: APTECHKA, spots: [
+        { id: "s1", where: "shelf", x: 180, item: APTECHKA },
+        { id: "s2", where: "desk", x: 360, item: ACID },
+        { id: "s3", where: "underDesk", x: 540, item: BATTERY_S },
+        { id: "s4", where: "trash", x: 700 },
+      ]},
+      { id: "l1-7", x: 1450, name: "Кабинет литературы", loot: ENERGY, spots: [
+        { id: "s1", where: "desk", x: 200, item: ENERGY },
+        { id: "s2", where: "desk", x: 380, item: BOOK },
+        { id: "s3", where: "underDesk", x: 560, item: FLASHLIGHT },
+        { id: "s4", where: "drawer", x: 700, item: BATTERY_M },
+      ]},
+      { id: "l1-bio", x: 2150, name: "Кабинет биологии", loot: MOP, spots: [
+        { id: "s1", where: "shelf", x: 180, item: MOP },
+        { id: "s2", where: "underDesk", x: 380, item: BANDAGE },
+        { id: "s3", where: "desk", x: 560, item: BATTERY_S },
+        { id: "s4", where: "trash", x: 700, item: CHOCO },
+      ]},
     ],
     zombies: [
       { id: "l1-z1", x: 500, kind: "switches", name: "Зомби-ученик" },
@@ -57,11 +113,36 @@ export const levels: Level[] = [
     worldW: 3400,
     exitX: 3250,
     classrooms: [
-      { id: "l2-tu", x: 350, name: "Учительская", loot: { name: "Шоколад", emoji: "🍫", hpGain: 5, foodGain: 30 } },
-      { id: "l2-eng", x: 850, name: "Кабинет английского", loot: { name: "Бинт", emoji: "🩹", hpGain: 30 } },
-      { id: "l2-inf", x: 1500, name: "Кабинет информатики", loot: { name: "Флешка", emoji: "💾", strengthGain: 1 } },
-      { id: "l2-mus", x: 2100, name: "Музыкальный класс", loot: { name: "Гитара", emoji: "🎸", strengthGain: 2 } },
-      { id: "l2-gym", x: 2700, name: "Спортзал", loot: { name: "Протеин", emoji: "💪", hpGain: 15, strengthGain: 1, foodGain: 25 } },
+      { id: "l2-tu", x: 350, name: "Учительская", loot: CHOCO, spots: [
+        { id: "s1", where: "desk", x: 180, item: CHOCO },
+        { id: "s2", where: "drawer", x: 360, item: BATTERY_M },
+        { id: "s3", where: "underDesk", x: 540, item: BANDAGE },
+        { id: "s4", where: "shelf", x: 700, item: BOOK },
+      ]},
+      { id: "l2-eng", x: 850, name: "Кабинет английского", loot: BANDAGE, spots: [
+        { id: "s1", where: "desk", x: 200, item: BANDAGE },
+        { id: "s2", where: "desk", x: 380, item: BATTERY_S },
+        { id: "s3", where: "underDesk", x: 560, item: FLASHLIGHT },
+        { id: "s4", where: "trash", x: 700 },
+      ]},
+      { id: "l2-inf", x: 1500, name: "Кабинет информатики", loot: BATTERY_M, spots: [
+        { id: "s1", where: "desk", x: 180, item: BATTERY_M },
+        { id: "s2", where: "drawer", x: 360, item: BATTERY_M },
+        { id: "s3", where: "shelf", x: 540, item: BOOK },
+        { id: "s4", where: "underDesk", x: 700, item: ENERGY },
+      ]},
+      { id: "l2-mus", x: 2100, name: "Музыкальный класс", loot: { name: "Гитара", emoji: "🎸", strengthGain: 2 }, spots: [
+        { id: "s1", where: "shelf", x: 200, item: { name: "Гитара", emoji: "🎸", strengthGain: 2 } },
+        { id: "s2", where: "underDesk", x: 400, item: BATTERY_S },
+        { id: "s3", where: "drawer", x: 580, item: BANDAGE },
+        { id: "s4", where: "trash", x: 700, item: CHOCO },
+      ]},
+      { id: "l2-gym", x: 2700, name: "Спортзал", loot: PROTEIN, spots: [
+        { id: "s1", where: "shelf", x: 180, item: PROTEIN },
+        { id: "s2", where: "desk", x: 360, item: { name: "Бита", emoji: "🏏", strengthGain: 1 } },
+        { id: "s3", where: "underDesk", x: 540, item: BATTERY_M },
+        { id: "s4", where: "trash", x: 700, item: APTECHKA },
+      ]},
     ],
     zombies: [
       { id: "l2-z1", x: 600, kind: "lock", name: "Зомби-завуч" },
@@ -79,11 +160,36 @@ export const levels: Level[] = [
     worldW: 3600,
     exitX: 3450,
     classrooms: [
-      { id: "l3-arch", x: 400, name: "Архив", loot: { name: "Учебник физики", emoji: "📕", strengthGain: 1 } },
-      { id: "l3-med", x: 950, name: "Медкабинет", loot: { name: "Большая аптечка", emoji: "💉", hpGain: 60 } },
-      { id: "l3-lab", x: 1600, name: "Лаборатория", loot: { name: "Кислота", emoji: "🧪", strengthGain: 2 } },
-      { id: "l3-libr", x: 2250, name: "Библиотека", loot: { name: "Том знаний", emoji: "📚", strengthGain: 1, hpGain: 10 } },
-      { id: "l3-canteen", x: 2900, name: "Столовая", loot: { name: "Обед", emoji: "🍲", hpGain: 20, foodGain: 50 } },
+      { id: "l3-arch", x: 400, name: "Архив", loot: BOOK, spots: [
+        { id: "s1", where: "shelf", x: 180, item: BOOK },
+        { id: "s2", where: "drawer", x: 360, item: BATTERY_M },
+        { id: "s3", where: "underDesk", x: 540, item: BATTERY_S },
+        { id: "s4", where: "trash", x: 700, item: BANDAGE },
+      ]},
+      { id: "l3-med", x: 950, name: "Медкабинет", loot: { name: "Большая аптечка", emoji: "💉", hpGain: 60 }, spots: [
+        { id: "s1", where: "shelf", x: 180, item: { name: "Большая аптечка", emoji: "💉", hpGain: 60 } },
+        { id: "s2", where: "drawer", x: 360, item: APTECHKA },
+        { id: "s3", where: "desk", x: 540, item: BANDAGE },
+        { id: "s4", where: "underDesk", x: 700, item: BATTERY_M },
+      ]},
+      { id: "l3-lab", x: 1600, name: "Лаборатория", loot: ACID, spots: [
+        { id: "s1", where: "desk", x: 180, item: ACID },
+        { id: "s2", where: "shelf", x: 360, item: FLASHLIGHT },
+        { id: "s3", where: "drawer", x: 540, item: BATTERY_M },
+        { id: "s4", where: "underDesk", x: 700, item: BATTERY_M },
+      ]},
+      { id: "l3-libr", x: 2250, name: "Библиотека", loot: BOOK, spots: [
+        { id: "s1", where: "shelf", x: 180, item: BOOK },
+        { id: "s2", where: "shelf", x: 360, item: BOOK },
+        { id: "s3", where: "underDesk", x: 540, item: BATTERY_S },
+        { id: "s4", where: "drawer", x: 700, item: CHOCO },
+      ]},
+      { id: "l3-canteen", x: 2900, name: "Столовая", loot: SOUP, spots: [
+        { id: "s1", where: "desk", x: 180, item: SOUP },
+        { id: "s2", where: "shelf", x: 360, item: SANDWICH },
+        { id: "s3", where: "drawer", x: 540, item: CHOCO },
+        { id: "s4", where: "underDesk", x: 700, item: BATTERY_M },
+      ]},
     ],
     zombies: [
       { id: "l3-z1", x: 600, kind: "reactor", name: "Зомби-завкафедрой" },
