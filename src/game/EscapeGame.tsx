@@ -952,6 +952,39 @@ function ClassroomScene({
   const [keyFound, setKeyFound] = useState(false);
   const [doorOpen, setDoorOpen] = useState(false);
 
+  // Передвижение Ланы по классу (A/D или стрелки)
+  const [lanaX, setLanaX] = useState(20);
+  const [facing, setFacing] = useState<1 | -1>(1);
+  const keysRef = useRef<{ l: boolean; r: boolean }>({ l: false, r: false });
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      const k = e.key;
+      if (k === "a" || k === "A" || k === "ArrowLeft" || k === "ф" || k === "Ф") { keysRef.current.l = true; setFacing(-1); }
+      if (k === "d" || k === "D" || k === "ArrowRight" || k === "в" || k === "В") { keysRef.current.r = true; setFacing(1); }
+    };
+    const up = (e: KeyboardEvent) => {
+      const k = e.key;
+      if (k === "a" || k === "A" || k === "ArrowLeft" || k === "ф" || k === "Ф") keysRef.current.l = false;
+      if (k === "d" || k === "D" || k === "ArrowRight" || k === "в" || k === "В") keysRef.current.r = false;
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    let raf = 0;
+    const tick = () => {
+      const k = keysRef.current;
+      if (k.l || k.r) {
+        setLanaX(x => Math.max(4, Math.min(720, x + (k.r ? 3 : 0) - (k.l ? 3 : 0))));
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
   const openDoor = () => {
     if (!keyFound) { onToast("🔒 Сначала найди ключ"); return; }
     setDoorOpen(true);
@@ -1076,9 +1109,9 @@ function ClassroomScene({
         }} />
       ))}
 
-      {/* Лана у входа */}
-      <div className="absolute" style={{ left: 6, bottom: 28 }}>
-        <PixelHuman palette={lanaPalette} facing={1} size={64} variant="girl" />
+      {/* Лана — ходит по классу (A/D или ← →) */}
+      <div className="absolute transition-none" style={{ left: lanaX, bottom: 28 }}>
+        <PixelHuman palette={lanaPalette} facing={facing} size={64} variant="girl" />
       </div>
 
       {/* Точки поиска */}
