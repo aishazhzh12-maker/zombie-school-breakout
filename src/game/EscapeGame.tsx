@@ -879,14 +879,16 @@ function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
 }
 
 // Детерминированный квест для класса: определяет, какая точка прячет ключ и биту.
-function getClassroomQuest(classroom: Classroom) {
+function getClassroomQuest(classroom: Classroom, levelId: number) {
   let h = 0;
   for (let i = 0; i < classroom.id.length; i++) h = (h * 31 + classroom.id.charCodeAt(i)) >>> 0;
+  h = (h + levelId * 997) >>> 0;
   const n = classroom.spots.length;
   const keyIdx = h % n;
-  let batIdx = (h * 7 + 3) % n;
+  const hasBat = (h % 2) === 0; // 50% шанс найти биту в классе
+  let batIdx = hasBat ? ((h * 7 + 3) % n) : -1;
   if (batIdx === keyIdx) batIdx = (batIdx + 1) % n;
-  return { keyIdx, batIdx };
+  return { keyIdx, batIdx, hasBat };
 }
 
 const KEY_ITEM: LootItem = { name: "Ключ от двери", emoji: "🗝", strengthGain: 0 };
