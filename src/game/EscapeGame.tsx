@@ -257,15 +257,18 @@ type Inventory = {
 const EMPTY_INV: Inventory = { bat: 0, gun: 0, flashlight: false, hp: false, hint: false };
 
 const SAVE_KEY = "escape-school-save-v1";
-type SaveData = { coins: number; outfit: string; owned: Inventory };
+type SaveData = { coins: number; outfit: string; owned: Inventory; ownedOutfits: string[] };
+const DEFAULT_OUTFITS = ["classic"];
 const loadSave = (): SaveData => {
-  if (typeof window === "undefined") return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV } };
+  if (typeof window === "undefined") return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] };
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV } };
+    if (!raw) return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] };
     const p = JSON.parse(raw);
-    return { coins: p.coins ?? 0, outfit: p.outfit ?? "classic", owned: { ...EMPTY_INV, ...(p.owned ?? {}) } };
-  } catch { return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV } }; }
+    const ownedOutfits: string[] = Array.isArray(p.ownedOutfits) ? p.ownedOutfits : [];
+    const merged = Array.from(new Set([...DEFAULT_OUTFITS, ...ownedOutfits, p.outfit ?? "classic"]));
+    return { coins: p.coins ?? 0, outfit: p.outfit ?? "classic", owned: { ...EMPTY_INV, ...(p.owned ?? {}) }, ownedOutfits: merged };
+  } catch { return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] }; }
 };
 const writeSave = (s: SaveData) => {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
@@ -1579,12 +1582,15 @@ export default function EscapeGame() {
   };
 
   const buyOutfit = (o: Outfit) => {
-    if (save.outfit === o.id) return;
+    if (save.ownedOutfits.includes(o.id)) return;
     if (coins < o.price) { setToast("Не хватает монет"); setTimeout(() => setToast(""), 1500); return; }
-    const ns = { ...save, coins: coins - o.price, outfit: o.id };
+    const ownedOutfits = Array.from(new Set([...save.ownedOutfits, o.id]));
+    const ns = { ...save, coins: coins - o.price, outfit: o.id, ownedOutfits };
     setCoins(ns.coins); setSave(ns); writeSave(ns);
+    setToast(`Куплено: ${o.name}`); setTimeout(() => setToast(""), 1500);
   };
   const equipOutfit = (o: Outfit) => {
+    if (!save.ownedOutfits.includes(o.id)) return;
     const ns = { ...save, outfit: o.id };
     setSave(ns); writeSave(ns);
   };
@@ -1658,7 +1664,7 @@ export default function EscapeGame() {
           {menuTab === "outfit" && (
             <div className="bg-black/40 rounded p-4 grid grid-cols-2 md:grid-cols-3 gap-3">
               {OUTFITS.map(o => {
-                const owned = o.price === 0 || (save.outfit === o.id);
+                const owned = o.price === 0 || save.ownedOutfits.includes(o.id);
                 const equipped = save.outfit === o.id;
                 return (
                   <div key={o.id} className={`p-3 rounded border ${equipped ? "border-primary bg-primary/10" : "border-zinc-700 bg-black/40"} flex flex-col items-center gap-2`}>
