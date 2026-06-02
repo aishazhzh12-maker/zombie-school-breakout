@@ -257,15 +257,18 @@ type Inventory = {
 const EMPTY_INV: Inventory = { bat: 0, gun: 0, flashlight: false, hp: false, hint: false };
 
 const SAVE_KEY = "escape-school-save-v1";
-type SaveData = { coins: number; outfit: string; owned: Inventory };
+type SaveData = { coins: number; outfit: string; owned: Inventory; ownedOutfits: string[] };
+const DEFAULT_OUTFITS = ["classic"];
 const loadSave = (): SaveData => {
-  if (typeof window === "undefined") return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV } };
+  if (typeof window === "undefined") return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] };
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV } };
+    if (!raw) return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] };
     const p = JSON.parse(raw);
-    return { coins: p.coins ?? 0, outfit: p.outfit ?? "classic", owned: { ...EMPTY_INV, ...(p.owned ?? {}) } };
-  } catch { return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV } }; }
+    const ownedOutfits: string[] = Array.isArray(p.ownedOutfits) ? p.ownedOutfits : [];
+    const merged = Array.from(new Set([...DEFAULT_OUTFITS, ...ownedOutfits, p.outfit ?? "classic"]));
+    return { coins: p.coins ?? 0, outfit: p.outfit ?? "classic", owned: { ...EMPTY_INV, ...(p.owned ?? {}) }, ownedOutfits: merged };
+  } catch { return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] }; }
 };
 const writeSave = (s: SaveData) => {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
