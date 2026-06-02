@@ -2165,6 +2165,7 @@ export default function EscapeGame() {
                 </div>
                 <ClassroomScene
                   classroom={modal.classroom}
+                  levelId={cur.id}
                   hasFlashlight={hasFlashlight}
                   batteryPct={battery}
                   onCollect={(loot, spot) => {
@@ -2179,12 +2180,8 @@ export default function EscapeGame() {
                       return;
                     }
                     if (loot.emoji === "🏏") {
-                      // бита — +1 удар (одноразовый)
-                      setBatLeft(n => {
-                        const nn = n + 1;
-                        setSave(s => { const ns = { ...s, owned: { ...s.owned, bat: nn } }; writeSave(ns); return ns; });
-                        return nn;
-                      });
+                      // бита из класса — одноразовая, не сохраняется между забегами
+                      setBatLeft(n => n + 1);
                       return;
                     }
                     collectSpotItem(loot, spot);
