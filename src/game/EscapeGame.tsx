@@ -1274,7 +1274,17 @@ export default function EscapeGame() {
           return;
         }
         if (k === "g" && batLeft > 0) {
-          setBatLeft(n => { const nn = n - 1; setSave(s => { const ns = { ...s, owned: { ...s.owned, bat: nn } }; writeSave(ns); return ns; }); return nn; });
+          setBatLeft(n => {
+            const nn = n - 1;
+            setSave(s => {
+              const ownedBat = s.owned.bat ?? 0;
+              const newBat = Math.max(0, ownedBat - 1);
+              const ns = { ...s, owned: { ...s.owned, bat: newBat } };
+              writeSave(ns);
+              return ns;
+            });
+            return nn;
+          });
           setKilled(prev => new Set(prev).add(z.id));
           setCoins(c => c + 15);
           setToast(`🏏 ${z.name} — оглушён битой! +15 монет`);
