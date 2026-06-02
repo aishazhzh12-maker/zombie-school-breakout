@@ -11,8 +11,9 @@ import {
   Calculator, HelpCircle, Lock, Target,
   X, Skull, Heart, DoorClosed, ArrowUp,
   Lightbulb, Coins, Shirt, ShoppingBag, Crosshair, Swords, Flashlight, Volume2, VolumeX,
-  Backpack, Utensils, ArrowDown, BatteryFull, BatteryLow,
+  Backpack, Utensils, ArrowDown, BatteryFull, BatteryLow, Trophy,
 } from "lucide-react";
+import { Leaderboard, submitScore } from "./Leaderboard";
 
 
 
@@ -1199,7 +1200,15 @@ function ClassroomScene({
 export default function EscapeGame() {
   // Persisted (menu / shop)
   const [save, setSave] = useState<SaveData>(() => loadSave());
-  const [menuTab, setMenuTab] = useState<"play" | "outfit" | "shop">("play");
+  const [menuTab, setMenuTab] = useState<"play" | "outfit" | "shop" | "leaderboard">("play");
+  const [playerName, setPlayerName] = useState<string>(() => {
+    if (typeof window === "undefined") return "Лана";
+    return localStorage.getItem("lana_player_name") || "Лана";
+  });
+  const [leaderboardKey, setLeaderboardKey] = useState(0);
+  const startTimeRef = useRef<number>(0);
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [submittingScore, setSubmittingScore] = useState(false);
 
   const [started, setStarted] = useState(false);
   const [level, setLevel] = useState(0);
@@ -1609,7 +1618,34 @@ export default function EscapeGame() {
     setFoundFlashlight(false);
     wokenRef.current = new Set();
     setModal({ kind: "none" });
+    startTimeRef.current = Date.now();
+    setScoreSubmitted(false);
     setStarted(true);
+  };
+
+  const submitMyScore = async (won: boolean) => {
+    if (scoreSubmitted || submittingScore) return;
+    setSubmittingScore(true);
+    try {
+      const name = (playerName || "Лана").trim().slice(0, 24) || "Лана";
+      if (typeof window !== "undefined") localStorage.setItem("lana_player_name", name);
+      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      await submitScore({
+        name,
+        coins: coins + (won ? 200 : 0),
+        levels_completed: won ? levels.length : level,
+        time_seconds: elapsed,
+        won,
+      });
+      setScoreSubmitted(true);
+      setLeaderboardKey(k => k + 1);
+      setToast("Рекорд отправлен!");
+    } catch (e: any) {
+      setToast("Ошибка отправки: " + (e?.message ?? "неизвестно"));
+    } finally {
+      setSubmittingScore(false);
+      setTimeout(() => setToast(""), 2000);
+    }
   };
 
   const buyOutfit = (o: Outfit) => {
@@ -1658,6 +1694,7 @@ export default function EscapeGame() {
               { id: "play", label: "Игра", icon: ArrowUp },
               { id: "outfit", label: "Одежда", icon: Shirt },
               { id: "shop", label: "Магазин", icon: ShoppingBag },
+              { id: "leaderboard", label: "Рекорды", icon: Trophy },
             ].map(t => (
               <button key={t.id} onClick={() => setMenuTab(t.id as typeof menuTab)}
                 className={`px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border ${menuTab === t.id ? "bg-primary text-primary-foreground border-primary" : "bg-black/40 border-zinc-700 text-zinc-300"}`}>
@@ -1730,6 +1767,29 @@ export default function EscapeGame() {
                 );
               })}
               <p className="text-[11px] text-muted-foreground text-center pt-1">Покупки сохраняются между играми.</p>
+            </div>
+          )}
+
+          {menuTab === "leaderboard" && (
+            <div className="bg-black/40 rounded p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-zinc-400 font-pixel shrink-0">Имя:</label>
+                <Input
+                  value={playerName}
+                  maxLength={24}
+                  onChange={(e) => {
+                    setPlayerName(e.target.value);
+                    if (typeof window !== "undefined") localStorage.setItem("lana_player_name", e.target.value);
+                  }}
+                  className="h-8 text-sm"
+                  placeholder="Лана"
+                />
+                <Button size="sm" variant="secondary" onClick={() => setLeaderboardKey(k => k + 1)}>↻</Button>
+              </div>
+              <Leaderboard refreshKey={leaderboardKey} />
+              <p className="text-[10px] text-muted-foreground text-center">
+                Топ-20 игроков по монетам. Рекорд отправляется после победы или поражения.
+              </p>
             </div>
           )}
         </div>
@@ -2268,9 +2328,24 @@ export default function EscapeGame() {
                 <p>Лана выбежала из школы. Солнце. Свобода.</p>
                 <div className="flex justify-center"><Crewmate color="#ff66aa" palette={lanaPalette} size={80} /></div>
                 <p className="text-amber-300 font-pixel">Бонус за победу: +200 🪙</p>
+                <div className="flex items-center gap-2 justify-center">
+                  <Input
+                    value={playerName}
+                    maxLength={24}
+                    onChange={(e) => setPlayerName(e.target.value)}
+                    className="h-8 text-sm max-w-[180px]"
+                    placeholder="Твоё имя"
+                    disabled={scoreSubmitted}
+                  />
+                  <Button size="sm" variant="secondary" disabled={scoreSubmitted || submittingScore}
+                    onClick={() => submitMyScore(true)}>
+                    <Trophy className="h-3 w-3 mr-1" />
+                    {scoreSubmitted ? "Отправлено" : "В рекорды"}
+                  </Button>
+                </div>
                 <Button onClick={() => {
                   setCoins(c => c + 200);
-                  setStarted(false); setModal({ kind: "none" });
+                  setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" });
                 }}>В меню</Button>
               </div>
             )}
@@ -2280,7 +2355,23 @@ export default function EscapeGame() {
                 <Skull className="h-16 w-16 text-red-500 mx-auto" />
                 <h2 className="font-display text-2xl text-red-400">ПОРАЖЕНИЕ</h2>
                 <p>Зомби оказались сильнее. Купи улучшения и попробуй снова.</p>
-                <Button onClick={() => { setStarted(false); setModal({ kind: "none" }); }}>В меню</Button>
+                <p className="text-xs text-zinc-400">Этажей пройдено: {level} · Монет: {coins}</p>
+                <div className="flex items-center gap-2 justify-center">
+                  <Input
+                    value={playerName}
+                    maxLength={24}
+                    onChange={(e) => setPlayerName(e.target.value)}
+                    className="h-8 text-sm max-w-[180px]"
+                    placeholder="Твоё имя"
+                    disabled={scoreSubmitted}
+                  />
+                  <Button size="sm" variant="secondary" disabled={scoreSubmitted || submittingScore}
+                    onClick={() => submitMyScore(false)}>
+                    <Trophy className="h-3 w-3 mr-1" />
+                    {scoreSubmitted ? "Отправлено" : "В рекорды"}
+                  </Button>
+                </div>
+                <Button onClick={() => { setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" }); }}>В меню</Button>
               </div>
             )}
           </div>
