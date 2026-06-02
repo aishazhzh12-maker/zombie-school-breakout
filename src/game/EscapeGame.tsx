@@ -1434,6 +1434,27 @@ export default function EscapeGame() {
     return () => clearInterval(id);
   }, [started, modal.kind]);
 
+  // Разряд батареи — только когда фонарь горит и темно (этаж >= 2) или мы внутри класса.
+  useEffect(() => {
+    if (!started) return;
+    if (modal.kind === "lose" || modal.kind === "win") return;
+    const id = setInterval(() => {
+      if (!flashlightOn) return;
+      const inDarkCorridor = level >= 1 && modal.kind === "none";
+      const inSearch = modal.kind === "search";
+      if (!inDarkCorridor && !inSearch) return;
+      setBattery(b => {
+        const nb = Math.max(0, b - 1);
+        if (nb === 0 && b > 0) {
+          setToast("🪫 Батарейка села! Нужна новая.");
+          setTimeout(() => setToast(""), 1600);
+        }
+        return nb;
+      });
+    }, 900);
+    return () => clearInterval(id);
+  }, [started, modal.kind, flashlightOn, level]);
+
   const beginGame = () => {
     const mh = 100 + (save.owned.hp ? 25 : 0);
     setMaxHp(mh); setHp(mh);
@@ -1441,6 +1462,8 @@ export default function EscapeGame() {
     setLevel(0); setX(120); setStrength(1);
     setKilled(new Set()); setSearched(new Set()); setInv([]);
     setHunger(MAX_HUNGER);
+    setBattery(MAX_BATTERY);
+    setFoundFlashlight(false);
     wokenRef.current = new Set();
     setModal({ kind: "none" });
     setStarted(true);
