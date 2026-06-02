@@ -4,14 +4,14 @@ import { Input } from "@/components/ui/input";
 import {
   levels, bossRiddles, ADMIN_CODE, ADMIN_HINT,
   FLOOR_Y, CEIL_Y,
-  type Classroom, type Zombie, type TaskKind,
+  type Classroom, type Zombie, type TaskKind, type LootItem, type SearchSpot,
 } from "./data";
 import {
   Zap, KeyRound, Download, Flame, Trash2, ToggleRight,
   Calculator, HelpCircle, Lock, Target,
   X, Skull, Heart, DoorClosed, ArrowUp,
   Lightbulb, Coins, Shirt, ShoppingBag, Crosshair, Swords, Flashlight, Volume2, VolumeX,
-  Backpack, Utensils, ArrowDown,
+  Backpack, Utensils, ArrowDown, BatteryFull, BatteryLow,
 } from "lucide-react";
 
 
@@ -30,7 +30,7 @@ type Modal =
   | { kind: "backpack" }
   | { kind: "boss" };
 
-type InvItem = { id: string; name: string; emoji: string; hp: number; food: number; strength: number };
+type InvItem = { id: string; name: string; emoji: string; hp: number; food: number; strength: number; battery?: number; givesFlashlight?: boolean };
 
 
 // ---- helpers ----
