@@ -823,8 +823,8 @@ function ZombieHand({ delay = 0 }: { delay?: number }) {
 }
 
 // ====== Точка поиска в комнате ======
-function SpotEl({ spot, taken, onClick }:
-  { spot: SearchSpot; taken: boolean; onClick: () => void }) {
+function SpotEl({ spot, taken, lit, hasKey, onClick }:
+  { spot: SearchSpot; taken: boolean; lit: boolean; hasKey?: boolean; onClick: () => void }) {
   const x = spot.x;
   let body: React.ReactNode = null;
   let labelTop = 0;
@@ -896,15 +896,21 @@ function SpotEl({ spot, taken, onClick }:
           <div className="absolute inset-0 border border-amber-300/0 group-hover:border-amber-300/60 group-hover:bg-amber-200/5 rounded" />
         </div>
         {!taken && (
-          <div className="absolute font-pixel text-amber-200 text-[10px] bg-black/80 border border-amber-400/50 rounded px-1 animate-pulse"
+          <div className={`absolute font-pixel text-[10px] rounded px-1 animate-pulse border ${lit ? "text-amber-200 bg-black/80 border-amber-400/50" : "text-zinc-400 bg-black/80 border-zinc-700"}`}
             style={{ left: x - 24, bottom: 130 + labelTop }}>
-            🔍 искать
+            {lit ? "🔍 искать" : "???"}
           </div>
         )}
         {taken && spot.item && (
           <div className="absolute font-pixel text-emerald-300 text-[11px]"
             style={{ left: x - 14, bottom: 135 + labelTop }}>
-            ✓ {spot.item.emoji}
+            ✓ {hasKey ? "🗝" : spot.item.emoji}
+          </div>
+        )}
+        {taken && !spot.item && (
+          <div className="absolute font-pixel text-zinc-500 text-[10px]"
+            style={{ left: x - 14, bottom: 135 + labelTop }}>
+            ✗ пусто
           </div>
         )}
       </div>
@@ -912,10 +918,23 @@ function SpotEl({ spot, taken, onClick }:
   );
 }
 
+// Детерминированный квест для класса: какая точка прячет ключ + 4-значный код двери.
+function getClassroomQuest(classroom: Classroom) {
+  let h = 0;
+  for (let i = 0; i < classroom.id.length; i++) h = (h * 31 + classroom.id.charCodeAt(i)) >>> 0;
+  const keyIdx = h % classroom.spots.length;
+  const code = String(1000 + (h % 9000)).padStart(4, "0");
+  // Тип задания: 0 = только ключ, 1 = ключ + код-фонарь, 2 = ключ + код-фонарь
+  const variant = h % 3 === 0 ? "key-only" : "key-code";
+  return { keyIdx, code, variant: variant as "key-only" | "key-code" };
+}
+
+const KEY_ITEM: LootItem = { name: "Ключ от двери", emoji: "🗝", strengthGain: 0 };
+
 // ====== Сцена внутри класса ======
 function ClassroomScene({
   classroom, hasFlashlight, batteryPct, onCollect, onLeave,
-  lanaPalette,
+  lanaPalette, onConsumeBattery, onToast,
 }: {
   classroom: Classroom;
   hasFlashlight: boolean;
@@ -923,94 +942,148 @@ function ClassroomScene({
   onCollect: (item: LootItem, spot: SearchSpot) => void;
   onLeave: () => void;
   lanaPalette: PixelPalette;
+  onConsumeBattery: (n: number) => boolean;
+  onToast: (m: string) => void;
 }) {
   const [taken, setTaken] = useState<Set<string>>(new Set());
   const lit = hasFlashlight && batteryPct > 0;
   const remaining = classroom.spots.filter(s => !taken.has(s.id)).length;
+  const quest = useMemo(() => getClassroomQuest(classroom), [classroom]);
+  const keySpotId = classroom.spots[quest.keyIdx]?.id;
+
+  const [keyFound, setKeyFound] = useState(false);
+  const [doorOpen, setDoorOpen] = useState(false);
+  const [pin, setPin] = useState("");
+  const [codeRevealedUntil, setCodeRevealedUntil] = useState(0);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (codeRevealedUntil === 0) return;
+    const id = setInterval(() => setNow(Date.now()), 200);
+    return () => clearInterval(id);
+  }, [codeRevealedUntil]);
+  const codeVisible = now < codeRevealedUntil;
+
+  const noCodeNeeded = quest.variant === "key-only";
+
+  const tryShine = () => {
+    if (!lit) { onToast("🔦 Нужен фонарик с зарядом"); return; }
+    if (!onConsumeBattery(10)) { onToast("🪫 Не хватает заряда"); return; }
+    setCodeRevealedUntil(Date.now() + 5000);
+    onToast(`🔦 Код виден ${5}с (−10% батареи)`);
+  };
+
+  const submitPin = () => {
+    if (!keyFound) { onToast("🔒 Сначала найди ключ"); return; }
+    if (noCodeNeeded || pin === quest.code) {
+      setDoorOpen(true);
+      onToast("🚪 Дверь открыта! +15 монет");
+      onCollect({ name: "Открытая дверь", emoji: "🚪", hpGain: 0 }, classroom.spots[0]); // не используется, просто триггер
+    } else {
+      onToast("❌ Неверный код");
+    }
+  };
+
+  const tryLeave = () => {
+    if (!doorOpen) { onToast("🔒 Дверь закрыта — выполни квест"); return; }
+    onLeave();
+  };
+
   return (
     <div className="relative w-full overflow-hidden border-2 border-zinc-800 rounded bg-[#0a0610]"
-      style={{ height: 360 }}>
+      style={{ height: 380 }}>
       {/* задняя стена */}
       <div className="absolute inset-x-0 top-0" style={{
-        height: 220,
+        height: 230,
         background: "linear-gradient(180deg,#1a1018,#0d0610 70%,#080308)",
       }} />
-      {/* трещины на стене */}
-      <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 800 360" preserveAspectRatio="none">
+      <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 800 380" preserveAspectRatio="none">
         <path d="M 40 60 L 80 100 L 60 140 L 110 180" stroke="#1a0a0a" strokeWidth="1.5" fill="none" />
         <path d="M 700 30 L 750 80 L 720 130 L 770 180" stroke="#1a0a0a" strokeWidth="1.5" fill="none" />
       </svg>
-      {/* потеки крови */}
-      <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 800 360" preserveAspectRatio="none">
+      <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 800 380" preserveAspectRatio="none">
         <path d="M 250 20 C 240 70, 270 110, 245 160" stroke="#5a0a0a" strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.85" />
         <circle cx="245" cy="160" r="6" fill="#5a0a0a" />
         <path d="M 580 0 C 575 40, 600 70, 585 110" stroke="#5a0a0a" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.8" />
       </svg>
 
       {/* ОКНО с луной и зомби-руками */}
-      <div className="absolute" style={{ left: 460, top: 18, width: 200, height: 140 }}>
-        {/* небо за окном */}
+      <div className="absolute" style={{ left: 430, top: 18, width: 190, height: 130 }}>
         <div className="absolute inset-0 border-4 border-zinc-700 overflow-hidden"
           style={{ background: "linear-gradient(180deg,#0d1a3a 0%,#1a2550 40%,#0a1530 100%)" }}>
-          {/* звёзды */}
           {Array.from({ length: 18 }).map((_, i) => (
             <div key={i} className="absolute bg-white rounded-full" style={{
               left: `${(i * 53) % 100}%`, top: `${(i * 37) % 75}%`,
               width: 2, height: 2, opacity: 0.3 + ((i * 11) % 7) / 10,
             }} />
           ))}
-          {/* луна */}
           <div className="absolute" style={{
-            top: 16, right: 16, width: 56, height: 56, borderRadius: "50%",
+            top: 14, right: 14, width: 50, height: 50, borderRadius: "50%",
             background: "radial-gradient(circle at 35% 35%, #fef9d4 0%, #e8dca0 55%, #a89c60 100%)",
             boxShadow: "0 0 40px 10px rgba(254,249,212,0.45), 0 0 80px 20px rgba(254,249,212,0.18)",
           }}>
-            {/* кратеры */}
-            <div className="absolute bg-[#a89c60]/60 rounded-full" style={{ left: 14, top: 18, width: 6, height: 6 }} />
-            <div className="absolute bg-[#a89c60]/60 rounded-full" style={{ left: 30, top: 30, width: 4, height: 4 }} />
-            <div className="absolute bg-[#a89c60]/60 rounded-full" style={{ left: 22, top: 38, width: 5, height: 5 }} />
+            <div className="absolute bg-[#a89c60]/60 rounded-full" style={{ left: 12, top: 16, width: 6, height: 6 }} />
+            <div className="absolute bg-[#a89c60]/60 rounded-full" style={{ left: 26, top: 28, width: 4, height: 4 }} />
+            <div className="absolute bg-[#a89c60]/60 rounded-full" style={{ left: 20, top: 34, width: 5, height: 5 }} />
           </div>
-          {/* облако перед луной */}
-          <div className="absolute bg-zinc-700/40 rounded-full blur-md" style={{ top: 40, right: 4, width: 80, height: 12 }} />
-          {/* силуэты школы вдалеке */}
+          <div className="absolute bg-zinc-700/40 rounded-full blur-md" style={{ top: 38, right: 4, width: 76, height: 12 }} />
           <div className="absolute bottom-0 left-0 right-0 h-6 bg-[#050810]" style={{
             clipPath: "polygon(0 100%,0 60%,8% 50%,15% 60%,22% 30%,32% 40%,42% 20%,52% 35%,62% 25%,72% 45%,82% 35%,92% 55%,100% 45%,100% 100%)",
           }} />
         </div>
-        {/* рама-крест */}
         <div className="absolute top-0 bottom-0 w-[3px] bg-zinc-700" style={{ left: "50%" }} />
         <div className="absolute left-0 right-0 h-[3px] bg-zinc-700" style={{ top: "50%" }} />
-        {/* трещины на стекле */}
         <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 200 140" preserveAspectRatio="none">
           <line x1="0" y1="0" x2="80" y2="50" stroke="#cfd6dc" strokeWidth="0.6" opacity="0.6" />
           <line x1="200" y1="20" x2="120" y2="90" stroke="#cfd6dc" strokeWidth="0.6" opacity="0.6" />
           <line x1="30" y1="140" x2="100" y2="80" stroke="#cfd6dc" strokeWidth="0.6" opacity="0.6" />
         </svg>
-        {/* зомби-руки тянутся внутрь */}
-        <div className="absolute" style={{ left: 6, bottom: -34, transform: "rotate(-12deg)" }}>
-          <ZombieHand delay={0} />
-        </div>
-        <div className="absolute" style={{ left: 100, bottom: -38, transform: "rotate(8deg)" }}>
-          <ZombieHand delay={0.4} />
-        </div>
-        <div className="absolute" style={{ right: -6, bottom: -28, transform: "rotate(20deg) scaleX(-1)" }}>
-          <ZombieHand delay={0.8} />
-        </div>
-        {/* кровь у подоконника */}
+        <div className="absolute" style={{ left: 6, bottom: -34, transform: "rotate(-12deg)" }}><ZombieHand delay={0} /></div>
+        <div className="absolute" style={{ left: 92, bottom: -38, transform: "rotate(8deg)" }}><ZombieHand delay={0.4} /></div>
+        <div className="absolute" style={{ right: -6, bottom: -28, transform: "rotate(20deg) scaleX(-1)" }}><ZombieHand delay={0.8} /></div>
         <div className="absolute -bottom-1 left-2 right-2 h-2 bg-[#5a0a0a] opacity-80" />
-        {/* подпись */}
         <div className="absolute -top-4 left-2 text-[9px] font-pixel text-red-300 animate-pulse">⚠ они снаружи</div>
       </div>
 
       {/* Доска */}
-      <div className="absolute" style={{ left: 24, top: 28, width: 200, height: 100 }}>
+      <div className="absolute" style={{ left: 24, top: 28, width: 180, height: 90 }}>
         <div className="absolute inset-0 bg-[#0a2a1a] border-4 border-[#3a2a1a]" />
-        <div className="absolute inset-2 text-[11px] font-pixel text-red-400 leading-tight">
-          ВЫХОДА<br/>НЕТ...<br/>БЕГИ
+        <div className="absolute inset-2 text-[10px] font-pixel text-red-400 leading-tight">
+          ВЫХОДА НЕТ...<br/>НАЙДИ КЛЮЧ 🗝<br/>{!noCodeNeeded && "И КОД ОТ ДВЕРИ"}
         </div>
       </div>
-      {/* Шкаф / батарея отопления для атмосферы */}
-      <div className="absolute" style={{ left: 250, top: 100, width: 70, height: 60 }}>
+
+      {/* Запертая дверь справа на стене */}
+      <div className="absolute" style={{ right: 16, top: 24, width: 130, height: 200 }}>
+        {/* рамка */}
+        <div className="absolute inset-0 bg-[#3a2618] border-4 border-[#1a0e08]" />
+        {/* филёнки */}
+        <div className="absolute left-3 right-3 top-3 h-16 bg-[#2a1810] border-2 border-[#0a0604]" />
+        <div className="absolute left-3 right-3 top-24 h-16 bg-[#2a1810] border-2 border-[#0a0604]" />
+        {/* следы крови */}
+        <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 130 200" preserveAspectRatio="none">
+          <path d="M 20 40 C 18 60, 28 80, 22 100" stroke="#5a0a0a" strokeWidth="3" fill="none" opacity="0.85" />
+          <circle cx="22" cy="100" r="3" fill="#5a0a0a" />
+        </svg>
+        {/* замок */}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 bg-[#1a1a1a] border-2 border-[#5a5a5a] rounded-full">
+          {doorOpen ? "🔓" : "🔒"}
+        </div>
+        {/* код на двери (виден только при подсветке) */}
+        <div className="absolute -bottom-1 left-0 right-0 text-center text-[10px] font-pixel">
+          {doorOpen ? (
+            <span className="text-emerald-300">✓ ОТКРЫТО</span>
+          ) : noCodeNeeded ? (
+            <span className="text-amber-200">{keyFound ? "Поверни ключ →" : "🔒 нужен ключ"}</span>
+          ) : codeVisible ? (
+            <span className="text-amber-200">КОД: <b className="text-yellow-300 tracking-widest">{quest.code}</b></span>
+          ) : (
+            <span className="text-zinc-500">??-??-?? (посвети)</span>
+          )}
+        </div>
+      </div>
+
+      {/* Шкаф с трубами */}
+      <div className="absolute" style={{ left: 230, top: 110, width: 70, height: 60 }}>
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="absolute top-0 bottom-0 w-2 bg-[#5a5a5a] border border-black" style={{ left: i * 11 }} />
         ))}
@@ -1018,11 +1091,10 @@ function ClassroomScene({
 
       {/* Пол */}
       <div className="absolute inset-x-0 bottom-0" style={{
-        height: 140,
+        height: 150,
         background: "repeating-linear-gradient(90deg,#2a1f1a 0 50px,#1f1612 50px 100px)",
         boxShadow: "inset 0 4px 0 #0a0606",
       }} />
-      {/* мусор на полу */}
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="absolute" style={{
           left: 40 + i * 90, bottom: 6 + ((i * 7) % 12),
@@ -1033,43 +1105,91 @@ function ClassroomScene({
       ))}
 
       {/* Лана у входа */}
-      <div className="absolute" style={{ left: 6, bottom: 18 }}>
+      <div className="absolute" style={{ left: 6, bottom: 28 }}>
         <PixelHuman palette={lanaPalette} facing={1} size={64} variant="girl" />
       </div>
 
       {/* Точки поиска */}
-      {classroom.spots.map(spot => (
-        <SpotEl key={spot.id} spot={spot} taken={taken.has(spot.id)} onClick={() => {
-          if (taken.has(spot.id)) return;
-          setTaken(prev => new Set(prev).add(spot.id));
-          if (spot.item) onCollect(spot.item, spot);
-        }} />
-      ))}
+      {classroom.spots.map(spot => {
+        const isKeySpot = spot.id === keySpotId;
+        return (
+          <SpotEl key={spot.id} spot={spot} taken={taken.has(spot.id)} lit={lit} hasKey={isKeySpot}
+            onClick={() => {
+              if (taken.has(spot.id)) return;
+              setTaken(prev => new Set(prev).add(spot.id));
+              if (isKeySpot) {
+                setKeyFound(true);
+                onCollect(KEY_ITEM, spot);
+                onToast("🗝 Ключ от двери найден!");
+              }
+              if (spot.item) onCollect(spot.item, spot);
+            }} />
+        );
+      })}
 
       {/* Темнота если нет фонаря или села батарея */}
       {!lit && (
         <div className="absolute inset-0 pointer-events-none"
           style={{
-            background: "radial-gradient(circle at 8% 80%, rgba(0,0,0,0) 60px, rgba(0,0,0,0.92) 220px, rgba(0,0,0,0.98) 100%)",
+            background: "radial-gradient(circle at 8% 80%, rgba(0,0,0,0) 60px, rgba(0,0,0,0.94) 220px, rgba(0,0,0,0.98) 100%)",
           }}>
           <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[11px] font-pixel text-red-300 animate-pulse">
-            🌑 темно — нужен фонарик с зарядом
+            🌑 темно — без фонарика не разглядеть точки и код
           </div>
         </div>
       )}
       {lit && (
         <div className="absolute inset-0 pointer-events-none"
           style={{
-            background: "radial-gradient(ellipse 380px 260px at 30% 75%, rgba(255,240,180,0.0) 0%, rgba(0,0,0,0.0) 40%, rgba(0,0,0,0.55) 95%)",
+            background: "radial-gradient(ellipse 420px 280px at 30% 75%, rgba(255,240,180,0.0) 0%, rgba(0,0,0,0.0) 40%, rgba(0,0,0,0.55) 95%)",
           }} />
       )}
 
-      {/* Подпись */}
-      <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-pixel text-amber-200/90 bg-black/70 px-2 py-0.5 rounded border border-amber-400/40">
-        🔍 Осталось точек: {remaining}/{classroom.spots.length} · кликай по партам, шкафам, ящикам
+      {/* Панель квеста сверху */}
+      <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-pixel bg-black/85 px-3 py-1 rounded border border-amber-400/40 flex items-center gap-3 z-10">
+        <span className={keyFound ? "text-emerald-300" : "text-amber-200"}>
+          {keyFound ? "✓ Ключ 🗝" : "✗ Найди ключ 🗝"}
+        </span>
+        {!noCodeNeeded && (
+          <span className={doorOpen ? "text-emerald-300" : "text-amber-200"}>
+            · {doorOpen ? "✓ Код" : `Введи код двери`}
+          </span>
+        )}
+        <span className="text-zinc-400">· Точек: {remaining}/{classroom.spots.length}</span>
       </div>
-      <div className="absolute bottom-2 right-2">
-        <Button size="sm" variant="secondary" onClick={onLeave}>← Выйти в коридор</Button>
+
+      {/* Панель двери — управление квестом */}
+      <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2 z-10">
+        <div className="flex items-center gap-2 bg-black/85 border border-amber-700/60 rounded p-2">
+          {!noCodeNeeded && !doorOpen && (
+            <>
+              <Input
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                placeholder="код"
+                className="h-8 w-20 text-center font-mono text-base"
+                inputMode="numeric"
+              />
+              <Button size="sm" onClick={submitPin} disabled={!keyFound || pin.length !== 4}>
+                Открыть 🔓
+              </Button>
+              <Button size="sm" variant="secondary" onClick={tryShine} disabled={!lit}>
+                <Flashlight className="h-3 w-3 mr-1" /> Посветить (−10%)
+              </Button>
+            </>
+          )}
+          {noCodeNeeded && !doorOpen && (
+            <Button size="sm" onClick={submitPin} disabled={!keyFound}>
+              {keyFound ? "🗝 Открыть дверь" : "🔒 Нужен ключ"}
+            </Button>
+          )}
+          {doorOpen && (
+            <span className="text-emerald-300 font-pixel text-xs px-2">🚪 Дверь открыта</span>
+          )}
+        </div>
+        <Button size="sm" variant={doorOpen ? "default" : "secondary"} onClick={tryLeave} disabled={!doorOpen}>
+          {doorOpen ? "→ Выйти в коридор" : "🔒 Заперто"}
+        </Button>
       </div>
     </div>
   );
@@ -2003,9 +2123,27 @@ export default function EscapeGame() {
                   classroom={modal.classroom}
                   hasFlashlight={hasFlashlight}
                   batteryPct={battery}
-                  onCollect={collectSpotItem}
+                  onCollect={(loot, spot) => {
+                    if (loot.emoji === "🚪") {
+                      // триггер "дверь открыта" — даём награду
+                      setCoins(c => c + 15);
+                      return;
+                    }
+                    if (loot.emoji === "🗝") {
+                      // ключ — не кладём в рюкзак, просто бонус
+                      setCoins(c => c + 5);
+                      return;
+                    }
+                    collectSpotItem(loot, spot);
+                  }}
                   onLeave={leaveClassroom}
                   lanaPalette={lanaPalette}
+                  onConsumeBattery={(n) => {
+                    if (battery < n) return false;
+                    setBattery(b => Math.max(0, b - n));
+                    return true;
+                  }}
+                  onToast={(m) => { setToast(m); setTimeout(() => setToast(""), 1600); }}
                 />
               </div>
             )}
