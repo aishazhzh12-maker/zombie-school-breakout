@@ -2089,6 +2089,14 @@ export default function EscapeGame() {
                     <div className="text-emerald-300">Сила</div><div className="font-mono">×{strength}</div>
                   </div>
                 </div>
+                {hasFlashlight && (
+                  <div className="bg-black/40 border border-amber-600/40 rounded p-2 text-xs flex items-center justify-between">
+                    <span className="flex items-center gap-2"><Flashlight className="h-4 w-4 text-amber-200" /> Фонарик</span>
+                    <span className={`font-mono ${battery === 0 ? "text-red-400" : battery < 25 ? "text-amber-400" : "text-amber-200"}`}>
+                      🔋 {battery}%
+                    </span>
+                  </div>
+                )}
                 {inv.length === 0 ? (
                   <p className="text-center text-muted-foreground text-sm py-6">Рюкзак пуст. Ищи предметы в кабинетах.</p>
                 ) : (
@@ -2101,7 +2109,8 @@ export default function EscapeGame() {
                           <div className="text-[10px] text-muted-foreground">
                             {it.hp ? `+${it.hp} HP ` : ""}
                             {it.food ? `+${it.food} 🍴 ` : ""}
-                            {it.strength ? `+${it.strength} 💪` : ""}
+                            {it.strength ? `+${it.strength} 💪 ` : ""}
+                            {it.battery ? `+${it.battery}% 🔋` : ""}
                           </div>
                         </div>
                         <Button size="sm" onClick={() => useItem(idx)}>Исп.</Button>
