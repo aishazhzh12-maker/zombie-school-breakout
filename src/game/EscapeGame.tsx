@@ -2,13 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  levels, bossRiddles, ADMIN_CODE, ADMIN_HINT,
+  levels, bossRiddles,
   FLOOR_Y, CEIL_Y,
   type Classroom, type Zombie, type TaskKind, type LootItem, type SearchSpot,
 } from "./data";
 import {
-  Zap, KeyRound, Download, Flame, Trash2, ToggleRight,
-  Calculator, HelpCircle, Lock, Target,
+  Zap, Download, Flame, Trash2, ToggleRight,
+  HelpCircle, Target,
   X, Skull, Heart, DoorClosed, ArrowUp,
   Lightbulb, Coins, Shirt, ShoppingBag, Crosshair, Swords, Flashlight, Volume2, VolumeX,
   Backpack, Utensils, ArrowDown, BatteryFull, BatteryLow, Trophy,
@@ -274,13 +274,11 @@ const writeSave = (s: SaveData) => {
 // ---- Per-task hints ----
 const TASK_HINTS: Record<TaskKind, { short: string; long: string }> = {
   wires:    { short: "Тяни мышью провод от левой клеммы к правой того же цвета.", long: "Если ошибся — кликни левую клемму ещё раз, чтобы сбросить соединение. Цвета должны совпасть точно." },
-  code:     { short: "На двери математическое выражение — реши его.", long: "1740 + 2331 = 4071. Введи последние 4 цифры — это и есть код." },
   download: { short: "Удерживай кнопку, не отпускай, пока полоса не достигнет 100%.", long: "Если отпустить — прогресс быстро падает. Не двигай мышью с кнопки." },
   reactor:  { short: "Запомни цвета в нужном порядке и повтори.", long: "Если ошибся — последовательность покажут заново с начала. Считай вслух." },
   trash:    { short: "Удерживай рычаг, пока бак не опустеет.", long: "Бак заполняется обратно, если отпустить. Не отвлекайся." },
   switches: { short: "Включи ВСЕ рубильники (ON).", long: "Просто нажми на каждый OFF — нет ловушек, никаких комбинаций." },
   quiz:     { short: "Прочитай вопрос внимательно, всего 2 попытки.", long: "Если не уверен — выбирай самый правдоподобный, времени мало." },
-  lock:     { short: "Подбери 3 цифры по подсказкам сбоку.", long: "Сначала зафиксируй последнюю цифру (она дана прямо), потом подбирай первую по чётности, остаток — по сумме." },
   aim:      { short: "Кликай по красным мишеням как можно быстрее.", long: "Не води мышью — мишень появится случайно. Целься в центр." },
 };
 
@@ -385,34 +383,6 @@ function WiresGame({ onDone }: { onDone: (ok: boolean) => void }) {
   );
 }
 
-// 2) CODE
-function CodeGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const [val, setVal] = useState("");
-  const [err, setErr] = useState(false);
-  const submit = () => {
-    if (val === ADMIN_CODE) onDone(true);
-    else { setErr(true); setTimeout(() => setErr(false), 400); }
-  };
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground text-center">{ADMIN_HINT}</p>
-      <div className={`flex gap-2 ${err ? "shake" : ""}`}>
-        {[0, 1, 2, 3].map(i => (
-          <div key={i} className="w-12 h-14 border-2 border-primary/60 bg-black/50 rounded flex items-center justify-center text-2xl font-display">
-            {val[i] ?? ""}
-          </div>
-        ))}
-      </div>
-      <Input autoFocus inputMode="numeric" maxLength={4} value={val}
-        onChange={(e) => setVal(e.target.value.replace(/\D/g, "").slice(0, 4))}
-        onKeyDown={(e) => e.key === "Enter" && submit()}
-        className="text-center w-40 tracking-[0.5em] font-mono" />
-      <Button onClick={submit} disabled={val.length !== 4}>
-        <KeyRound className="mr-2 h-4 w-4" /> Подтвердить
-      </Button>
-    </div>
-  );
-}
 
 // 3) DOWNLOAD — hold button
 function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
@@ -550,38 +520,6 @@ function SwitchesGame({ onDone }: { onDone: (ok: boolean) => void }) {
   );
 }
 
-// 7) MATH — solve arithmetic
-function MathGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const problem = useMemo(() => {
-    const a = 12 + Math.floor(Math.random() * 80);
-    const b = 7 + Math.floor(Math.random() * 40);
-    const ops = ["+", "-", "×"] as const;
-    const op = ops[Math.floor(Math.random() * 3)];
-    const ans = op === "+" ? a + b : op === "-" ? a - b : a * b;
-    return { a, b, op, ans };
-  }, []);
-  const [val, setVal] = useState("");
-  const [err, setErr] = useState(false);
-  const submit = () => {
-    if (parseInt(val, 10) === problem.ans) onDone(true);
-    else { setErr(true); setTimeout(() => setErr(false), 400); }
-  };
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">Реши пример, чтобы оглушить зомби.</p>
-      <div className={`text-4xl font-display text-primary ${err ? "shake" : ""}`}>
-        {problem.a} {problem.op} {problem.b} = ?
-      </div>
-      <Input autoFocus inputMode="numeric" value={val}
-        onChange={(e) => setVal(e.target.value.replace(/[^\d-]/g, "").slice(0, 6))}
-        onKeyDown={(e) => e.key === "Enter" && submit()}
-        className="text-center w-40 text-2xl font-mono" />
-      <Button onClick={submit} disabled={!val}>
-        <Calculator className="mr-2 h-4 w-4" /> Ответить
-      </Button>
-    </div>
-  );
-}
 
 // 8) QUIZ — school question
 const QUIZ_POOL = [
@@ -688,9 +626,9 @@ function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
 // ============== TASK ICONS ==============
 function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string }) {
   const map: Record<TaskKind, typeof Zap> = {
-    wires: Zap, code: KeyRound, download: Download, reactor: Flame,
+    wires: Zap, download: Download, reactor: Flame,
     trash: Trash2, switches: ToggleRight,
-    quiz: HelpCircle, lock: Lock, aim: Target,
+    quiz: HelpCircle, aim: Target,
   };
   const I = map[kind];
   return <I className={className} />;
@@ -757,8 +695,8 @@ const REACH = 70;
 
 // Task time limits (seconds). aim has its own timer.
 const TIME_LIMITS: Record<TaskKind, number | null> = {
-  wires: 14, code: 18, download: 10, reactor: 22,
-  trash: 12, switches: 10, quiz: 10, lock: 25, aim: null,
+  wires: 14, download: 10, reactor: 22,
+  trash: 12, switches: 10, quiz: 10, aim: null,
 };
 
 // Countdown above each task — calls onTimeout when 0.
@@ -2140,13 +2078,11 @@ export default function EscapeGame() {
                   />
                 )}
                 {modal.zombie.kind === "wires" && <WiresGame onDone={finishTask} />}
-                {modal.zombie.kind === "code" && <CodeGame onDone={finishTask} />}
                 {modal.zombie.kind === "download" && <DownloadGame onDone={finishTask} />}
                 {modal.zombie.kind === "reactor" && <ReactorGame onDone={finishTask} />}
                 {modal.zombie.kind === "trash" && <TrashGame onDone={finishTask} />}
                 {modal.zombie.kind === "switches" && <SwitchesGame onDone={finishTask} />}
                 {modal.zombie.kind === "quiz" && <QuizGame onDone={finishTask} />}
-                {modal.zombie.kind === "lock" && <LockGame onDone={finishTask} />}
                 {modal.zombie.kind === "aim" && <AimGame onDone={finishTask} />}
               </div>
             )}
@@ -2246,10 +2182,10 @@ export default function EscapeGame() {
                   <DoorClosed className="h-10 w-10 text-amber-400" />
                   <div>
                     <h2 className="font-display text-lg text-amber-300">Замок на двери</h2>
-                    <p className="text-xs text-muted-foreground">Подбери код, чтобы открыть путь к директору.</p>
+                    <p className="text-xs text-muted-foreground">Соедини провода, чтобы открыть путь к директору.</p>
                   </div>
                 </div>
-                <HintBox kind="lock" advanced={save.owned.hint} />
+                <HintBox kind="wires" advanced={save.owned.hint} />
                 <TaskTimer seconds={30} onTimeout={() => {
                   setHp(h => Math.max(0, h - 15));
                   setShake(true); setTimeout(() => setShake(false), 400);
@@ -2257,7 +2193,7 @@ export default function EscapeGame() {
                   setTimeout(() => setToast(""), 1600);
                   setModal({ kind: "none" });
                 }} />
-                <LockGame onDone={(ok) => {
+                <WiresGame onDone={(ok) => {
                   if (ok) { setToast("🚪 Дверь открыта!"); setTimeout(() => setToast(""), 1500); setModal({ kind: "boss" }); }
                   else { setHp(h => Math.max(0, h - 10)); setModal({ kind: "none" }); }
                 }} />
