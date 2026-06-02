@@ -951,34 +951,12 @@ function ClassroomScene({
 
   const [keyFound, setKeyFound] = useState(false);
   const [doorOpen, setDoorOpen] = useState(false);
-  const [pin, setPin] = useState("");
-  const [codeRevealedUntil, setCodeRevealedUntil] = useState(0);
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    if (codeRevealedUntil === 0) return;
-    const id = setInterval(() => setNow(Date.now()), 200);
-    return () => clearInterval(id);
-  }, [codeRevealedUntil]);
-  const codeVisible = now < codeRevealedUntil;
 
-  const noCodeNeeded = quest.variant === "key-only";
-
-  const tryShine = () => {
-    if (!lit) { onToast("🔦 Нужен фонарик с зарядом"); return; }
-    if (!onConsumeBattery(10)) { onToast("🪫 Не хватает заряда"); return; }
-    setCodeRevealedUntil(Date.now() + 5000);
-    onToast(`🔦 Код виден ${5}с (−10% батареи)`);
-  };
-
-  const submitPin = () => {
+  const openDoor = () => {
     if (!keyFound) { onToast("🔒 Сначала найди ключ"); return; }
-    if (noCodeNeeded || pin === quest.code) {
-      setDoorOpen(true);
-      onToast("🚪 Дверь открыта! +15 монет");
-      onCollect({ name: "Открытая дверь", emoji: "🚪", hpGain: 0 }, classroom.spots[0]); // не используется, просто триггер
-    } else {
-      onToast("❌ Неверный код");
-    }
+    setDoorOpen(true);
+    onToast("🚪 Дверь открыта! +15 монет");
+    onCollect({ name: "Открытая дверь", emoji: "🚪", hpGain: 0 }, classroom.spots[0]);
   };
 
   const tryLeave = () => {
