@@ -204,8 +204,6 @@ export const levels: Level[] = [
   },
 ];
 
-export const ADMIN_CODE = "4071";
-export const ADMIN_HINT = "На двери: «1740 + 2331 = ?» — последние 4 цифры.";
 
 export const bossRiddles: { question: string; options: string[]; answer: number }[] = [
   { question: "Что становится больше, если поставить с ног на голову?", options: ["Гора", "Число 6", "Часы", "Зеркало"], answer: 1 },
