@@ -1,7 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bangers&family=Press+Start+2P&family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;700&family=Source+Code+Pro:wght@400;500;700&family=Bangers&family=Press+Start+2P&family=VT323&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -29,34 +29,42 @@
   --color-ring: var(--ring);
   --color-blood: var(--blood);
   --color-toxic: var(--toxic);
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-display: "Press Start 2P", system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-display: "IBM Plex Sans", "Press Start 2P", system-ui, sans-serif;
   --font-pixel: "VT323", "Press Start 2P", monospace;
+  --font-mono: "IBM Plex Mono", "Source Code Pro", ui-monospace, monospace;
 }
 
+/* PostHog-inspired palette (cream canvas, olive ink, saturated yellow-orange CTA) */
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.14 0.02 150);
-  --foreground: oklch(0.96 0.01 100);
-  --card: oklch(0.18 0.02 150);
-  --card-foreground: oklch(0.96 0.01 100);
-  --popover: oklch(0.18 0.02 150);
-  --popover-foreground: oklch(0.96 0.01 100);
-  --primary: oklch(0.78 0.22 140);
-  --primary-foreground: oklch(0.12 0.02 150);
-  --secondary: oklch(0.24 0.03 150);
-  --secondary-foreground: oklch(0.96 0.01 100);
-  --muted: oklch(0.22 0.02 150);
-  --muted-foreground: oklch(0.72 0.03 130);
-  --accent: oklch(0.65 0.22 30);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.58 0.24 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.3 0.04 140);
-  --input: oklch(0.22 0.03 150);
-  --ring: oklch(0.78 0.22 140);
-  --blood: oklch(0.52 0.22 25);
-  --toxic: oklch(0.82 0.24 135);
+  --radius: 0.375rem;
+  --background: #eeefe9;
+  --foreground: #23251d;
+  --card: #ffffff;
+  --card-foreground: #23251d;
+  --popover: #fcfcfa;
+  --popover-foreground: #23251d;
+  --primary: #f7a501;
+  --primary-foreground: #23251d;
+  --secondary: #e5e7e0;
+  --secondary-foreground: #23251d;
+  --muted: #e5e7e0;
+  --muted-foreground: #6c6e63;
+  --accent: #f7a501;
+  --accent-foreground: #23251d;
+  --destructive: #cd4239;
+  --destructive-foreground: #ffffff;
+  --border: #bfc1b7;
+  --input: #dcdfd2;
+  --ring: #f7a501;
+  --blood: #cd4239;
+  --toxic: #2c8c66;
+  --primary-pressed: #dd9001;
+  --primary-active: #b17816;
+  --ink: #23251d;
+  --body: #4d4f46;
+  --hairline: #bfc1b7;
+  --hairline-soft: #dcdfd2;
 }
 
 @layer base {
