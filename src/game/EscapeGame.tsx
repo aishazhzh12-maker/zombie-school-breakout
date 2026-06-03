@@ -1342,7 +1342,10 @@ function ClassroomScene({
 
       {/* Лана — ходит по классу (A/D или ← →) */}
       <div className="absolute transition-none" style={{ left: lanaX, bottom: 28 }}>
-        <PixelHuman palette={lanaPalette} facing={facing} size={43} variant="girl" />
+        <LanaSpeech />
+        <div className="lana-idle">
+          <PixelHuman palette={lanaPalette} facing={facing} size={64} variant="girl" />
+        </div>
       </div>
 
       {/* Точки поиска */}
