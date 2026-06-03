@@ -1643,14 +1643,16 @@ export default function EscapeGame() {
     const z = modal.zombie;
     if (ok) {
       setKilled(prev => new Set(prev).add(z.id));
+      sfxKill();
       const reward = 10 + level * 5;
       setCoins(c => c + reward);
       setToast(`💀 ${z.name} повержен! +${reward} 🪙`);
     } else {
       const dmg = Math.max(8, 25 - strength * 3);
+      sfxBite();
       setHp(h => {
         const nh = Math.max(0, h - dmg);
-        if (nh === 0) setTimeout(() => setModal({ kind: "lose" }), 200);
+        if (nh === 0) { sfxDeath(); setTimeout(() => setModal({ kind: "lose" }), 200); }
         return nh;
       });
       setShake(true);
