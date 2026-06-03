@@ -53,7 +53,7 @@ type PixelPalette = {
   eyes?: string;
 };
 
-function PixelHuman({ palette, facing = 1, size = 56, variant = "student", dead = false }:
+function PixelHuman({ palette, facing = 1, size = 80, variant = "student", dead = false }:
   { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
   // Build grid using cells (x,y,color). Use rectangles for crisp pixels.
   // 16 columns x 20 rows
@@ -306,7 +306,7 @@ function HintBox({ kind, advanced }: { kind: TaskKind; advanced: boolean }) {
 }
 
 // Backwards-compatible API used elsewhere in this file
-function Crewmate({ color, facing = 1, size = 56, dead = false, palette }:
+function Crewmate({ color, facing = 1, size = 80, dead = false, palette }:
   { color: string; facing?: 1 | -1; size?: number; dead?: boolean; palette?: PixelPalette }) {
   const isLana = color === "#ff66aa";
   const pal = palette ?? (isLana ? PAL_LANA : (PALETTES[color] ?? { ...PAL_MILA, shirt: color, shirtShade: color }));
@@ -638,7 +638,7 @@ function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string
 }
 
 // ---- Pixel zombie sprite ----
-function PixelZombie({ size = 56, facing = -1, hurt = false }: { size?: number; facing?: 1 | -1; hurt?: boolean }) {
+function PixelZombie({ size = 80, facing = -1, hurt = false }: { size?: number; facing?: 1 | -1; hurt?: boolean }) {
   return (
     <PixelHuman
       facing={facing}
@@ -1079,7 +1079,7 @@ function ClassroomScene({
 
       {/* Лана — ходит по классу (A/D или ← →) */}
       <div className="absolute transition-none" style={{ left: lanaX, bottom: 28 }}>
-        <PixelHuman palette={lanaPalette} facing={facing} size={64} variant="girl" />
+        <PixelHuman palette={lanaPalette} facing={facing} size={88} variant="girl" />
       </div>
 
       {/* Точки поиска */}
@@ -1658,7 +1658,7 @@ export default function EscapeGame() {
       <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-red-950 p-4 overflow-auto">
         <div className="max-w-3xl w-full space-y-4">
           <div className="flex justify-center items-end gap-4">
-            <Crewmate color="#ff66aa" palette={lanaPalette} size={72} />
+            <Crewmate color="#ff66aa" palette={lanaPalette} size={96} />
             <PixelZombie />
             <PixelZombie facing={1} />
             <Impostor size={80} />
@@ -1713,7 +1713,7 @@ export default function EscapeGame() {
                 const equipped = save.outfit === o.id;
                 return (
                   <div key={o.id} className={`p-3 rounded border ${equipped ? "border-primary bg-primary/10" : "border-zinc-700 bg-black/40"} flex flex-col items-center gap-2`}>
-                    <PixelHuman palette={o.palette} variant="girl" size={64} />
+                    <PixelHuman palette={o.palette} variant="girl" size={88} />
                     <div className="text-xs font-pixel text-center">{o.name}</div>
                     {equipped
                       ? <div className="text-[10px] text-primary font-pixel">НАДЕТО</div>
@@ -2017,7 +2017,7 @@ export default function EscapeGame() {
             if (killed.has(z.id)) {
               return (
                 <div key={z.id} className="absolute opacity-60" style={{ left: z.x - 28, top: FLOOR_Y - 20, transform: "rotate(90deg)" }}>
-                  <PixelZombie size={56} />
+                  <PixelZombie size={80} />
                 </div>
               );
             }
@@ -2027,7 +2027,7 @@ export default function EscapeGame() {
                 <div key={z.id} className="absolute" style={{ left: z.x - 28, top: FLOOR_Y - 70 }}>
                   {/* tilted up, looking at ceiling */}
                   <div style={{ transform: "rotate(-18deg)", transformOrigin: "50% 90%" }}>
-                    <PixelZombie size={56} facing={1} />
+                    <PixelZombie size={80} facing={1} />
                   </div>
                   {/* Zzz */}
                   <div className="absolute -top-6 left-10 text-blue-200 font-pixel text-sm animate-pulse drop-shadow">
@@ -2042,7 +2042,7 @@ export default function EscapeGame() {
             const zCur = zomPosRef.current[z.id] ?? z.x;
             return (
               <div key={z.id} className="absolute zombie-walk" style={{ left: zCur - 28, top: FLOOR_Y - 70, transition: "left 0.08s linear" }}>
-                <PixelZombie size={56} facing={zCur > x ? -1 : 1} />
+                <PixelZombie size={80} facing={zCur > x ? -1 : 1} />
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
                   <TaskIcon kind={z.kind} className="h-3 w-3" />
                   {z.name}
@@ -2055,7 +2055,7 @@ export default function EscapeGame() {
           <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 }}>
             <div className={moving ? "lana-walk" : "lana-idle"}
               style={crouching ? { transform: "scaleY(0.7) translateY(18px)", transformOrigin: "50% 100%" } : undefined}>
-              <Crewmate color="#ff66aa" palette={lanaPalette} facing={facing} size={56} />
+              <Crewmate color="#ff66aa" palette={lanaPalette} facing={facing} size={80} />
               {batLeft > 0 && (
                 <div
                   className="absolute pointer-events-none"
@@ -2128,7 +2128,7 @@ export default function EscapeGame() {
             {modal.kind === "task" && (
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <PixelZombie size={48} />
+                  <PixelZombie size={64} />
                   <div>
                     <h2 className="font-display text-lg text-red-400">{modal.zombie.name}</h2>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
