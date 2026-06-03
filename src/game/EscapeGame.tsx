@@ -55,105 +55,177 @@ type PixelPalette = {
 
 function PixelHuman({ palette, facing = 1, size = 80, variant = "student", dead = false }:
   { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
-  // Build grid using cells (x,y,color). Use rectangles for crisp pixels.
-  // 16 columns x 20 rows
+  // Detailed pixel grid: 16 cols x 20 rows. Crisp pixels with outline + shading + highlights.
   const px = (x: number, y: number, c: string, w = 1, h = 1) =>
-    <rect key={`${x}-${y}-${c}`} x={x} y={y} width={w} height={h} fill={c} />;
+    <rect key={`${x}-${y}-${c}-${w}-${h}`} x={x} y={y} width={w} height={h} fill={c} shapeRendering="crispEdges" />;
 
   const isGirl = variant === "girl";
   const isBoss = variant === "boss";
+  const OUTLINE = "#1a0f14";
+  const HL = "#ffffff";
   const cells: React.ReactNode[] = [];
 
-  // Hair back (girl: long hair behind body)
+  // ---------- HAIR BACK (girl long hair) ----------
   if (isGirl) {
-    cells.push(px(4, 11, palette.hairShade, 8, 5));
-    cells.push(px(3, 12, palette.hairShade, 1, 3));
-    cells.push(px(12, 12, palette.hairShade, 1, 3));
+    cells.push(px(3, 6, palette.hairShade, 1, 9));
+    cells.push(px(12, 6, palette.hairShade, 1, 9));
+    cells.push(px(2, 7, palette.hairShade, 1, 6));
+    cells.push(px(13, 7, palette.hairShade, 1, 6));
+    cells.push(px(4, 13, palette.hairShade, 8, 2));
+    // outline tips
+    cells.push(px(2, 13, OUTLINE)); cells.push(px(13, 13, OUTLINE));
   }
 
-  // Head (rows 2..6)
-  // skin block
-  cells.push(px(6, 2, palette.skin, 4, 5));
-  cells.push(px(5, 3, palette.skin, 6, 3));
-  // skin shading right side
-  cells.push(px(10, 3, palette.skinShade, 1, 3));
-  cells.push(px(9, 6, palette.skinShade, 1, 1));
+  // ---------- HEAD ----------
+  // head outline
+  cells.push(px(5, 1, OUTLINE, 6, 1));
+  cells.push(px(4, 2, OUTLINE)); cells.push(px(11, 2, OUTLINE));
+  cells.push(px(4, 3, OUTLINE)); cells.push(px(11, 3, OUTLINE));
+  cells.push(px(4, 4, OUTLINE)); cells.push(px(11, 4, OUTLINE));
+  cells.push(px(4, 5, OUTLINE)); cells.push(px(11, 5, OUTLINE));
+  cells.push(px(5, 6, OUTLINE)); cells.push(px(10, 6, OUTLINE));
+  // skin fill
+  cells.push(px(5, 2, palette.skin, 6, 1));
+  cells.push(px(5, 3, palette.skin, 6, 1));
+  cells.push(px(5, 4, palette.skin, 6, 1));
+  cells.push(px(5, 5, palette.skin, 6, 1));
+  cells.push(px(6, 6, palette.skin, 4, 1));
+  // skin shading right
+  cells.push(px(10, 3, palette.skinShade));
+  cells.push(px(10, 4, palette.skinShade));
+  cells.push(px(10, 5, palette.skinShade));
+  cells.push(px(9, 6, palette.skinShade));
+  // cheek blush
+  if (isGirl) {
+    cells.push(px(5, 5, "#ff9bb5"));
+    cells.push(px(10, 5, "#ff7d99"));
+  }
+
   // hair top
-  cells.push(px(5, 1, palette.hair, 6, 1));
-  cells.push(px(4, 2, palette.hair, 8, 1));
-  cells.push(px(4, 3, palette.hair, 1, 2));
-  cells.push(px(11, 3, palette.hair, 1, 2));
+  if (!isBoss) {
+    cells.push(px(5, 1, palette.hair, 6, 1));
+    cells.push(px(4, 2, palette.hair)); cells.push(px(11, 2, palette.hair));
+    // shine
+    cells.push(px(6, 1, palette.hairShade));
+    cells.push(px(8, 1, HL));
+  }
   if (isGirl) {
     // bangs
-    cells.push(px(5, 3, palette.hair, 2, 1));
-    cells.push(px(9, 3, palette.hair, 2, 1));
+    cells.push(px(5, 2, palette.hair, 2, 1));
+    cells.push(px(9, 2, palette.hair, 2, 1));
+    cells.push(px(5, 3, palette.hair));
+    cells.push(px(10, 3, palette.hair));
   }
   if (isBoss) {
-    // bald with side gray
-    cells.push(px(5, 2, palette.skin, 6, 1));
-    cells.push(px(4, 2, palette.hair, 1, 2));
-    cells.push(px(11, 2, palette.hair, 1, 2));
+    cells.push(px(5, 1, palette.skin, 6, 1));
+    cells.push(px(4, 2, palette.hair)); cells.push(px(11, 2, palette.hair));
+    cells.push(px(4, 3, palette.hair)); cells.push(px(11, 3, palette.hair));
   }
-  // eyes
-  cells.push(px(6, 4, palette.eyes ?? "#1b1b1b", 1, 1));
-  cells.push(px(9, 4, palette.eyes ?? "#1b1b1b", 1, 1));
+
+  // eyebrows
+  cells.push(px(6, 3, OUTLINE));
+  cells.push(px(9, 3, OUTLINE));
+  // eye whites + pupils
+  cells.push(px(6, 4, HL)); cells.push(px(9, 4, HL));
+  cells.push(px(6, 4, palette.eyes ?? OUTLINE));
+  cells.push(px(9, 4, palette.eyes ?? OUTLINE));
   // mouth
-  if (isBoss) {
-    cells.push(px(7, 6, "#5a0a0a", 2, 1));
-  } else {
-    cells.push(px(7, 6, "#8a3a3a", 2, 1));
-  }
+  if (isBoss) cells.push(px(7, 6, "#5a0a0a", 2, 1));
+  else cells.push(px(7, 6, "#7a2230", 2, 1));
   // neck
   cells.push(px(7, 7, palette.skinShade, 2, 1));
+  cells.push(px(6, 7, OUTLINE)); cells.push(px(9, 7, OUTLINE));
 
-  // Body / shirt (rows 8..13)
-  cells.push(px(4, 8, palette.shirt, 8, 5));
-  cells.push(px(3, 9, palette.shirt, 1, 3));
-  cells.push(px(12, 9, palette.shirt, 1, 3));
+  // ---------- BODY / SHIRT ----------
+  // shirt outline
+  cells.push(px(3, 8, OUTLINE)); cells.push(px(12, 8, OUTLINE));
+  cells.push(px(2, 9, OUTLINE)); cells.push(px(13, 9, OUTLINE));
+  cells.push(px(2, 10, OUTLINE)); cells.push(px(13, 10, OUTLINE));
+  cells.push(px(2, 11, OUTLINE)); cells.push(px(13, 11, OUTLINE));
+  cells.push(px(3, 12, OUTLINE)); cells.push(px(12, 12, OUTLINE));
+  // shirt fill
+  cells.push(px(4, 8, palette.shirt, 8, 1));
+  cells.push(px(3, 9, palette.shirt, 10, 1));
+  cells.push(px(3, 10, palette.shirt, 10, 1));
+  cells.push(px(3, 11, palette.shirt, 10, 1));
+  cells.push(px(4, 12, palette.shirt, 8, 1));
   // shirt shading
-  cells.push(px(11, 8, palette.shirtShade, 1, 5));
+  cells.push(px(11, 9, palette.shirtShade, 1, 3));
   cells.push(px(4, 12, palette.shirtShade, 8, 1));
+  cells.push(px(3, 11, palette.shirtShade));
+  cells.push(px(12, 11, palette.shirtShade));
+  // shirt highlight
+  cells.push(px(4, 9, HL));
+
   if (isGirl) {
-    // collar / detail
-    cells.push(px(7, 8, "#ffffff", 2, 1));
+    // collar
+    cells.push(px(7, 8, HL, 2, 1));
+    cells.push(px(7, 9, palette.shirt, 2, 1));
+    // heart
+    cells.push(px(7, 10, HL));
+    cells.push(px(9, 10, HL));
+    cells.push(px(7, 11, HL, 3, 1));
+    cells.push(px(8, 12, HL));
   }
   if (isBoss) {
-    // tie
-    cells.push(px(7, 8, "#1b1b1b", 2, 4));
-    cells.push(px(7, 12, "#1b1b1b", 2, 1));
+    cells.push(px(7, 8, OUTLINE, 2, 5));
+    cells.push(px(7, 9, "#dd2222"));
   }
-  // arms
-  cells.push(px(3, 8, palette.shirt, 1, 1));
-  cells.push(px(12, 8, palette.shirt, 1, 1));
-  // hands
-  cells.push(px(3, 12, palette.skin, 1, 1));
-  cells.push(px(12, 12, palette.skin, 1, 1));
 
-  // Pants / legs (rows 13..17)
-  cells.push(px(5, 13, palette.pants, 6, 4));
-  cells.push(px(5, 13, palette.pants, 2, 4));
-  cells.push(px(9, 13, palette.pants, 2, 4));
-  cells.push(px(7, 13, palette.pantsShade, 2, 4));
+  // arms (skin showing at hands)
+  cells.push(px(2, 9, palette.shirt));
+  cells.push(px(13, 9, palette.shirt));
+  cells.push(px(2, 10, palette.shirt));
+  cells.push(px(13, 10, palette.shirt));
+  // hands
+  cells.push(px(2, 11, palette.skin));
+  cells.push(px(13, 11, palette.skin));
+  cells.push(px(2, 12, OUTLINE));
+  cells.push(px(13, 12, OUTLINE));
+
+  // ---------- PANTS / LEGS ----------
+  cells.push(px(4, 13, OUTLINE)); cells.push(px(11, 13, OUTLINE));
+  cells.push(px(5, 13, palette.pants, 6, 1));
+  // legs split
+  cells.push(px(4, 14, OUTLINE)); cells.push(px(11, 14, OUTLINE));
+  cells.push(px(7, 14, OUTLINE, 2, 4));
+  cells.push(px(5, 14, palette.pants, 2, 3));
+  cells.push(px(9, 14, palette.pants, 2, 3));
+  // shading
+  cells.push(px(6, 14, palette.pantsShade, 1, 3));
+  cells.push(px(10, 14, palette.pantsShade, 1, 3));
   // shoes
+  cells.push(px(4, 17, OUTLINE, 3, 1));
+  cells.push(px(9, 17, OUTLINE, 3, 1));
   cells.push(px(4, 17, palette.shoes, 3, 1));
   cells.push(px(9, 17, palette.shoes, 3, 1));
+  cells.push(px(4, 17, HL));
+  cells.push(px(9, 17, HL));
 
-  // Girl: hair down sides
+  // Girl side hair (front)
   if (isGirl) {
-    cells.push(px(4, 7, palette.hair, 1, 3));
-    cells.push(px(11, 7, palette.hair, 1, 3));
+    cells.push(px(4, 6, palette.hair));
+    cells.push(px(11, 6, palette.hair));
+    cells.push(px(4, 7, palette.hair));
+    cells.push(px(11, 7, palette.hair));
   }
 
   return (
     <svg width={size} height={size * 1.25} viewBox="0 0 16 20"
       style={{ transform: `scaleX(${facing})`, imageRendering: "pixelated", shapeRendering: "crispEdges" }}>
-      {/* shadow */}
-      <ellipse cx="8" cy="19" rx="4" ry="0.6" fill="#000" opacity="0.5" />
+      {/* drop shadow */}
+      <ellipse cx="8" cy="18.7" rx="4" ry="0.6" fill="#000" opacity="0.5" />
       {cells}
-      {dead && <text x="8" y="6" textAnchor="middle" fontSize="3" fill="red">X</text>}
+      {dead && (
+        <>
+          <rect x="6" y="4" width="1" height="1" fill="#ff2222" />
+          <rect x="9" y="4" width="1" height="1" fill="#ff2222" />
+        </>
+      )}
     </svg>
   );
 }
+
 
 // Palettes
 const PAL_LANA: PixelPalette = {
