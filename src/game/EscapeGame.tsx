@@ -2027,12 +2027,23 @@ export default function EscapeGame() {
               </span>
             ))}
             {inv.length > 5 && <span className="text-[10px] text-amber-300">+{inv.length - 5}</span>}
+            <button onClick={beginGame}
+              title="Начать заново"
+              className="ml-2 flex items-center gap-1 text-[10px] text-amber-200 hover:text-amber-100 bg-black/60 border border-amber-700/60 rounded px-2 py-0.5 font-pixel">
+              ↻ Заново
+            </button>
+            <button onClick={() => { setStarted(false); setMenuTab("play"); setModal({ kind: "none" }); }}
+              title="Выйти в меню"
+              className="flex items-center gap-1 text-[10px] text-red-200 hover:text-red-100 bg-black/60 border border-red-700/60 rounded px-2 py-0.5 font-pixel">
+              ✕ В меню
+            </button>
           </div>
           {allKilled && <div className="text-emerald-400 font-bold animate-pulse">
             → {isFinalLevel ? "Беги к директору!" : "Лестница наверх!"}
           </div>}
         </div>
       </div>
+
 
       {/* Corridor */}
       <div ref={viewportRef} className="absolute inset-0 pt-16">
