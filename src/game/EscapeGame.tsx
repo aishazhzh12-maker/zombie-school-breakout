@@ -1376,6 +1376,24 @@ export default function EscapeGame() {
   const [submittingScore, setSubmittingScore] = useState(false);
 
   const [started, setStarted] = useState(false);
+  const [musicOff, setMusicOff] = useState(false);
+
+  // Background music: menu vs game. Needs a user gesture to start AudioContext.
+  useEffect(() => {
+    const track: "menu" | "game" = started ? "game" : "menu";
+    const start = () => playMusic(track);
+    start();
+    const onGesture = () => start();
+    window.addEventListener("pointerdown", onGesture);
+    window.addEventListener("keydown", onGesture);
+    return () => {
+      window.removeEventListener("pointerdown", onGesture);
+      window.removeEventListener("keydown", onGesture);
+    };
+  }, [started]);
+  useEffect(() => () => { stopMusic(); }, []);
+  useEffect(() => { setMusicMuted(musicOff); }, [musicOff]);
+
   const [level, setLevel] = useState(0);
   const [x, setX] = useState(120);
   const [facing, setFacing] = useState<1 | -1>(1);
