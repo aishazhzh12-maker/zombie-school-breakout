@@ -1477,6 +1477,7 @@ export default function EscapeGame() {
         if (k === "f" && gunLeft > 0) {
           setGunLeft(n => { const nn = n - 1; setSave(s => { const ns = { ...s, owned: { ...s.owned, gun: nn } }; writeSave(ns); return ns; }); return nn; });
           setKilled(prev => new Set(prev).add(z.id));
+          sfxGunshot();
           setCoins(c => c + 25);
           setToast(`🔫 ${z.name} — выстрел! +25 монет`);
           setTimeout(() => setToast(""), 1600);
