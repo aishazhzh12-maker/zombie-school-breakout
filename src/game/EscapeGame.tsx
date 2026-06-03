@@ -63,7 +63,7 @@ type PixelPalette = {
   ponytail?: string;
 };
 
-function PixelHuman({ palette, facing = 1, size = 43, variant = "student", dead = false }:
+function PixelHuman({ palette, facing = 1, size = 64, variant = "student", dead = false }:
   { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
   // 64x64 detailed sprite. Built into a pixel grid then emitted as horizontal-run rects.
   const isGirl = variant === "girl";
