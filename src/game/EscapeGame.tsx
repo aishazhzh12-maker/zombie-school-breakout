@@ -55,6 +55,12 @@ type PixelPalette = {
   armored?: boolean;
   /** Optional Mario-style cap color (defaults to hair) */
   cap?: string;
+  /** Optional accent streak color in hair (e.g. purple strand) */
+  streak?: string;
+  /** Optional accent color for clothing trim */
+  accent?: string;
+  /** Optional ponytail color (defaults to hair) */
+  ponytail?: string;
 };
 
 function PixelHuman({ palette, facing = 1, size = 43, variant = "student", dead = false }:
