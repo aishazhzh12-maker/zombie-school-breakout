@@ -55,9 +55,15 @@ type PixelPalette = {
   armored?: boolean;
   /** Optional Mario-style cap color (defaults to hair) */
   cap?: string;
+  /** Optional accent streak color in hair (e.g. purple strand) */
+  streak?: string;
+  /** Optional accent color for clothing trim */
+  accent?: string;
+  /** Optional ponytail color (defaults to hair) */
+  ponytail?: string;
 };
 
-function PixelHuman({ palette, facing = 1, size = 43, variant = "student", dead = false }:
+function PixelHuman({ palette, facing = 1, size = 64, variant = "student", dead = false }:
   { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
   // 64x64 detailed sprite. Built into a pixel grid then emitted as horizontal-run rects.
   const isGirl = variant === "girl";
@@ -130,6 +136,50 @@ function PixelHuman({ palette, facing = 1, size = 43, variant = "student", dead 
     fill(42, 34, 44, 34, K);
     // forward strand on left cheek
     set(22, 11, HAIRs); set(22, 12, HAIRs);
+
+    // === HIGH PONYTAIL (sticks out on facing side) ===
+    const PT = palette.ponytail ?? HAIR;
+    const PTs = HAIRs;
+    // pony base / scrunchie
+    fill(38, 5, 44, 8, PT);
+    outline(38, 5, 44, 8, K);
+    // ribbon highlight
+    fill(39, 6, 43, 6, palette.accent ?? "#c84060");
+    // tail flowing back/up-right
+    const tail: [number, number][] = [
+      [44,4],[45,4],[46,4],[47,5],[48,6],[49,7],[50,8],[51,9],[52,10],
+      [52,11],[53,12],[53,13],[52,14],[51,15],[50,16],[49,17],[48,18],
+      [47,18],[46,19],[45,19],[44,19],
+      // thicker body of tail
+      [46,5],[47,6],[48,7],[49,8],[50,9],[51,10],[51,11],[52,12],
+      [50,13],[51,13],[49,14],[50,14],[48,15],[49,15],[47,16],[48,16],
+      [46,17],[47,17],[45,18],[46,18],
+    ];
+    for (const [tx, ty] of tail) set(tx, ty, PT);
+    // shading on tail
+    for (const [tx, ty] of tail) {
+      if (ty > 9 && (tx + ty) % 2 === 0) set(tx, ty, PTs);
+    }
+    // ponytail outline (right edge)
+    set(53,11,K); set(53,14,K); set(52,15,K); set(51,16,K); set(50,17,K); set(49,18,K); set(48,19,K);
+    set(43,4,K); set(46,3,K); set(47,4,K);
+
+    // === PURPLE STREAK in front (if streak color provided) ===
+    if (palette.streak) {
+      const S = palette.streak;
+      // a clear strand falling over right side of face/bangs
+      fill(36, 8, 38, 9, S);
+      fill(37, 10, 38, 12, S);
+      set(38, 13, S); set(38, 14, S);
+      // a small accent in ponytail
+      fill(40, 7, 41, 8, S);
+      set(46, 9, S); set(47, 10, S);
+    }
+
+    // === LONG EYELASHES ===
+    set(24, 12, K); set(29, 12, K);
+    set(34, 12, K); set(39, 12, K);
+    set(24, 13, K); set(39, 13, K);
   } else if (isBoss) {
     // bald top + grey temples
     fill(27, 4, 36, 6, SKIN);
@@ -152,14 +202,34 @@ function PixelHuman({ palette, facing = 1, size = 43, variant = "student", dead 
   fill(34, 11, 38, 11, brow);
   if (isBoss) { fill(25, 12, 26, 12, K); fill(37, 12, 38, 12, K); }
 
-  // ===== EYES =====
-  fill(25, 13, 29, 15, WHITE);
-  fill(34, 13, 38, 15, WHITE);
-  outline(25, 13, 29, 15, K);
-  outline(34, 13, 38, 15, K);
-  fill(26, 13, 27, 15, EYE);
-  fill(35, 13, 36, 15, EYE);
-  set(27, 13, WHITE); set(36, 13, WHITE); // catchlight
+  // ===== EYES (pretty: iris + pupil + catchlight) =====
+  const IRIS = isBoss ? "#ff3030" : isGirl ? "#7a5ad6" : EYE;
+  const IRISs = isBoss ? "#7a0808" : isGirl ? "#3a2a6a" : "#0a1530";
+  // sclera
+  fill(24, 13, 29, 16, WHITE);
+  fill(34, 13, 39, 16, WHITE);
+  outline(24, 13, 29, 16, K);
+  outline(34, 13, 39, 16, K);
+  // iris ring
+  fill(25, 14, 28, 15, IRIS);
+  fill(35, 14, 38, 15, IRIS);
+  // iris shading bottom
+  set(25, 15, IRISs); set(28, 15, IRISs);
+  set(35, 15, IRISs); set(38, 15, IRISs);
+  // pupil
+  fill(26, 14, 27, 15, K);
+  fill(36, 14, 37, 15, K);
+  // big sparkly catchlight
+  set(26, 14, WHITE); set(36, 14, WHITE);
+  set(27, 13, WHITE); set(37, 13, WHITE);
+  // tiny secondary sparkle
+  set(28, 15, isBoss ? "#ffaaaa" : "#bcd6ff");
+  set(38, 15, isBoss ? "#ffaaaa" : "#bcd6ff");
+  if (isBoss) {
+    // glowing red aura under eyes
+    set(24, 16, "#7a0a0a"); set(29, 16, "#7a0a0a");
+    set(34, 16, "#7a0a0a"); set(39, 16, "#7a0a0a");
+  }
 
   // ===== NOSE =====
   fill(31, 15, 32, 18, SKINs);
@@ -339,15 +409,77 @@ function PixelHuman({ palette, facing = 1, size = 43, variant = "student", dead 
   );
 }
 
+// ---- Lana speech bubble (rotating phrases) ----
+const LANA_LINES = [
+  "Где же ключ?..",
+  "Тише, не разбуди их",
+  "Надо найти выход!",
+  "Я справлюсь 💜",
+  "Хм, может в столе?",
+  "Слышишь шаги?",
+  "Только бы батарейка не села",
+  "Ещё немного…",
+  "Кажется, тут что-то есть",
+  "Спокойно, Лана",
+];
+function LanaSpeech({ side = "right" }: { side?: "left" | "right" }) {
+  const [line, setLine] = useState<string | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    const pick = () => {
+      if (!mounted) return;
+      setLine(LANA_LINES[Math.floor(Math.random() * LANA_LINES.length)]);
+      setTimeout(() => mounted && setLine(null), 2600);
+    };
+    const t0 = setTimeout(pick, 1200);
+    const iv = setInterval(pick, 6500);
+    return () => { mounted = false; clearTimeout(t0); clearInterval(iv); };
+  }, []);
+  if (!line) return null;
+  return (
+    <div
+      className="absolute font-pixel text-[11px] text-black bg-white border-2 border-black px-2 py-1 whitespace-nowrap animate-fade-in"
+      style={{
+        bottom: 70, [side]: -10, borderRadius: 6,
+        boxShadow: "2px 2px 0 #000",
+        zIndex: 20,
+      }}
+    >
+      {line}
+      <span
+        className="absolute"
+        style={{
+          [side]: 16, bottom: -8, width: 0, height: 0,
+          borderLeft: "6px solid transparent",
+          borderRight: "6px solid transparent",
+          borderTop: "8px solid #000",
+        }}
+      />
+      <span
+        className="absolute"
+        style={{
+          [side]: 17, bottom: -5, width: 0, height: 0,
+          borderLeft: "5px solid transparent",
+          borderRight: "5px solid transparent",
+          borderTop: "6px solid #fff",
+        }}
+      />
+    </div>
+  );
+}
+
 
 
 // Palettes
 const PAL_LANA: PixelPalette = {
-  skin: "#e8b894", skinShade: "#b8855f",
-  hair: "#1a0f0a", hairShade: "#000000",
-  shirt: "#3a2a3a", shirtShade: "#1a121a",
-  pants: "#1a1a22", pantsShade: "#000000",
-  shoes: "#0a0a0a",
+  skin: "#f0c8a4", skinShade: "#c08a68",
+  hair: "#5a3418", hairShade: "#2a180a",
+  shirt: "#6a3a9a", shirtShade: "#3a1a5a",
+  pants: "#2a1a3a", pantsShade: "#150a1f",
+  shoes: "#1a0a1a",
+  streak: "#c84afe",
+  accent: "#e8a8ff",
+  ponytail: "#5a3418",
 };
 const PAL_MILA: PixelPalette = {
   skin: "#f0c098", skinShade: "#c89070",
@@ -1269,7 +1401,10 @@ function ClassroomScene({
 
       {/* Лана — ходит по классу (A/D или ← →) */}
       <div className="absolute transition-none" style={{ left: lanaX, bottom: 28 }}>
-        <PixelHuman palette={lanaPalette} facing={facing} size={43} variant="girl" />
+        <LanaSpeech />
+        <div className="lana-idle">
+          <PixelHuman palette={lanaPalette} facing={facing} size={64} variant="girl" />
+        </div>
       </div>
 
       {/* Точки поиска */}
@@ -2260,6 +2395,7 @@ export default function EscapeGame() {
 
           {/* Lana */}
           <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 }}>
+            <LanaSpeech side={facing === 1 ? "left" : "right"} />
             <div className={moving ? "lana-walk" : "lana-idle"}
               style={crouching ? { transform: "scaleY(0.7) translateY(18px)", transformOrigin: "50% 100%" } : undefined}>
               <Crewmate color="#ff66aa" palette={lanaPalette} facing={facing} size={80} />
