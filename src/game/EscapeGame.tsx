@@ -117,61 +117,81 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
   // shading on the cheek opposite the turn (head looks right → shade left cheek)
   px(5, 5, Sh); px(5, 6, Sh); px(6, 6, Sh);
 
-  // ============ HAIR (top crown, bangs swept toward turn side) ============
+  // ============ HAIR (top crown only — does NOT cover eyes) ============
   if (isBoss) {
-    row(1, 6, 9, S);
+    // bald with thin grey rim
     px(5, 1, Hh); px(10, 1, Hh);
-    px(8, 2, "#7a1a1a"); px(9, 3, "#7a1a1a"); // scar
+    px(6, 1, Hh); px(9, 1, Hh);
+    // scar on forehead
+    px(8, 2, "#7a1a1a");
   } else {
+    // crown across top (row 1 only)
     row(1, 6, 9, H);
     px(5, 2, H); px(10, 2, H);
-    px(5, 3, H); px(10, 3, H);
-    // bangs on the turn side (right of face)
-    px(8, 2, H); px(9, 2, H); px(9, 3, H);
-    // highlight
+    // small bangs ABOVE the eyes (row 2 only, not row 3)
+    px(6, 2, H); px(9, 2, H);
+    // highlight on crown
     px(7, 1, Hh); px(8, 1, Hh);
   }
 
-  // ============ PONYTAIL (girl) — behind head, OPPOSITE the turn side ============
+  // ============ PONYTAIL (girl) — behind head on the LEFT ============
   if (isGirl) {
-    px(4, 4, PT); px(3, 4, PT);
-    px(3, 5, PT); px(2, 5, PT);
-    px(2, 6, PT); px(1, 6, PT);
-    px(1, 7, PT); px(2, 7, PT);
-    px(1, 8, PT);
+    px(3, 3, PT); px(3, 4, PT);
+    px(2, 4, PT); px(2, 5, PT);
+    px(1, 5, PT); px(1, 6, PT); px(1, 7, PT);
+    px(2, 7, PT);
     // ribbon highlight
-    px(3, 5, ACC); px(2, 6, ACC);
+    px(2, 5, ACC);
     // outline
-    px(0, 6, K); px(0, 7, K); px(0, 8, K);
-    px(1, 9, K); px(2, 8, K); px(3, 6, K);
+    px(0, 5, K); px(0, 6, K); px(0, 7, K); px(0, 8, K);
+    px(1, 8, K); px(2, 8, K); px(3, 5, K);
   }
 
-  // ============ PURPLE STREAK in bangs ============
+  // ============ PURPLE STREAK ============
   if (STREAK) {
-    px(8, 2, STREAK);
-    px(8, 3, STREAK);
-    if (isGirl) { px(2, 6, STREAK); px(1, 7, STREAK); }
+    px(6, 2, STREAK);
+    if (isGirl) px(1, 6, STREAK);
   }
 
-  // ============ EYES (both shifted toward turn side) ============
-  px(8, 3, W); px(10, 3, W);
-  px(8, 3, EYE);
+  // ============ EYES (symmetric, large, clearly visible) ============
+  // Eye whites — two pixels each
+  px(6, 3, W); px(7, 3, W);
+  px(9, 3, W); px(10, 3, W);
+  // Pupils shifted toward facing side (right by default) so it looks like glancing sideways
+  // facing=1 → pupils on the right pixel of each eye (cols 7 & 10)
+  px(7, 3, EYE);
   px(10, 3, EYE);
-  // brows
-  px(8, 2, isBoss ? K : Hh);
-  px(10, 2, isBoss ? K : Hh);
-  if (isBoss) {
-    px(7, 3, "#7a0a0a");
-    px(9, 3, "#7a0a0a");
-  } else if (isGirl) {
-    px(8, 2, K); px(10, 2, K); // lashes
+  // Brows above each eye
+  if (!isBoss) {
+    px(6, 2, Hh); px(7, 2, Hh);
+    px(9, 2, Hh); px(10, 2, Hh);
+  } else {
+    // angry brows
+    px(6, 2, K); px(7, 2, K);
+    px(9, 2, K); px(10, 2, K);
+    // red glow
+    px(6, 3, "#ffb0b0"); px(9, 3, "#ffb0b0");
+    px(7, 3, "#ff2a2a"); px(10, 3, "#ff2a2a");
+  }
+  // Girl lashes
+  if (isGirl) {
+    px(6, 2, K); px(10, 2, K);
   }
 
-  // ============ NOSE & MOUTH (turn side) ============
-  px(10, 4, Sh);
-  px(10, 5, Sh);
-  px(9, 6, MOUTH); px(10, 6, MOUTH);
-  if (isBoss) px(9, 6, K);
+  // ============ NOSE & MOUTH (centered) ============
+  // small nose between eyes
+  px(8, 4, Sh);
+  // mouth — small smile centered
+  px(7, 5, MOUTH); px(8, 5, MOUTH);
+  if (isGirl) {
+    // smaller heart-shaped lips
+    px(7, 5, ACC); px(8, 5, ACC);
+  }
+  if (isBoss) {
+    // grim mouth
+    row(5, 7, 9, K);
+  }
+
 
   // ============ NECK ============
   box(7, 7, 8, 8, S);
