@@ -55,133 +55,209 @@ type PixelPalette = {
 
 function PixelHuman({ palette, facing = 1, size = 80, variant = "student", dead = false }:
   { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
-  // 8-bit NES-style sprite. 16x16 grid, ~3 colors per region + hard black outline.
-  // Inspired by Mega Man / Mother era sprites — chunky, iconic silhouettes, no anti-aliasing.
+  // 16-bit JRPG-style game sprite on a 16x22 grid.
+  // Inspired by SNES Chrono Trigger / Secret of Mana / Earthbound:
+  // hard black outline silhouette + 3-tone shading per region + spec highlight.
   const px = (x: number, y: number, c: string, w = 1, h = 1) =>
     <rect key={`${x}-${y}-${c}-${w}-${h}`} x={x} y={y} width={w} height={h} fill={c} shapeRendering="crispEdges" />;
 
   const isGirl = variant === "girl";
   const isBoss = variant === "boss";
-  const K = "#000000"; // hard black outline (NES-style)
+  const K = "#0a0a0a";   // outline
   const W = "#ffffff";
+  const HI = "#ffffff";  // skin highlight
   const cells: React.ReactNode[] = [];
 
-  // ---------- HEAD (rows 1..6) ----------
-  // outline silhouette
-  cells.push(px(5, 1, K, 6, 1));     // top
-  cells.push(px(4, 2, K)); cells.push(px(11, 2, K));
-  cells.push(px(4, 3, K)); cells.push(px(11, 3, K));
+  // =================== HAIR BACK LAYER (girl pigtails) ===================
+  if (isGirl) {
+    cells.push(px(2, 4, K)); cells.push(px(13, 4, K));
+    cells.push(px(2, 5, palette.hair)); cells.push(px(13, 5, palette.hair));
+    cells.push(px(2, 6, palette.hair)); cells.push(px(13, 6, palette.hair));
+    cells.push(px(2, 7, palette.hairShade)); cells.push(px(13, 7, palette.hairShade));
+    cells.push(px(2, 8, K)); cells.push(px(13, 8, K));
+  }
+
+  // =================== HEAD OUTLINE (rows 2..8) ===================
+  cells.push(px(6, 2, K, 4, 1));               // crown
+  cells.push(px(5, 3, K)); cells.push(px(10, 3, K));
   cells.push(px(4, 4, K)); cells.push(px(11, 4, K));
   cells.push(px(4, 5, K)); cells.push(px(11, 5, K));
-  cells.push(px(5, 6, K, 6, 1));     // chin
+  cells.push(px(4, 6, K)); cells.push(px(11, 6, K));
+  cells.push(px(4, 7, K)); cells.push(px(11, 7, K));
+  cells.push(px(5, 8, K)); cells.push(px(10, 8, K));
+  cells.push(px(6, 9, K, 4, 1));               // chin
 
-  // skin fill
-  cells.push(px(5, 2, palette.skin, 6, 4));
-  // single shade column
-  cells.push(px(10, 3, palette.skinShade, 1, 3));
+  // skin base
+  cells.push(px(6, 3, palette.skin, 4, 1));
+  cells.push(px(5, 4, palette.skin, 6, 4));
+  cells.push(px(6, 8, palette.skin, 4, 1));
+  // skin shade (right cheek + jaw)
+  cells.push(px(9, 5, palette.skinShade));
+  cells.push(px(10, 5, palette.skinShade));
+  cells.push(px(10, 6, palette.skinShade));
+  cells.push(px(10, 7, palette.skinShade));
+  cells.push(px(9, 8, palette.skinShade));
+  // forehead highlight
+  cells.push(px(6, 4, HI)); cells.push(px(7, 4, HI));
 
-  // ---------- HAIR ----------
+  // =================== HAIR FRONT ===================
   if (isGirl) {
-    // chunky pigtails / long hair frame
-    cells.push(px(3, 2, K)); cells.push(px(12, 2, K));
-    cells.push(px(3, 3, palette.hair)); cells.push(px(12, 3, palette.hair));
-    cells.push(px(3, 4, palette.hair)); cells.push(px(12, 4, palette.hair));
-    cells.push(px(3, 5, palette.hair)); cells.push(px(12, 5, palette.hair));
-    cells.push(px(2, 5, K)); cells.push(px(13, 5, K));
-    cells.push(px(3, 6, K)); cells.push(px(12, 6, K));
-    // top hair + bangs
-    cells.push(px(5, 1, palette.hair, 6, 1));
-    cells.push(px(5, 2, palette.hair, 2, 1));
-    cells.push(px(9, 2, palette.hair, 2, 1));
+    // bangs across forehead
+    cells.push(px(5, 3, palette.hair)); cells.push(px(10, 3, palette.hair));
+    cells.push(px(6, 3, palette.hair, 4, 1));
+    cells.push(px(5, 4, palette.hair));
+    cells.push(px(10, 4, palette.hair));
     // bow
-    cells.push(px(3, 1, K)); cells.push(px(4, 1, palette.shirt));
+    cells.push(px(6, 2, palette.shirt, 4, 1));
+    cells.push(px(7, 1, palette.shirt, 2, 1));
+    cells.push(px(7, 2, K)); cells.push(px(8, 2, palette.shirtShade));
   } else if (isBoss) {
-    // bald with gray sides
-    cells.push(px(4, 2, palette.hair)); cells.push(px(11, 2, palette.hair));
-    cells.push(px(4, 3, palette.hair)); cells.push(px(11, 3, palette.hair));
+    // bald top + dark sides (gray)
+    cells.push(px(5, 3, palette.hair));
+    cells.push(px(10, 3, palette.hair));
+    cells.push(px(4, 4, palette.hair));
+    cells.push(px(11, 4, palette.hair));
+    cells.push(px(4, 5, palette.hairShade));
+    cells.push(px(11, 5, palette.hairShade));
+    // scar across cheek
+    cells.push(px(8, 6, palette.shirt));
   } else {
-    // short hair cap
-    cells.push(px(5, 1, palette.hair, 6, 1));
-    cells.push(px(5, 2, palette.hair, 6, 1));
-    cells.push(px(4, 2, palette.hair)); cells.push(px(11, 2, palette.hair));
+    // short hair cap with spiky front
+    cells.push(px(5, 3, palette.hair));
+    cells.push(px(6, 3, palette.hair, 4, 1));
+    cells.push(px(10, 3, palette.hair));
+    cells.push(px(5, 4, palette.hair));
+    cells.push(px(10, 4, palette.hair));
+    cells.push(px(11, 4, palette.hairShade));
+    // forelock
+    cells.push(px(6, 4, palette.hair));
+    cells.push(px(7, 4, palette.hairShade));
   }
 
-  // ---------- FACE ----------
-  // eyes — solid black 1x1 dots, NES-style
-  cells.push(px(6, 4, K));
-  cells.push(px(9, 4, K));
-  if (isBoss) {
-    cells.push(px(6, 4, "#ff2020"));
-    cells.push(px(9, 4, "#ff2020"));
+  // =================== EYES ===================
+  // eye whites
+  cells.push(px(6, 5, W)); cells.push(px(9, 5, W));
+  // pupils
+  const pupilColor = isBoss ? "#ff2020" : (palette.eyes ?? K);
+  cells.push(px(6, 6, pupilColor));
+  cells.push(px(9, 6, pupilColor));
+  // brow
+  cells.push(px(6, 4, K)); cells.push(px(9, 4, K));
+  // blush (girl only)
+  if (isGirl) {
+    cells.push(px(5, 7, "#ff8db0"));
+    cells.push(px(10, 7, "#ff8db0"));
   }
   // mouth
-  cells.push(px(7, 5, K, 2, 1));
-
-  // ---------- NECK ----------
-  cells.push(px(7, 7, palette.skinShade, 2, 1));
-
-  // ---------- BODY / SHIRT (rows 8..12) ----------
-  // outline
-  cells.push(px(3, 8, K, 10, 1));
-  cells.push(px(2, 9, K)); cells.push(px(13, 9, K));
-  cells.push(px(2, 10, K)); cells.push(px(13, 10, K));
-  cells.push(px(2, 11, K)); cells.push(px(13, 11, K));
-  cells.push(px(3, 12, K, 10, 1));
-  // fill
-  cells.push(px(3, 9, palette.shirt, 10, 3));
-  // single shade strip (right side)
-  cells.push(px(11, 9, palette.shirtShade, 1, 3));
-  cells.push(px(12, 9, palette.shirtShade, 1, 3));
-
-  // chest emblem
-  if (isGirl) {
-    // heart pixel
-    cells.push(px(7, 10, W)); cells.push(px(9, 10, W));
-    cells.push(px(7, 11, W, 3, 1));
-    cells.push(px(8, 12, W));
-  } else if (isBoss) {
-    // tie
-    cells.push(px(7, 8, K, 2, 5));
-    cells.push(px(7, 9, "#cc0000"));
-    cells.push(px(8, 10, "#cc0000"));
+  if (isBoss) {
+    cells.push(px(7, 7, K, 2, 1)); // grim line
+    cells.push(px(7, 8, "#5a0a0a"));
   } else {
-    // simple stripe
-    cells.push(px(3, 10, palette.shirtShade, 10, 1));
+    cells.push(px(7, 7, K));
+    cells.push(px(8, 7, "#9a3040"));
   }
 
-  // arms — skin hands at bottom corners
-  cells.push(px(2, 11, palette.skin));
-  cells.push(px(13, 11, palette.skin));
+  // =================== NECK ===================
+  cells.push(px(7, 10, palette.skinShade, 2, 1));
+  cells.push(px(7, 10, palette.skin));
 
-  // ---------- PANTS / LEGS (rows 13..16) ----------
-  // outline
-  cells.push(px(4, 13, K)); cells.push(px(11, 13, K));
-  cells.push(px(4, 14, K)); cells.push(px(11, 14, K));
-  cells.push(px(4, 15, K)); cells.push(px(11, 15, K));
-  cells.push(px(7, 13, K, 2, 3)); // leg split
-  // fill
-  cells.push(px(5, 13, palette.pants, 2, 3));
-  cells.push(px(9, 13, palette.pants, 2, 3));
-  // shade
-  cells.push(px(6, 13, palette.pantsShade, 1, 3));
-  cells.push(px(10, 13, palette.pantsShade, 1, 3));
+  // =================== TORSO (rows 11..15) ===================
+  // shoulders / outline
+  cells.push(px(3, 11, K)); cells.push(px(4, 11, K, 2, 1));
+  cells.push(px(10, 11, K, 2, 1)); cells.push(px(12, 11, K));
+  cells.push(px(2, 12, K)); cells.push(px(13, 12, K));
+  cells.push(px(2, 13, K)); cells.push(px(13, 13, K));
+  cells.push(px(2, 14, K)); cells.push(px(13, 14, K));
+  cells.push(px(2, 15, K)); cells.push(px(13, 15, K));
+  cells.push(px(3, 16, K, 10, 1));
+  // shirt fill
+  cells.push(px(4, 11, palette.shirt, 8, 1));
+  cells.push(px(3, 12, palette.shirt, 10, 4));
+  // shading band (right)
+  cells.push(px(11, 12, palette.shirtShade, 1, 4));
+  cells.push(px(12, 13, palette.shirtShade, 1, 3));
+  // top highlight (left shoulder)
+  cells.push(px(4, 12, HI));
+  cells.push(px(3, 13, HI));
 
-  // ---------- SHOES (row 16) ----------
-  cells.push(px(4, 16, K, 3, 1));
-  cells.push(px(9, 16, K, 3, 1));
-  cells.push(px(5, 16, palette.shoes, 2, 1));
-  cells.push(px(10, 16, palette.shoes, 2, 1));
+  // emblem
+  if (isGirl) {
+    // pixel heart
+    cells.push(px(7, 13, W)); cells.push(px(9, 13, W));
+    cells.push(px(6, 14, W, 5, 1));
+    cells.push(px(7, 15, W, 3, 1));
+    cells.push(px(8, 16, W));
+  } else if (isBoss) {
+    // tie
+    cells.push(px(7, 11, K, 2, 1));
+    cells.push(px(7, 12, "#cc1a1a")); cells.push(px(8, 12, "#a01010"));
+    cells.push(px(7, 13, "#cc1a1a")); cells.push(px(8, 13, "#a01010"));
+    cells.push(px(7, 14, "#cc1a1a")); cells.push(px(8, 14, "#a01010"));
+    cells.push(px(7, 15, K)); cells.push(px(8, 15, K));
+  } else {
+    // school stripe
+    cells.push(px(3, 14, palette.shirtShade, 10, 1));
+    cells.push(px(8, 12, W)); // button
+    cells.push(px(8, 14, W));
+  }
+
+  // =================== ARMS / HANDS ===================
+  // arm outlines hugging torso
+  cells.push(px(2, 12, palette.shirt));
+  cells.push(px(13, 12, palette.shirt));
+  cells.push(px(2, 13, palette.shirt));
+  cells.push(px(13, 13, palette.shirtShade));
+  // sleeve cuff
+  cells.push(px(2, 14, K)); cells.push(px(13, 14, K));
+  // hands (skin)
+  cells.push(px(2, 15, palette.skin));
+  cells.push(px(13, 15, palette.skin));
+  cells.push(px(2, 15, palette.skinShade)); // tiny shade pixel back left
+  cells.push(px(2, 15, palette.skin));
+  cells.push(px(13, 15, palette.skinShade));
+
+  // =================== BELT ===================
+  cells.push(px(3, 16, K, 10, 1));
+  cells.push(px(3, 17, K, 10, 1));
+  cells.push(px(4, 17, palette.pantsShade, 8, 1));
+  cells.push(px(8, 17, "#d4a83a")); // buckle
+
+  // =================== LEGS (rows 18..20) ===================
+  cells.push(px(4, 18, K)); cells.push(px(7, 18, K, 2, 1)); cells.push(px(11, 18, K));
+  cells.push(px(4, 19, K)); cells.push(px(7, 19, K, 2, 1)); cells.push(px(11, 19, K));
+  cells.push(px(4, 20, K)); cells.push(px(7, 20, K, 2, 1)); cells.push(px(11, 20, K));
+  // left leg fill
+  cells.push(px(5, 18, palette.pants, 2, 3));
+  // right leg fill
+  cells.push(px(9, 18, palette.pants, 2, 3));
+  // shade (right side of each leg)
+  cells.push(px(6, 18, palette.pantsShade, 1, 3));
+  cells.push(px(10, 18, palette.pantsShade, 1, 3));
+  // knee highlight
+  cells.push(px(5, 19, HI));
+  cells.push(px(9, 19, HI));
+
+  // =================== SHOES (row 21) ===================
+  cells.push(px(3, 21, K, 4, 1));
+  cells.push(px(9, 21, K, 4, 1));
+  cells.push(px(4, 21, palette.shoes, 2, 1));
+  cells.push(px(10, 21, palette.shoes, 2, 1));
+  // shoe shine
+  cells.push(px(4, 21, "#3a3a3a"));
+  cells.push(px(10, 21, "#3a3a3a"));
 
   return (
-    <svg width={size} height={size * 1.0625} viewBox="0 0 16 17"
+    <svg width={size} height={size * (22 / 16)} viewBox="0 0 16 22"
       style={{ transform: `scaleX(${facing})`, imageRendering: "pixelated", shapeRendering: "crispEdges" }}>
-      {/* hard pixel shadow */}
-      <rect x="4" y="16.4" width="8" height="0.4" fill="#000" opacity="0.55" shapeRendering="crispEdges" />
+      {/* drop shadow */}
+      <ellipse cx="8" cy="21.7" rx="4" ry="0.45" fill="#000" opacity="0.55" />
       {cells}
       {dead && (
         <>
-          <rect x="6" y="4" width="1" height="1" fill="#ff2222" />
-          <rect x="9" y="4" width="1" height="1" fill="#ff2222" />
+          <rect x="5" y="5" width="2" height="1" fill="#ff2222" />
+          <rect x="9" y="5" width="2" height="1" fill="#ff2222" />
+          <rect x="6" y="6" width="1" height="1" fill="#ff2222" />
+          <rect x="9" y="6" width="1" height="1" fill="#ff2222" />
         </>
       )}
     </svg>
