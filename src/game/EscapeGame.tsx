@@ -1605,7 +1605,12 @@ export default function EscapeGame() {
             lastBiteRef.current = nowT;
             const base = 4 + Math.floor(Math.random() * 5);
             const dmg = base + (level * 2) + (isRun ? 3 : 0);
-            setHp(h => Math.max(0, h - dmg));
+            sfxBite();
+            setHp(h => {
+              const nh = Math.max(0, h - dmg);
+              if (nh === 0) { sfxDeath(); setTimeout(() => setModal({ kind: "lose" }), 200); }
+              return nh;
+            });
             setShake(true);
             setTimeout(() => setShake(false), 350);
             setToast(`🩸 ${z.name} кусает! -${dmg} HP${isRun ? " (шумно!)" : ""}`);
