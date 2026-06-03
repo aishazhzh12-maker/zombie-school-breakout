@@ -61,7 +61,7 @@ function PixelHuman({ palette, facing = 1, size = 80, variant = "student", dead 
   { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
   // 16x16 sprite — richer detail, realistic proportions, soft shading.
   const px = (x: number, y: number, c: string, w = 1, h = 1) =>
-    <rect key={`${x}-${y}-${c}-${w}-${h}-${Math.random()}`} x={x} y={y} width={w} height={h} fill={c} shapeRendering="crispEdges" />;
+    <rect key={`r-${x}-${y}-${w}-${h}-${c}`} x={x} y={y} width={w} height={h} fill={c} shapeRendering="crispEdges" />;
 
   const isGirl = variant === "girl";
   const isBoss = variant === "boss";
