@@ -59,8 +59,13 @@ type PixelPalette = {
 
 function PixelHuman({ palette, facing = 1, size = 80, variant = "student", dead = false }:
   { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
-  // Mario / NES-arcade style sprite on a 16x22 grid.
-  // Chunky cap, big rounded nose, white gloves, overalls — bold silhouettes.
+  // Classic 8x8 NES-style sprite. Tiny grid, hard outlines, max readability.
+  // Layout:
+  //   row 0-1: hair / cap
+  //   row 2  : face (eyes)
+  //   row 3-5: torso (shirt / vest)
+  //   row 6  : pants
+  //   row 7  : shoes
   const px = (x: number, y: number, c: string, w = 1, h = 1) =>
     <rect key={`${x}-${y}-${c}-${w}-${h}`} x={x} y={y} width={w} height={h} fill={c} shapeRendering="crispEdges" />;
 
@@ -68,212 +73,64 @@ function PixelHuman({ palette, facing = 1, size = 80, variant = "student", dead 
   const isBoss = variant === "boss";
   const K = "#0a0a0a";
   const W = "#ffffff";
-  const GLOVE = "#ffffff";
-  const GLOVE_SHADE = "#c8c8c8";
-  const capColor = palette.cap ?? palette.hair;
-  const capShade = palette.hairShade;
   const cells: React.ReactNode[] = [];
 
-  // ============ CAP (rows 1..3) — signature Mario brim ============
-  // crown
-  cells.push(px(4, 1, K, 8, 1));
-  cells.push(px(3, 2, K)); cells.push(px(12, 2, K));
-  cells.push(px(4, 2, capColor, 8, 1));
-  // brim line
-  cells.push(px(2, 3, K, 12, 1));
-  cells.push(px(3, 3, capColor)); cells.push(px(4, 3, capColor));
-  cells.push(px(11, 3, capShade)); cells.push(px(12, 3, capShade));
-  // cap shade right
-  cells.push(px(10, 2, capShade)); cells.push(px(11, 2, capShade));
-  // emblem badge front
+  // ===== HAIR / CAP (rows 0..1) =====
+  cells.push(px(2, 0, palette.hair, 4, 1));
+  cells.push(px(1, 1, palette.hair));
+  cells.push(px(6, 1, palette.hairShade));
   if (isGirl) {
-    cells.push(px(7, 2, W)); cells.push(px(8, 2, W));
-  } else if (isBoss) {
-    cells.push(px(7, 2, "#cc1a1a")); cells.push(px(8, 2, "#cc1a1a"));
-  } else {
-    cells.push(px(7, 2, palette.shirt)); cells.push(px(8, 2, palette.shirtShade));
+    // long dark hair down sides
+    cells.push(px(1, 2, palette.hair));
+    cells.push(px(6, 2, palette.hairShade));
+    cells.push(px(1, 3, palette.hair));
+    cells.push(px(6, 3, palette.hairShade));
   }
 
-  // ============ HAIR sideburns / back (girl long dark hair) ============
-  if (isGirl) {
-    // long hair falling down sides past brim
-    cells.push(px(2, 4, K)); cells.push(px(13, 4, K));
-    cells.push(px(2, 5, palette.hair)); cells.push(px(13, 5, palette.hair));
-    cells.push(px(2, 6, palette.hair)); cells.push(px(13, 6, palette.hair));
-    cells.push(px(2, 7, palette.hair)); cells.push(px(13, 7, palette.hair));
-    cells.push(px(2, 8, palette.hairShade)); cells.push(px(13, 8, palette.hairShade));
-    cells.push(px(2, 9, K)); cells.push(px(13, 9, K));
-    // bangs under brim
-    cells.push(px(4, 4, palette.hair)); cells.push(px(5, 4, palette.hair));
-    cells.push(px(10, 4, palette.hair)); cells.push(px(11, 4, palette.hair));
-  } else if (!isBoss) {
-    // small sideburns
-    cells.push(px(4, 4, palette.hair));
-    cells.push(px(11, 4, palette.hairShade));
-  }
-
-  // ============ HEAD (rows 4..9) — round face with big nose ============
-  cells.push(px(4, 4, K)); cells.push(px(11, 4, K));
-  cells.push(px(3, 5, K)); cells.push(px(12, 5, K));
-  cells.push(px(3, 6, K)); cells.push(px(12, 6, K));
-  cells.push(px(3, 7, K)); cells.push(px(12, 7, K));
-  cells.push(px(4, 8, K)); cells.push(px(11, 8, K));
-  cells.push(px(5, 9, K, 6, 1));
-  // skin fill
-  cells.push(px(5, 4, palette.skin, 6, 1));
-  cells.push(px(4, 5, palette.skin, 8, 4));
-  cells.push(px(5, 8, palette.skin, 6, 1));
-  // skin shade (right cheek + chin)
-  cells.push(px(10, 6, palette.skinShade));
-  cells.push(px(10, 7, palette.skinShade));
-  cells.push(px(11, 6, palette.skinShade));
-  cells.push(px(11, 7, palette.skinShade));
-  cells.push(px(10, 8, palette.skinShade));
-
-  // eyes (white + pupil)
-  cells.push(px(6, 5, W)); cells.push(px(9, 5, W));
-  cells.push(px(6, 6, W)); cells.push(px(9, 6, W));
+  // ===== FACE (row 2) =====
+  cells.push(px(2, 1, palette.skin, 4, 1));
+  cells.push(px(2, 2, palette.skin, 4, 1));
+  // eyes
   const pupil = isBoss ? "#ff2020" : (palette.eyes ?? K);
-  cells.push(px(6, 6, pupil)); cells.push(px(9, 6, pupil));
-  // brow
-  cells.push(px(6, 4, K)); cells.push(px(9, 4, K));
+  cells.push(px(3, 2, pupil));
+  cells.push(px(5, 2, pupil));
 
-  // big rounded nose (Mario signature)
-  cells.push(px(7, 6, palette.skinShade));
-  cells.push(px(8, 6, palette.skinShade));
-  cells.push(px(7, 7, palette.skin));
-  cells.push(px(8, 7, palette.skinShade));
-
-  // mustache (boss only — action-villain bushy stache)
-  if (isBoss) {
-    cells.push(px(5, 8, K)); cells.push(px(6, 8, K));
-    cells.push(px(9, 8, K)); cells.push(px(10, 8, K));
-    cells.push(px(7, 8, K)); cells.push(px(8, 8, K));
-  } else {
-    // mouth
-    cells.push(px(7, 8, K, 2, 1));
-  }
-
-  // blush (girl)
-  if (isGirl) {
-    cells.push(px(5, 7, "#ff8db0"));
-    cells.push(px(10, 7, "#ff8db0"));
-  }
-
-  // ============ NECK ============
-  cells.push(px(7, 10, palette.skinShade));
-  cells.push(px(8, 10, palette.skinShade));
-
-  // ============ TORSO — shirt + overalls bib ============
-  // outline
-  cells.push(px(2, 11, K, 12, 1));
-  cells.push(px(1, 12, K)); cells.push(px(14, 12, K));
-  cells.push(px(1, 13, K)); cells.push(px(14, 13, K));
-  cells.push(px(1, 14, K)); cells.push(px(14, 14, K));
-  cells.push(px(1, 15, K)); cells.push(px(14, 15, K));
-  cells.push(px(2, 16, K, 12, 1));
-  // shirt fill (sleeves + collar area)
-  cells.push(px(2, 12, palette.shirt, 12, 1));
-  cells.push(px(2, 13, palette.shirt, 12, 1));
-  cells.push(px(2, 14, palette.shirt, 12, 1));
-  cells.push(px(2, 15, palette.shirt, 12, 1));
-  // shirt shade band
-  cells.push(px(12, 12, palette.shirtShade, 1, 4));
-  cells.push(px(13, 13, palette.shirtShade, 1, 3));
-  // shoulder highlight
-  cells.push(px(2, 12, palette.shirt));
-  cells.push(px(3, 12, W)); // tiny shine
-
-  // ============ OVERALLS BIB (pants color over shirt) ============
-  if (!palette.armored) {
-    // bib outline
-    cells.push(px(5, 12, K, 6, 1));
-    cells.push(px(5, 13, palette.pants, 6, 3));
-    cells.push(px(9, 13, palette.pantsShade));
-    cells.push(px(10, 13, palette.pantsShade));
-    cells.push(px(10, 14, palette.pantsShade));
-    cells.push(px(10, 15, palette.pantsShade));
-    // straps up onto shoulders
-    cells.push(px(4, 12, palette.pants));
-    cells.push(px(11, 12, palette.pants));
-    // gold buttons
-    cells.push(px(6, 13, "#ffd23a"));
-    cells.push(px(9, 13, "#ffd23a"));
-  }
-
-  // ============ TACTICAL VEST (action-movie body armor) ============
+  // ===== TORSO (rows 3..5) =====
   if (palette.armored) {
-    // dark vest plate over chest
     const VEST = "#2a3322";
-    const VEST_SHADE = "#141a10";
-    const STRAP = "#5a4a2a";
-    cells.push(px(4, 12, VEST, 8, 4));
-    // vest shade
-    cells.push(px(10, 12, VEST_SHADE, 2, 4));
-    cells.push(px(4, 15, VEST_SHADE, 8, 1));
-    // diagonal straps
-    cells.push(px(4, 12, STRAP)); cells.push(px(5, 13, STRAP));
-    cells.push(px(11, 12, STRAP)); cells.push(px(10, 13, STRAP));
-    // chest pouches (3 pockets)
-    cells.push(px(5, 14, K, 2, 1));
-    cells.push(px(8, 14, K, 2, 1));
-    cells.push(px(5, 13, "#3a4528"));
-    cells.push(px(8, 13, "#3a4528"));
-    // collar tag
-    cells.push(px(7, 12, "#7a6a3a"));
-    cells.push(px(8, 12, "#7a6a3a"));
-    // shoulder strap clip
-    cells.push(px(6, 12, "#c8c8c8"));
-    cells.push(px(9, 12, "#c8c8c8"));
+    const STRAP = "#7a6a3a";
+    cells.push(px(1, 3, VEST, 6, 3));
+    // strap
+    cells.push(px(2, 3, STRAP));
+    cells.push(px(5, 3, STRAP));
+    // pouch
+    cells.push(px(3, 4, K, 2, 1));
+  } else {
+    cells.push(px(1, 3, palette.shirt, 6, 1));
+    cells.push(px(1, 4, palette.shirt, 6, 1));
+    cells.push(px(1, 5, palette.shirtShade, 6, 1));
+    // arms hint
+    cells.push(px(0, 4, palette.skin));
+    cells.push(px(7, 4, palette.skin));
   }
 
-  // ============ GLOVES (white Mario gloves) ============
-  cells.push(px(0, 14, K)); cells.push(px(15, 14, K));
-  cells.push(px(0, 15, K)); cells.push(px(15, 15, K));
-  cells.push(px(1, 14, GLOVE)); cells.push(px(14, 14, GLOVE));
-  cells.push(px(1, 15, GLOVE_SHADE)); cells.push(px(14, 15, GLOVE_SHADE));
-  cells.push(px(0, 15, GLOVE)); cells.push(px(15, 15, GLOVE_SHADE));
+  // ===== PANTS (row 6) =====
+  cells.push(px(2, 6, palette.pants, 4, 1));
+  cells.push(px(4, 6, palette.pantsShade, 2, 1));
 
-  // ============ BELT ============
-  cells.push(px(2, 17, K, 12, 1));
-  cells.push(px(2, 17, "#3a2a1a", 12, 1));
-  cells.push(px(7, 17, "#ffd23a")); cells.push(px(8, 17, "#ffd23a"));
-
-  // ============ LEGS (rows 18..20) ============
-  cells.push(px(3, 18, K)); cells.push(px(7, 18, K, 2, 1)); cells.push(px(12, 18, K));
-  cells.push(px(3, 19, K)); cells.push(px(7, 19, K, 2, 1)); cells.push(px(12, 19, K));
-  cells.push(px(3, 20, K)); cells.push(px(7, 20, K, 2, 1)); cells.push(px(12, 20, K));
-  cells.push(px(4, 18, palette.pants, 3, 3));
-  cells.push(px(9, 18, palette.pants, 3, 3));
-  // leg shade
-  cells.push(px(6, 18, palette.pantsShade, 1, 3));
-  cells.push(px(11, 18, palette.pantsShade, 1, 3));
-  // knee patch (armored only)
-  if (palette.armored) {
-    cells.push(px(5, 19, "#2a3322"));
-    cells.push(px(10, 19, "#2a3322"));
-  }
-
-  // ============ SHOES (row 21) — chunky brown boots ============
-  cells.push(px(2, 21, K, 5, 1));
-  cells.push(px(9, 21, K, 5, 1));
-  cells.push(px(3, 21, palette.shoes, 3, 1));
-  cells.push(px(10, 21, palette.shoes, 3, 1));
-  // shoe shine
-  cells.push(px(3, 21, "#ffffff")); cells.push(px(3, 21, palette.shoes));
-  cells.push(px(4, 21, "#fff")); 
+  // ===== SHOES (row 7) =====
+  cells.push(px(1, 7, palette.shoes, 3, 1));
+  cells.push(px(4, 7, palette.shoes, 3, 1));
 
   return (
-    <svg width={size} height={size * (22 / 16)} viewBox="0 0 16 22"
+    <svg width={size} height={size} viewBox="0 0 8 8"
       style={{ transform: `scaleX(${facing})`, imageRendering: "pixelated", shapeRendering: "crispEdges" }}>
-      <ellipse cx="8" cy="21.7" rx="4.5" ry="0.45" fill="#000" opacity="0.55" />
+      <ellipse cx="4" cy="7.85" rx="2.6" ry="0.18" fill="#000" opacity="0.55" />
       {cells}
       {dead && (
         <>
-          <rect x="5" y="5" width="2" height="1" fill="#ff2222" />
-          <rect x="9" y="5" width="2" height="1" fill="#ff2222" />
-          <rect x="6" y="6" width="1" height="1" fill="#ff2222" />
-          <rect x="9" y="6" width="1" height="1" fill="#ff2222" />
+          <rect x="3" y="2" width="1" height="1" fill="#ff2222" />
+          <rect x="5" y="2" width="1" height="1" fill="#ff2222" />
         </>
       )}
     </svg>
