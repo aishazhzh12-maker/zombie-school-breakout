@@ -409,6 +409,65 @@ function PixelHuman({ palette, facing = 1, size = 64, variant = "student", dead 
   );
 }
 
+// ---- Lana speech bubble (rotating phrases) ----
+const LANA_LINES = [
+  "Где же ключ?..",
+  "Тише, не разбуди их",
+  "Надо найти выход!",
+  "Я справлюсь 💜",
+  "Хм, может в столе?",
+  "Слышишь шаги?",
+  "Только бы батарейка не села",
+  "Ещё немного…",
+  "Кажется, тут что-то есть",
+  "Спокойно, Лана",
+];
+function LanaSpeech({ side = "right" }: { side?: "left" | "right" }) {
+  const [line, setLine] = useState<string | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    const pick = () => {
+      if (!mounted) return;
+      setLine(LANA_LINES[Math.floor(Math.random() * LANA_LINES.length)]);
+      setTimeout(() => mounted && setLine(null), 2600);
+    };
+    const t0 = setTimeout(pick, 1200);
+    const iv = setInterval(pick, 6500);
+    return () => { mounted = false; clearTimeout(t0); clearInterval(iv); };
+  }, []);
+  if (!line) return null;
+  return (
+    <div
+      className="absolute font-pixel text-[11px] text-black bg-white border-2 border-black px-2 py-1 whitespace-nowrap animate-fade-in"
+      style={{
+        bottom: 70, [side]: -10, borderRadius: 6,
+        boxShadow: "2px 2px 0 #000",
+        zIndex: 20,
+      }}
+    >
+      {line}
+      <span
+        className="absolute"
+        style={{
+          [side]: 16, bottom: -8, width: 0, height: 0,
+          borderLeft: "6px solid transparent",
+          borderRight: "6px solid transparent",
+          borderTop: "8px solid #000",
+        }}
+      />
+      <span
+        className="absolute"
+        style={{
+          [side]: 17, bottom: -5, width: 0, height: 0,
+          borderLeft: "5px solid transparent",
+          borderRight: "5px solid transparent",
+          borderTop: "6px solid #fff",
+        }}
+      />
+    </div>
+  );
+}
+
 
 
 // Palettes
