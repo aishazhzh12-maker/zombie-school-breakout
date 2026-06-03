@@ -63,330 +63,221 @@ type PixelPalette = {
   ponytail?: string;
 };
 
-function PixelHuman({ palette, facing = 1, size = 64, variant = "student", dead = false }:
+/**
+ * SIDE-VIEW chunky pixel sprite (16x22 grid). Default profile faces RIGHT.
+ * Renders each cell as a square <rect>. With size=72 each pixel ≈ 4.5 real px → arcade look.
+ */
+function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead = false }:
   { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
-  // 64x64 detailed sprite. Built into a pixel grid then emitted as horizontal-run rects.
   const isGirl = variant === "girl";
   const isBoss = variant === "boss";
+
   const K = "#0a0a0a";
-  const WHITE = "#ffffff";
-  const SKIN = palette.skin, SKINs = palette.skinShade;
-  const HAIR = palette.hair, HAIRs = palette.hairShade;
-  const SHIRT = palette.shirt, SHIRTs = palette.shirtShade;
-  const PANTS = palette.pants, PANTSs = palette.pantsShade;
-  const SHOES = palette.shoes;
-  const EYE = isBoss ? "#d61a1a" : (palette.eyes ?? "#1a2a4a");
+  const W = "#ffffff";
+  const S = palette.skin;
+  const Sh = palette.skinShade;
+  const H = palette.hair;
+  const Hh = palette.hairShade;
+  const T = palette.shirt;
+  const Tt = palette.shirtShade;
+  const N = palette.pants;
+  const Nn = palette.pantsShade;
+  const B = palette.shoes;
+  const EYE = isBoss ? "#ff2a2a" : isGirl ? "#7a5ad6" : "#1a2a4a";
   const MOUTH = isBoss ? "#5a1010" : isGirl ? "#c84060" : "#7a3a2a";
-  const BLUSH = "#f0a8a8";
-  const STRAP = "#3a2a18";
-  const BUCKLE = "#c8a838";
+  const STREAK = palette.streak ?? null;
+  const PT = palette.ponytail ?? H;
+  const ACC = palette.accent ?? "#c84060";
 
-  const SZ = 64;
-  const grid: (string | null)[][] = Array.from({ length: SZ }, () => Array(SZ).fill(null));
-  const set = (x: number, y: number, c: string | null) => {
-    if (x >= 0 && x < SZ && y >= 0 && y < SZ) grid[y][x] = c;
+  const Wd = 16;
+  const Ht = 22;
+  const g: (string | null)[][] = Array.from({ length: Ht }, () => Array(Wd).fill(null));
+  const px = (x: number, y: number, c: string | null) => {
+    if (x >= 0 && x < Wd && y >= 0 && y < Ht) g[y][x] = c;
   };
-  const fill = (x0: number, y0: number, x1: number, y1: number, c: string) => {
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c);
+  const row = (y: number, x0: number, x1: number, c: string) => {
+    for (let x = x0; x <= x1; x++) px(x, y, c);
   };
-  const outline = (x0: number, y0: number, x1: number, y1: number, c: string) => {
-    for (let x = x0; x <= x1; x++) { set(x, y0, c); set(x, y1, c); }
-    for (let y = y0; y <= y1; y++) { set(x0, y, c); set(x1, y, c); }
+  const box = (x0: number, y0: number, x1: number, y1: number, c: string) => {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) px(x, y, c);
   };
 
-  // ===== HEAD (skin fill) =====
-  fill(22, 6, 41, 22, SKIN);
-  // round corners by clearing then redrawing outline
-  set(22, 6, null); set(23, 6, null); set(40, 6, null); set(41, 6, null);
-  set(22, 7, null); set(41, 7, null);
-  set(22, 22, null); set(41, 22, null);
+  // ============ HEAD (profile facing right) ============
   // outline
-  fill(24, 5, 39, 5, K);
-  set(23, 6, K); set(40, 6, K); set(22, 7, K); set(41, 7, K);
-  for (let y = 8; y <= 21; y++) { set(21, y, K); set(42, y, K); }
-  set(22, 22, K); set(41, 22, K);
-  fill(23, 23, 40, 23, K);
-  // jaw / cheek shading on right
-  fill(38, 16, 40, 21, SKINs);
-  fill(24, 21, 39, 21, SKINs);
+  row(0, 6, 10, K);
+  px(5, 1, K); px(11, 1, K);
+  px(4, 2, K); px(11, 2, K);
+  px(4, 3, K); px(11, 3, K);
+  px(4, 4, K); px(11, 4, K);
+  px(4, 5, K); px(11, 5, K);
+  px(5, 6, K); px(11, 6, K);
+  px(6, 7, K); px(10, 7, K);
+  // skin fill
+  box(5, 1, 10, 6, S);
+  // chin/jaw shading
+  px(10, 5, Sh); px(10, 6, Sh); px(9, 7, Sh);
 
-  // ===== HAIR =====
-  fill(22, 4, 41, 7, HAIR);
-  set(22, 4, null); set(23, 4, null); set(40, 4, null); set(41, 4, null);
-  set(22, 5, null); set(41, 5, null);
-  fill(24, 3, 39, 3, K);
-  set(23, 4, K); set(40, 4, K); set(22, 5, K); set(41, 5, K);
-  // bangs
-  fill(22, 8, 27, 10, HAIR);
-  fill(36, 8, 41, 10, HAIR);
-  set(27, 10, HAIRs); set(36, 10, HAIRs);
-  // hair shade on right top
-  fill(37, 4, 41, 6, HAIRs);
-
-  if (isGirl) {
-    // long flowing hair down sides + behind shoulders
-    fill(19, 7, 21, 33, HAIR);
-    fill(42, 7, 44, 33, HAIRs);
-    // back hair behind torso
-    fill(15, 26, 18, 38, HAIR);
-    fill(45, 26, 48, 38, HAIRs);
-    // outline
-    for (let y = 7; y <= 33; y++) { set(18, y, K); set(45, y, K); }
-    fill(19, 34, 21, 34, K);
-    fill(42, 34, 44, 34, K);
-    // forward strand on left cheek
-    set(22, 11, HAIRs); set(22, 12, HAIRs);
-
-    // === HIGH PONYTAIL (sticks out on facing side) ===
-    const PT = palette.ponytail ?? HAIR;
-    const PTs = HAIRs;
-    // pony base / scrunchie
-    fill(38, 5, 44, 8, PT);
-    outline(38, 5, 44, 8, K);
-    // ribbon highlight
-    fill(39, 6, 43, 6, palette.accent ?? "#c84060");
-    // tail flowing back/up-right
-    const tail: [number, number][] = [
-      [44,4],[45,4],[46,4],[47,5],[48,6],[49,7],[50,8],[51,9],[52,10],
-      [52,11],[53,12],[53,13],[52,14],[51,15],[50,16],[49,17],[48,18],
-      [47,18],[46,19],[45,19],[44,19],
-      // thicker body of tail
-      [46,5],[47,6],[48,7],[49,8],[50,9],[51,10],[51,11],[52,12],
-      [50,13],[51,13],[49,14],[50,14],[48,15],[49,15],[47,16],[48,16],
-      [46,17],[47,17],[45,18],[46,18],
-    ];
-    for (const [tx, ty] of tail) set(tx, ty, PT);
-    // shading on tail
-    for (const [tx, ty] of tail) {
-      if (ty > 9 && (tx + ty) % 2 === 0) set(tx, ty, PTs);
-    }
-    // ponytail outline (right edge)
-    set(53,11,K); set(53,14,K); set(52,15,K); set(51,16,K); set(50,17,K); set(49,18,K); set(48,19,K);
-    set(43,4,K); set(46,3,K); set(47,4,K);
-
-    // === PURPLE STREAK in front (if streak color provided) ===
-    if (palette.streak) {
-      const S = palette.streak;
-      // a clear strand falling over right side of face/bangs
-      fill(36, 8, 38, 9, S);
-      fill(37, 10, 38, 12, S);
-      set(38, 13, S); set(38, 14, S);
-      // a small accent in ponytail
-      fill(40, 7, 41, 8, S);
-      set(46, 9, S); set(47, 10, S);
-    }
-
-    // === LONG EYELASHES ===
-    set(24, 12, K); set(29, 12, K);
-    set(34, 12, K); set(39, 12, K);
-    set(24, 13, K); set(39, 13, K);
-  } else if (isBoss) {
-    // bald top + grey temples
-    fill(27, 4, 36, 6, SKIN);
-    fill(22, 4, 26, 7, HAIRs);
-    fill(37, 4, 41, 7, HAIRs);
-    fill(28, 3, 35, 3, K);
-    set(27, 4, K); set(36, 4, K);
-    // forehead wrinkles
-    fill(26, 10, 37, 10, SKINs);
-    // scar
-    fill(33, 9, 36, 9, "#7a1a1a");
-    set(35, 10, "#7a1a1a");
-  } else {
-    fill(36, 4, 41, 6, HAIRs);
-  }
-
-  // ===== EYEBROWS =====
-  const brow = isBoss ? K : HAIR;
-  fill(25, 11, 29, 11, brow);
-  fill(34, 11, 38, 11, brow);
-  if (isBoss) { fill(25, 12, 26, 12, K); fill(37, 12, 38, 12, K); }
-
-  // ===== EYES (pretty: iris + pupil + catchlight) =====
-  const IRIS = isBoss ? "#ff3030" : isGirl ? "#7a5ad6" : EYE;
-  const IRISs = isBoss ? "#7a0808" : isGirl ? "#3a2a6a" : "#0a1530";
-  // sclera
-  fill(24, 13, 29, 16, WHITE);
-  fill(34, 13, 39, 16, WHITE);
-  outline(24, 13, 29, 16, K);
-  outline(34, 13, 39, 16, K);
-  // iris ring
-  fill(25, 14, 28, 15, IRIS);
-  fill(35, 14, 38, 15, IRIS);
-  // iris shading bottom
-  set(25, 15, IRISs); set(28, 15, IRISs);
-  set(35, 15, IRISs); set(38, 15, IRISs);
-  // pupil
-  fill(26, 14, 27, 15, K);
-  fill(36, 14, 37, 15, K);
-  // big sparkly catchlight
-  set(26, 14, WHITE); set(36, 14, WHITE);
-  set(27, 13, WHITE); set(37, 13, WHITE);
-  // tiny secondary sparkle
-  set(28, 15, isBoss ? "#ffaaaa" : "#bcd6ff");
-  set(38, 15, isBoss ? "#ffaaaa" : "#bcd6ff");
+  // ============ HAIR (back of head + crown) ============
   if (isBoss) {
-    // glowing red aura under eyes
-    set(24, 16, "#7a0a0a"); set(29, 16, "#7a0a0a");
-    set(34, 16, "#7a0a0a"); set(39, 16, "#7a0a0a");
-  }
-
-  // ===== NOSE =====
-  fill(31, 15, 32, 18, SKINs);
-  set(30, 18, SKINs); set(33, 18, SKINs);
-  set(31, 19, "#000000"); set(32, 19, "#000000");
-
-  // ===== MOUTH =====
-  if (isGirl) {
-    fill(28, 19, 35, 20, MOUTH);
-    fill(29, 20, 34, 20, "#a82850");
+    // bald — just a thin grey strip + scar
+    row(1, 6, 10, S);
+    px(5, 1, Hh); px(10, 1, Hh);
+    // scar across forehead
+    px(8, 2, "#7a1a1a"); px(9, 3, "#7a1a1a");
   } else {
-    fill(28, 20, 35, 20, MOUTH);
+    // crown
+    row(1, 6, 10, H);
+    px(5, 2, H); px(6, 2, H); px(7, 2, H);
+    // forelock / bangs hanging in front of forehead
+    px(7, 2, H); px(8, 2, H);
+    px(8, 3, H);
+    // back of head curve
+    px(4, 2, H); px(4, 3, H); px(4, 4, H);
+    px(3, 3, H); px(3, 4, H);
+    // small shade
+    px(10, 1, Hh); px(9, 1, Hh);
   }
-  if (isBoss) {
-    set(27, 20, K); set(36, 20, K);
-    fill(28, 21, 35, 21, SKINs);
-  }
+
+  // ============ PONYTAIL (girl) — sticks out BACK (to the left in profile) ============
   if (isGirl) {
-    fill(23, 17, 25, 18, BLUSH);
-    fill(38, 17, 40, 18, BLUSH);
+    // scrunchie/base
+    px(3, 2, PT); px(3, 3, PT);
+    px(2, 3, PT); px(2, 4, PT); px(2, 5, PT);
+    px(1, 4, PT); px(1, 5, PT); px(1, 6, PT);
+    px(0, 5, PT); px(0, 6, PT);
+    // ribbon highlight on scrunchie
+    px(3, 3, ACC); px(2, 4, ACC);
+    // shading along underside
+    px(1, 6, Hh); px(0, 6, Hh);
+    // outline of ponytail
+    px(0, 4, K); px(0, 7, K); px(1, 7, K); px(2, 6, K);
+    px(3, 4, K);
   }
 
-  // ===== NECK =====
-  fill(28, 24, 35, 26, SKIN);
-  set(27, 24, K); set(36, 24, K);
-  set(27, 25, K); set(36, 25, K);
-  set(27, 26, K); set(36, 26, K);
-  fill(28, 26, 35, 26, SKINs);
+  // ============ PURPLE STREAK in bangs ============
+  if (STREAK) {
+    px(7, 2, STREAK);
+    px(7, 3, STREAK);
+    // small accent in ponytail
+    if (isGirl) { px(2, 5, STREAK); px(1, 5, STREAK); }
+  }
 
-  // ===== TORSO =====
-  fill(16, 27, 47, 43, SHIRT);
-  // shoulder curve cutouts
-  set(16, 27, null); set(17, 27, null); set(46, 27, null); set(47, 27, null);
+  // ============ EYE (single big arcade eye in profile) ============
+  // white
+  px(9, 3, W); px(9, 4, W); px(10, 3, W);
+  // iris+pupil
+  px(9, 3, EYE);
+  // sparkle catchlight
+  px(10, 3, W);
+  if (isBoss) {
+    // glowing red eye — add halo
+    px(8, 3, "#7a0a0a");
+    px(9, 2, "#7a0a0a");
+  } else if (isGirl) {
+    // long eyelash
+    px(8, 2, K);
+    // lower lash
+    px(9, 4, K);
+  }
+  // eyebrow
+  px(8, 2, isBoss ? K : Hh);
+  if (!isBoss) px(9, 2, Hh);
+
+  // ============ NOSE & MOUTH (profile) ============
+  px(11, 4, S);            // nose bridge tip
+  px(11, 5, Sh);           // nostril shadow
+  // mouth
+  px(10, 6, MOUTH);
+  if (isGirl) px(9, 6, MOUTH);
+  if (isBoss) { px(10, 6, MOUTH); px(9, 6, K); }
+
+  // ============ NECK ============
+  px(7, 7, S); px(8, 7, S); px(9, 7, S);
+  px(7, 8, S); px(8, 8, S); px(9, 8, Sh);
+  px(6, 8, K); px(10, 8, K);
+
+  // ============ TORSO ============
+  // shoulders
+  row(9, 5, 11, T);
+  // body
+  box(5, 10, 11, 13, T);
+  // shading on back (right side in our facing-right base — back is LEFT)
+  for (let y = 10; y <= 13; y++) px(5, y, Tt);
   // outline
-  fill(18, 27, 45, 27, K);
-  set(16, 28, K); set(47, 28, K); set(17, 27, K); set(46, 27, K);
-  for (let y = 28; y <= 43; y++) { set(15, y, K); set(48, y, K); }
-  fill(16, 44, 47, 44, K);
-  // shading band right
-  fill(43, 28, 47, 43, SHIRTs);
-  // collar
-  fill(28, 27, 35, 29, SKINs);
-  set(27, 27, K); set(36, 27, K);
-  fill(28, 29, 35, 29, K);
+  for (let y = 9; y <= 13; y++) { px(4, y, K); px(12, y, K); }
+  row(14, 5, 11, K);
 
   if (palette.armored) {
-    // tactical vest panels
-    fill(17, 30, 46, 43, SHIRT);
-    fill(43, 30, 46, 43, SHIRTs);
-    // center seam
-    fill(31, 30, 32, 43, K);
-    // chest pouches
-    outline(19, 32, 25, 37, K);
-    fill(20, 33, 24, 36, SHIRTs);
-    outline(38, 32, 44, 37, K);
-    fill(39, 33, 43, 36, SHIRTs);
-    // pouch buckle
-    fill(21, 35, 23, 35, BUCKLE);
-    fill(40, 35, 42, 35, BUCKLE);
-    // ammo loops
-    for (let i = 0; i < 5; i++) { set(20 + i, 39, K); set(20 + i, 41, K); set(20 + i, 40, STRAP); }
-    for (let i = 0; i < 5; i++) { set(39 + i, 39, K); set(39 + i, 41, K); set(39 + i, 40, STRAP); }
-    // shoulder straps
-    fill(22, 27, 24, 31, STRAP);
-    fill(40, 27, 42, 31, STRAP);
-    // belt buckle
-    fill(30, 42, 33, 43, BUCKLE);
-    set(31, 43, K);
+    // tactical vest: front pouch + strap
+    box(7, 10, 10, 12, Tt);
+    px(7, 11, "#c8a838"); // buckle
+    px(10, 11, "#c8a838");
+    px(8, 10, "#3a2a18"); px(9, 10, "#3a2a18"); // strap across chest
   } else if (isBoss) {
-    // suit lapels
-    for (let y = 28; y <= 36; y++) {
-      const w = Math.max(1, 8 - Math.floor((y - 28) / 2));
-      fill(22, y, 22 + w - 1, y, SHIRTs);
-      fill(47 - w + 1, y, 47, y, SHIRTs);
-    }
-    // tie
-    fill(30, 28, 33, 43, "#a01818");
-    fill(30, 28, 33, 29, "#7a0a0a");
-    fill(30, 42, 33, 43, "#5a0a0a");
-    outline(30, 28, 33, 29, K);
-    // pocket square
-    fill(38, 33, 42, 34, WHITE);
-  } else {
-    // shirt buttons
-    fill(31, 30, 32, 30, "#e8d8a8");
-    fill(31, 33, 32, 33, "#e8d8a8");
-    fill(31, 36, 32, 36, "#e8d8a8");
-    fill(31, 39, 32, 39, "#e8d8a8");
-    // chest seam
-    set(31, 31, SHIRTs); set(32, 31, SHIRTs);
-    set(31, 34, SHIRTs); set(32, 34, SHIRTs);
-    set(31, 37, SHIRTs); set(32, 37, SHIRTs);
+    // suit lapel + red tie
+    px(7, 10, Tt); px(8, 10, Tt);
+    px(8, 11, "#a01818"); px(8, 12, "#a01818"); px(8, 13, "#7a0a0a");
+  } else if (isGirl) {
+    // simple chest accent line (collar)
+    px(8, 10, ACC); px(9, 10, ACC);
+    // belt highlight at waist
+    px(7, 13, Tt); px(8, 13, Tt); px(9, 13, Tt);
   }
 
-  // ===== ARMS =====
-  fill(12, 28, 15, 38, SHIRT);
-  fill(48, 28, 51, 38, SHIRTs);
-  for (let y = 28; y <= 38; y++) { set(11, y, K); set(52, y, K); }
-  fill(12, 27, 15, 27, K);
-  fill(48, 27, 51, 27, K);
-  // sleeve cuff
-  fill(12, 38, 15, 38, SHIRTs);
-  fill(48, 38, 51, 38, K);
-  // forearm skin
-  fill(12, 39, 15, 44, SKIN);
-  fill(48, 39, 51, 44, SKINs);
-  for (let y = 39; y <= 44; y++) { set(11, y, K); set(52, y, K); }
-  // hands (fists)
-  fill(11, 45, 16, 48, SKIN);
-  fill(47, 45, 52, 48, SKINs);
-  outline(11, 45, 16, 48, K);
-  outline(47, 45, 52, 48, K);
-  // knuckles
-  set(12, 46, K); set(14, 46, K);
-  set(48, 46, K); set(50, 46, K);
-
-  // ===== HIPS / BELT =====
-  fill(16, 45, 47, 47, PANTS);
-  for (let y = 45; y <= 47; y++) { set(15, y, K); set(48, y, K); }
-  fill(16, 45, 47, 46, "#2a1a0a");
-  fill(30, 45, 33, 46, BUCKLE);
-  set(31, 46, K); set(32, 46, K);
-
-  // ===== LEGS =====
-  fill(18, 48, 30, 60, PANTS);
-  fill(33, 48, 45, 60, PANTS);
-  // shading
-  fill(27, 48, 30, 60, PANTSs);
-  fill(42, 48, 45, 60, PANTSs);
+  // ============ ARM (front arm swinging — drawn over torso) ============
+  // shoulder
+  px(11, 10, T);
+  // upper arm + sleeve cuff
+  px(11, 11, T); px(11, 12, Tt);
+  // forearm + hand
+  px(11, 13, S);
   // outline
-  for (let y = 48; y <= 60; y++) {
-    set(17, y, K); set(31, y, K); set(32, y, K); set(46, y, K);
+  px(12, 10, K); px(12, 11, K); px(12, 12, K); px(12, 13, K);
+  px(11, 14, K);
+
+  // ============ HIPS / BELT ============
+  row(14, 5, 11, "#2a1a0a");
+  // buckle
+  px(8, 14, "#c8a838");
+
+  // ============ LEGS (two legs in side view — front leg slightly forward) ============
+  // back leg (further from viewer)
+  box(6, 15, 7, 19, N);
+  // front leg (closer, slightly forward)
+  box(9, 15, 10, 19, N);
+  // shading
+  for (let y = 15; y <= 19; y++) { px(7, y, Nn); px(10, y, Nn); }
+  // outline
+  for (let y = 15; y <= 19; y++) { px(5, y, K); px(8, y, K); px(11, y, K); }
+  row(20, 6, 7, K); row(20, 9, 10, K);
+
+  // ============ SHOES ============
+  // back foot
+  box(5, 20, 8, 21, B);
+  // front foot (points forward — extra pixel to the right)
+  box(8, 20, 11, 21, B);
+  // sole highlight
+  px(6, 21, "#3a3a3a"); px(9, 21, "#3a3a3a");
+  // outline
+  px(4, 20, K); px(4, 21, K);
+  px(12, 20, K); px(12, 21, K);
+  row(21, 5, 11, K);
+
+  // ============ DEAD overlay (X over eye) ============
+  if (dead) {
+    px(9, 3, "#ff2222"); px(10, 4, "#ff2222");
+    px(10, 3, "#ff2222"); px(9, 4, "#ff2222");
   }
-  fill(18, 60, 30, 60, K);
-  fill(33, 60, 45, 60, K);
 
-  // ===== SHOES =====
-  fill(15, 61, 32, 63, SHOES);
-  fill(31, 61, 48, 63, SHOES);
-  outline(15, 61, 32, 63, K);
-  outline(31, 61, 48, 63, K);
-  // shine
-  fill(17, 62, 20, 62, "#4a4a4a");
-  fill(35, 62, 38, 62, "#4a4a4a");
-  // laces hint
-  set(22, 61, "#5a4a3a"); set(25, 61, "#5a4a3a");
-  set(40, 61, "#5a4a3a"); set(43, 61, "#5a4a3a");
-
-  // ===== Build horizontal-run rects =====
+  // ============ Build horizontal-run rects ============
   const rects: React.ReactNode[] = [];
-  for (let y = 0; y < SZ; y++) {
+  for (let y = 0; y < Ht; y++) {
     let x = 0;
-    while (x < SZ) {
-      const c = grid[y][x];
+    while (x < Wd) {
+      const c = g[y][x];
       if (c === null) { x++; continue; }
       let x2 = x;
-      while (x2 + 1 < SZ && grid[y][x2 + 1] === c) x2++;
+      while (x2 + 1 < Wd && g[y][x2 + 1] === c) x2++;
       rects.push(
         <rect key={`${y}-${x}`} x={x} y={y} width={x2 - x + 1} height={1} fill={c} shapeRendering="crispEdges" />
       );
@@ -394,17 +285,24 @@ function PixelHuman({ palette, facing = 1, size = 64, variant = "student", dead 
     }
   }
 
+  // Maintain visual width similar to old 64-grid → render at requested size, viewBox 16×22.
+  // Aspect: keep height ≈ size, width ≈ size * (16/22).
+  const vbW = Wd;
+  const vbH = Ht;
+  const renderH = size;
+  const renderW = Math.round((size * vbW) / vbH);
+
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64"
-      style={{ transform: `scaleX(${facing})`, imageRendering: "pixelated", shapeRendering: "crispEdges" }}>
-      <ellipse cx="32" cy="63.5" rx="18" ry="1.2" fill="#000" opacity="0.5" />
+    <svg width={renderW} height={renderH} viewBox={`0 0 ${vbW} ${vbH}`}
+      style={{
+        transform: `scaleX(${facing})`,
+        imageRendering: "pixelated",
+        shapeRendering: "crispEdges",
+      }}
+    >
+      {/* ground shadow */}
+      <ellipse cx={Wd / 2} cy={vbH - 0.2} rx={Wd / 2.4} ry={0.5} fill="#000" opacity="0.45" />
       {rects}
-      {dead && (
-        <>
-          <rect x="24" y="12" width="6" height="2" fill="#ff2222" />
-          <rect x="34" y="12" width="6" height="2" fill="#ff2222" />
-        </>
-      )}
     </svg>
   );
 }
