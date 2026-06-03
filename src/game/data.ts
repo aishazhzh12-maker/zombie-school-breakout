@@ -79,9 +79,9 @@ export const levels: Level[] = [
         { id: "s3", where: "shelf", x: 560, item: BOOK },
         { id: "s4", where: "drawer", x: 680 },
       ]},
-      { id: "l1-18", x: 750, name: "Кабинет химии №18", loot: APTECHKA, spots: [
+      { id: "l1-18", x: 750, name: "Кабинет математики №18", loot: APTECHKA, spots: [
         { id: "s1", where: "shelf", x: 180, item: APTECHKA },
-        { id: "s2", where: "desk", x: 360, item: ACID },
+        { id: "s2", where: "desk", x: 360, item: BOOK },
         { id: "s3", where: "underDesk", x: 540, item: BATTERY_S },
         { id: "s4", where: "trash", x: 700 },
       ]},
