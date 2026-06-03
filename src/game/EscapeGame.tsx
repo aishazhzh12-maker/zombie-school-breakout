@@ -726,13 +726,13 @@ function SwitchesGame({ onDone }: { onDone: (ok: boolean) => void }) {
 
 // 8) QUIZ — school question
 const QUIZ_POOL = [
-  { q: "Столица Австралии?", o: ["Сидней", "Канберра", "Мельбурн", "Перт"], a: 1 },
-  { q: "Сколько планет в Солнечной системе?", o: ["7", "8", "9", "10"], a: 1 },
-  { q: "Автор «Войны и мира»?", o: ["Достоевский", "Чехов", "Толстой", "Пушкин"], a: 2 },
-  { q: "Химический символ золота?", o: ["Go", "Gd", "Au", "Ag"], a: 2 },
-  { q: "Сколько хромосом у человека?", o: ["23", "44", "46", "48"], a: 2 },
-  { q: "Самая длинная река мира?", o: ["Амазонка", "Нил", "Янцзы", "Волга"], a: 1 },
-  { q: "Кто открыл закон тяготения?", o: ["Эйнштейн", "Ньютон", "Галилей", "Кеплер"], a: 1 },
+  { q: "Capital of Australia?", o: ["Sydney", "Canberra", "Melbourne", "Perth"], a: 1 },
+  { q: "How many planets in the Solar System?", o: ["7", "8", "9", "10"], a: 1 },
+  { q: "Author of War and Peace?", o: ["Dostoevsky", "Chekhov", "Tolstoy", "Pushkin"], a: 2 },
+  { q: "Chemical symbol for gold?", o: ["Go", "Gd", "Au", "Ag"], a: 2 },
+  { q: "How many chromosomes do humans have?", o: ["23", "44", "46", "48"], a: 2 },
+  { q: "Longest river in the world?", o: ["Amazon", "Nile", "Yangtze", "Volga"], a: 1 },
+  { q: "Who discovered the law of gravity?", o: ["Einstein", "Newton", "Galileo", "Kepler"], a: 1 },
 ];
 function QuizGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const item = useMemo(() => QUIZ_POOL[Math.floor(Math.random() * QUIZ_POOL.length)], []);
@@ -1157,7 +1157,7 @@ function ClassroomScene({
     if (!keyFound) { onToast("🔒 Find the key first"); return; }
     setDoorOpen(true);
     onToast("🚪 Door open! +15 coins");
-    onCollect({ name: "Открытая дверь", emoji: "🚪", hpGain: 0 }, classroom.spots[0]);
+    onCollect({ name: "Open door", emoji: "🚪", hpGain: 0 }, classroom.spots[0]);
   };
 
   const tryLeave = () => {
@@ -1218,7 +1218,7 @@ function ClassroomScene({
         <div className="absolute" style={{ left: 92, bottom: -38, transform: "rotate(8deg)" }}><ZombieHand delay={0.4} /></div>
         <div className="absolute" style={{ right: -6, bottom: -28, transform: "rotate(20deg) scaleX(-1)" }}><ZombieHand delay={0.8} /></div>
         <div className="absolute -bottom-1 left-2 right-2 h-2 bg-[#5a0a0a] opacity-80" />
-        <div className="absolute -top-4 left-2 text-[9px] font-pixel text-red-300 animate-pulse">⚠ они снаружи</div>
+        <div className="absolute -top-4 left-2 text-[9px] font-pixel text-red-300 animate-pulse">⚠ they are outside</div>
       </div>
 
       {/* Доска */}
@@ -1648,11 +1648,11 @@ export default function EscapeGame() {
     const id = setInterval(() => {
       const px = xRef.current;
       const z = zombies.find((z, i) => !killed.has(z.id) && Math.abs((zomPosRef.current[z.id] ?? zx(z, i)) - px) < REACH);
-      if (z) { setHint(`[E] Победить ${z.name}`); return; }
+      if (z) { setHint(`[E] Defeat ${z.name}`); return; }
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
-      if (c) { setHint(`[E] Осмотреть · ${c.name}`); return; }
+      if (c) { setHint(`[E] Inspect · ${c.name}`); return; }
       if (Math.abs(EXIT_X - px) < REACH) {
-        setHint(allKilled ? (isFinalLevel ? "[E] К директору!" : "[E] Подняться на этаж выше") : "Путь заблокирован");
+        setHint(allKilled ? (isFinalLevel ? "[E] To the Principal!" : "[E] Go up a floor") : "Path blocked");
         return;
       }
       setHint("");
@@ -1674,7 +1674,7 @@ export default function EscapeGame() {
       sfxKill();
       const reward = 10 + level * 5;
       setCoins(c => c + reward);
-      setToast(`💀 ${z.name} повержен! +${reward} 🪙`);
+      setToast(`💀 ${z.name} defeated! +${reward} 🪙`);
     } else {
       const dmg = Math.max(8, 25 - strength * 3);
       sfxBite();
@@ -1685,7 +1685,7 @@ export default function EscapeGame() {
       });
       setShake(true);
       setTimeout(() => setShake(false), 500);
-      setToast(`💢 Зомби укусил! -${dmg} HP`);
+      setToast(`💢 Zombie bit you! -${dmg} HP`);
     }
     setTimeout(() => setToast(""), 1800);
     setModal({ kind: "none" });
@@ -1694,13 +1694,13 @@ export default function EscapeGame() {
   // Подобрать предмет внутри сцены класса.
   const collectSpotItem = useCallback((loot: LootItem, _spot: SearchSpot) => {
     // Found bat — give a single-use stun weapon, hold it in hand.
-    if (loot.name === "Бейсбольная бита") {
+    if (loot.name === "Baseball bat") {
       setBatLeft(n => {
         const nn = n + 1;
         setSave(s => { const ns = { ...s, owned: { ...s.owned, bat: nn } }; writeSave(ns); return ns; });
         return nn;
       });
-      setToast("🏏 Лана подобрала биту! 1 удар — нажми G рядом с зомби.");
+      setToast("🏏 Lana picked up a bat! 1 hit — press G near a zombie.");
       setTimeout(() => setToast(""), 2200);
       setCoins(c => c + 10);
       return;
@@ -1709,7 +1709,7 @@ export default function EscapeGame() {
     if (loot.givesFlashlight) {
       setFoundFlashlight(true);
       setBattery(b => Math.max(b, loot.battery ?? MAX_BATTERY));
-      setToast(`🔦 Найден ${loot.name}! Теперь Лана видит в темноте.`);
+      setToast(`🔦 Found ${loot.name}! Now Lana can see in the dark.`);
       setTimeout(() => setToast(""), 1800);
       setCoins(c => c + 8);
       return;
@@ -1732,7 +1732,7 @@ export default function EscapeGame() {
       ].filter(Boolean).join(", ");
       setToast(`🎒 ${loot.emoji} ${loot.name}${bonus ? ` (${bonus})` : ""}`);
     } else {
-      setToast(`Найдено: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} 💪)` : ""}`);
+      setToast(`Found: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} 💪)` : ""}`);
     }
     setCoins(c => c + 3);
     setTimeout(() => setToast(""), 1600);
@@ -1756,13 +1756,13 @@ export default function EscapeGame() {
     if (it.strength) setStrength(s => s + it.strength);
     if (it.battery) {
       if (!hasFlashlight) {
-        setToast(`🪫 ${it.emoji} ${it.name}: нет фонарика — батарейка не нужна сейчас.`);
+        setToast(`🪫 ${it.emoji} ${it.name}: no flashlight — battery not needed now.`);
       } else {
         setBattery(b => Math.min(MAX_BATTERY, b + it.battery!));
-        setToast(`🔋 ${it.emoji} +${it.battery}% заряда фонаря`);
+        setToast(`🔋 ${it.emoji} +${it.battery}% flashlight charge`);
       }
     } else {
-      setToast(`💊 ${it.emoji} ${it.name} использовано`);
+      setToast(`💊 ${it.emoji} ${it.name} used`);
     }
     setTimeout(() => setToast(""), 1400);
   }, [maxHp, hasFlashlight]);
@@ -1781,7 +1781,7 @@ export default function EscapeGame() {
       setInv(p => p.filter((_, i) => i !== bestIdx));
       setHp(h => Math.min(maxHp, h + item.hp));
       if (item.food) setHunger(h => Math.min(MAX_HUNGER, h + item.food));
-      setToast(`💊 Авто: ${item.emoji} ${item.name} (+${item.hp} HP)`);
+      setToast(`💊 Auto: ${item.emoji} ${item.name} (+${item.hp} HP)`);
       setTimeout(() => setToast(""), 1800);
     }
   }, [hp, started, modal.kind, maxHp]);
@@ -1796,7 +1796,7 @@ export default function EscapeGame() {
         if (nh === 0) {
           // голодаем — теряем 2 HP
           setHp(hh => Math.max(0, hh - 2));
-          setToast("🍴 Лана голодна! -2 HP");
+          setToast("🍴 Lana is hungry! -2 HP");
           setTimeout(() => setToast(""), 1200);
         }
         return nh;
@@ -1858,9 +1858,9 @@ export default function EscapeGame() {
       });
       setScoreSubmitted(true);
       setLeaderboardKey(k => k + 1);
-      setToast("Рекорд отправлен!");
+      setToast("Record submitted!");
     } catch (e: any) {
-      setToast("Ошибка отправки: " + (e?.message ?? "неизвестно"));
+      setToast("Submit error: " + (e?.message ?? "unknown"));
     } finally {
       setSubmittingScore(false);
       setTimeout(() => setToast(""), 2000);
