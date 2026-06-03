@@ -59,172 +59,280 @@ type PixelPalette = {
 
 function PixelHuman({ palette, facing = 1, size = 80, variant = "student", dead = false }:
   { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
-  // 16x16 sprite — richer detail, realistic proportions, soft shading.
-  const px = (x: number, y: number, c: string, w = 1, h = 1) =>
-    <rect key={`r-${x}-${y}-${w}-${h}-${c}`} x={x} y={y} width={w} height={h} fill={c} shapeRendering="crispEdges" />;
-
+  // 64x64 detailed sprite. Built into a pixel grid then emitted as horizontal-run rects.
   const isGirl = variant === "girl";
   const isBoss = variant === "boss";
   const K = "#0a0a0a";
-  const W = "#ffffff";
-  const SKIN = palette.skin;
-  const SKIN_S = palette.skinShade;
-  const HAIR = palette.hair;
-  const HAIR_S = palette.hairShade;
-  const cells: React.ReactNode[] = [];
+  const WHITE = "#ffffff";
+  const SKIN = palette.skin, SKINs = palette.skinShade;
+  const HAIR = palette.hair, HAIRs = palette.hairShade;
+  const SHIRT = palette.shirt, SHIRTs = palette.shirtShade;
+  const PANTS = palette.pants, PANTSs = palette.pantsShade;
+  const SHOES = palette.shoes;
+  const EYE = isBoss ? "#d61a1a" : (palette.eyes ?? "#1a2a4a");
+  const MOUTH = isBoss ? "#5a1010" : isGirl ? "#c84060" : "#7a3a2a";
+  const BLUSH = "#f0a8a8";
+  const STRAP = "#3a2a18";
+  const BUCKLE = "#c8a838";
 
-  // HEAD outline + fill (rows 1..6, cols 5..10)
-  cells.push(px(5, 1, K, 6, 1));
-  cells.push(px(4, 2, K), px(11, 2, K));
-  cells.push(px(4, 3, K), px(11, 3, K));
-  cells.push(px(4, 4, K), px(11, 4, K));
-  cells.push(px(4, 5, K), px(11, 5, K));
-  cells.push(px(5, 6, K, 6, 1));
-  cells.push(px(5, 2, SKIN, 6, 1));
-  cells.push(px(5, 3, SKIN, 6, 1));
-  cells.push(px(5, 4, SKIN, 6, 1));
-  cells.push(px(5, 5, SKIN, 6, 1));
-  // cheek shading
-  cells.push(px(10, 4, SKIN_S));
-  cells.push(px(10, 5, SKIN_S));
-  cells.push(px(9, 5, SKIN_S));
+  const SZ = 64;
+  const grid: (string | null)[][] = Array.from({ length: SZ }, () => Array(SZ).fill(null));
+  const set = (x: number, y: number, c: string | null) => {
+    if (x >= 0 && x < SZ && y >= 0 && y < SZ) grid[y][x] = c;
+  };
+  const fill = (x0: number, y0: number, x1: number, y1: number, c: string) => {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c);
+  };
+  const outline = (x0: number, y0: number, x1: number, y1: number, c: string) => {
+    for (let x = x0; x <= x1; x++) { set(x, y0, c); set(x, y1, c); }
+    for (let y = y0; y <= y1; y++) { set(x0, y, c); set(x1, y, c); }
+  };
 
-  // HAIR
-  cells.push(px(5, 0, HAIR, 6, 1));
-  cells.push(px(4, 1, HAIR));
-  cells.push(px(11, 1, HAIR));
-  cells.push(px(5, 2, HAIR));
-  cells.push(px(6, 2, HAIR_S));
-  cells.push(px(10, 2, HAIR));
+  // ===== HEAD (skin fill) =====
+  fill(22, 6, 41, 22, SKIN);
+  // round corners by clearing then redrawing outline
+  set(22, 6, null); set(23, 6, null); set(40, 6, null); set(41, 6, null);
+  set(22, 7, null); set(41, 7, null);
+  set(22, 22, null); set(41, 22, null);
+  // outline
+  fill(24, 5, 39, 5, K);
+  set(23, 6, K); set(40, 6, K); set(22, 7, K); set(41, 7, K);
+  for (let y = 8; y <= 21; y++) { set(21, y, K); set(42, y, K); }
+  set(22, 22, K); set(41, 22, K);
+  fill(23, 23, 40, 23, K);
+  // jaw / cheek shading on right
+  fill(38, 16, 40, 21, SKINs);
+  fill(24, 21, 39, 21, SKINs);
+
+  // ===== HAIR =====
+  fill(22, 4, 41, 7, HAIR);
+  set(22, 4, null); set(23, 4, null); set(40, 4, null); set(41, 4, null);
+  set(22, 5, null); set(41, 5, null);
+  fill(24, 3, 39, 3, K);
+  set(23, 4, K); set(40, 4, K); set(22, 5, K); set(41, 5, K);
+  // bangs
+  fill(22, 8, 27, 10, HAIR);
+  fill(36, 8, 41, 10, HAIR);
+  set(27, 10, HAIRs); set(36, 10, HAIRs);
+  // hair shade on right top
+  fill(37, 4, 41, 6, HAIRs);
+
   if (isGirl) {
-    cells.push(px(4, 3, HAIR));
-    cells.push(px(4, 4, HAIR));
-    cells.push(px(4, 5, HAIR));
-    cells.push(px(4, 6, HAIR));
-    cells.push(px(11, 3, HAIR_S));
-    cells.push(px(11, 4, HAIR_S));
-    cells.push(px(11, 5, HAIR_S));
-    cells.push(px(11, 6, HAIR_S));
-    cells.push(px(7, 2, HAIR));
+    // long flowing hair down sides + behind shoulders
+    fill(19, 7, 21, 33, HAIR);
+    fill(42, 7, 44, 33, HAIRs);
+    // back hair behind torso
+    fill(15, 26, 18, 38, HAIR);
+    fill(45, 26, 48, 38, HAIRs);
+    // outline
+    for (let y = 7; y <= 33; y++) { set(18, y, K); set(45, y, K); }
+    fill(19, 34, 21, 34, K);
+    fill(42, 34, 44, 34, K);
+    // forward strand on left cheek
+    set(22, 11, HAIRs); set(22, 12, HAIRs);
   } else if (isBoss) {
-    cells.push(px(5, 1, HAIR_S));
-    cells.push(px(10, 1, HAIR_S));
-    cells.push(px(7, 1, SKIN));
-    cells.push(px(8, 1, SKIN));
-    cells.push(px(9, 3, "#7a1a1a"));
+    // bald top + grey temples
+    fill(27, 4, 36, 6, SKIN);
+    fill(22, 4, 26, 7, HAIRs);
+    fill(37, 4, 41, 7, HAIRs);
+    fill(28, 3, 35, 3, K);
+    set(27, 4, K); set(36, 4, K);
+    // forehead wrinkles
+    fill(26, 10, 37, 10, SKINs);
+    // scar
+    fill(33, 9, 36, 9, "#7a1a1a");
+    set(35, 10, "#7a1a1a");
   } else {
-    cells.push(px(9, 2, HAIR_S));
+    fill(36, 4, 41, 6, HAIRs);
   }
 
-  // EYES
-  cells.push(px(6, 3, W));
-  cells.push(px(9, 3, W));
-  const pupil = isBoss ? "#d61a1a" : (palette.eyes ?? "#1a2a4a");
-  cells.push(px(6, 3, pupil));
-  cells.push(px(9, 3, pupil));
-  if (isBoss) {
-    cells.push(px(6, 2, K));
-    cells.push(px(9, 2, K));
-  }
+  // ===== EYEBROWS =====
+  const brow = isBoss ? K : HAIR;
+  fill(25, 11, 29, 11, brow);
+  fill(34, 11, 38, 11, brow);
+  if (isBoss) { fill(25, 12, 26, 12, K); fill(37, 12, 38, 12, K); }
 
-  // NOSE + MOUTH
-  cells.push(px(7, 4, SKIN_S));
-  cells.push(px(8, 4, SKIN_S));
-  if (isBoss) {
-    cells.push(px(7, 5, "#5a1010", 2, 1));
-  } else if (isGirl) {
-    cells.push(px(7, 5, "#c84060", 2, 1));
+  // ===== EYES =====
+  fill(25, 13, 29, 15, WHITE);
+  fill(34, 13, 38, 15, WHITE);
+  outline(25, 13, 29, 15, K);
+  outline(34, 13, 38, 15, K);
+  fill(26, 13, 27, 15, EYE);
+  fill(35, 13, 36, 15, EYE);
+  set(27, 13, WHITE); set(36, 13, WHITE); // catchlight
+
+  // ===== NOSE =====
+  fill(31, 15, 32, 18, SKINs);
+  set(30, 18, SKINs); set(33, 18, SKINs);
+  set(31, 19, "#000000"); set(32, 19, "#000000");
+
+  // ===== MOUTH =====
+  if (isGirl) {
+    fill(28, 19, 35, 20, MOUTH);
+    fill(29, 20, 34, 20, "#a82850");
   } else {
-    cells.push(px(7, 5, "#7a3a2a", 2, 1));
+    fill(28, 20, 35, 20, MOUTH);
+  }
+  if (isBoss) {
+    set(27, 20, K); set(36, 20, K);
+    fill(28, 21, 35, 21, SKINs);
   }
   if (isGirl) {
-    cells.push(px(5, 4, "#f0a8a8"));
-    cells.push(px(10, 4, "#f0a8a8"));
+    fill(23, 17, 25, 18, BLUSH);
+    fill(38, 17, 40, 18, BLUSH);
   }
 
-  // NECK
-  cells.push(px(7, 6, SKIN, 2, 1));
-  cells.push(px(7, 7, SKIN_S, 2, 1));
+  // ===== NECK =====
+  fill(28, 24, 35, 26, SKIN);
+  set(27, 24, K); set(36, 24, K);
+  set(27, 25, K); set(36, 25, K);
+  set(27, 26, K); set(36, 26, K);
+  fill(28, 26, 35, 26, SKINs);
 
-  // TORSO outline
-  cells.push(px(3, 7, K), px(12, 7, K));
-  cells.push(px(2, 8, K), px(13, 8, K));
-  cells.push(px(2, 9, K), px(13, 9, K));
-  cells.push(px(2, 10, K), px(13, 10, K));
-  cells.push(px(2, 11, K), px(13, 11, K));
-  cells.push(px(3, 12, K, 10, 1));
+  // ===== TORSO =====
+  fill(16, 27, 47, 43, SHIRT);
+  // shoulder curve cutouts
+  set(16, 27, null); set(17, 27, null); set(46, 27, null); set(47, 27, null);
+  // outline
+  fill(18, 27, 45, 27, K);
+  set(16, 28, K); set(47, 28, K); set(17, 27, K); set(46, 27, K);
+  for (let y = 28; y <= 43; y++) { set(15, y, K); set(48, y, K); }
+  fill(16, 44, 47, 44, K);
+  // shading band right
+  fill(43, 28, 47, 43, SHIRTs);
+  // collar
+  fill(28, 27, 35, 29, SKINs);
+  set(27, 27, K); set(36, 27, K);
+  fill(28, 29, 35, 29, K);
 
   if (palette.armored) {
-    const VEST = palette.shirt;
-    const VEST_S = palette.shirtShade;
-    const STRAP = "#3a2a18";
-    const BUCKLE = "#c8a838";
-    cells.push(px(4, 7, VEST, 8, 1));
-    cells.push(px(3, 8, VEST, 10, 1));
-    cells.push(px(3, 9, VEST, 10, 1));
-    cells.push(px(3, 10, VEST, 10, 1));
-    cells.push(px(3, 11, VEST_S, 10, 1));
-    cells.push(px(7, 8, K), px(8, 8, K));
-    cells.push(px(7, 9, VEST_S), px(8, 9, VEST_S));
-    cells.push(px(4, 10, STRAP, 2, 1));
-    cells.push(px(10, 10, STRAP, 2, 1));
-    cells.push(px(5, 10, BUCKLE));
-    cells.push(px(10, 10, BUCKLE));
-    cells.push(px(7, 7, K), px(8, 7, K));
+    // tactical vest panels
+    fill(17, 30, 46, 43, SHIRT);
+    fill(43, 30, 46, 43, SHIRTs);
+    // center seam
+    fill(31, 30, 32, 43, K);
+    // chest pouches
+    outline(19, 32, 25, 37, K);
+    fill(20, 33, 24, 36, SHIRTs);
+    outline(38, 32, 44, 37, K);
+    fill(39, 33, 43, 36, SHIRTs);
+    // pouch buckle
+    fill(21, 35, 23, 35, BUCKLE);
+    fill(40, 35, 42, 35, BUCKLE);
+    // ammo loops
+    for (let i = 0; i < 5; i++) { set(20 + i, 39, K); set(20 + i, 41, K); set(20 + i, 40, STRAP); }
+    for (let i = 0; i < 5; i++) { set(39 + i, 39, K); set(39 + i, 41, K); set(39 + i, 40, STRAP); }
+    // shoulder straps
+    fill(22, 27, 24, 31, STRAP);
+    fill(40, 27, 42, 31, STRAP);
+    // belt buckle
+    fill(30, 42, 33, 43, BUCKLE);
+    set(31, 43, K);
+  } else if (isBoss) {
+    // suit lapels
+    for (let y = 28; y <= 36; y++) {
+      const w = Math.max(1, 8 - Math.floor((y - 28) / 2));
+      fill(22, y, 22 + w - 1, y, SHIRTs);
+      fill(47 - w + 1, y, 47, y, SHIRTs);
+    }
+    // tie
+    fill(30, 28, 33, 43, "#a01818");
+    fill(30, 28, 33, 29, "#7a0a0a");
+    fill(30, 42, 33, 43, "#5a0a0a");
+    outline(30, 28, 33, 29, K);
+    // pocket square
+    fill(38, 33, 42, 34, WHITE);
   } else {
-    const SHIRT = palette.shirt;
-    const SHIRT_S = palette.shirtShade;
-    cells.push(px(4, 7, SHIRT, 8, 1));
-    cells.push(px(3, 8, SHIRT, 10, 1));
-    cells.push(px(3, 9, SHIRT, 10, 1));
-    cells.push(px(3, 10, SHIRT, 10, 1));
-    cells.push(px(3, 11, SHIRT_S, 10, 1));
-    cells.push(px(11, 8, SHIRT_S));
-    cells.push(px(11, 9, SHIRT_S));
-    cells.push(px(11, 10, SHIRT_S));
-    cells.push(px(7, 7, SKIN_S), px(8, 7, SKIN_S));
-    if (isBoss) {
-      cells.push(px(7, 8, "#c41818"));
-      cells.push(px(7, 9, "#c41818"));
-      cells.push(px(7, 10, "#7a0a0a"));
+    // shirt buttons
+    fill(31, 30, 32, 30, "#e8d8a8");
+    fill(31, 33, 32, 33, "#e8d8a8");
+    fill(31, 36, 32, 36, "#e8d8a8");
+    fill(31, 39, 32, 39, "#e8d8a8");
+    // chest seam
+    set(31, 31, SHIRTs); set(32, 31, SHIRTs);
+    set(31, 34, SHIRTs); set(32, 34, SHIRTs);
+    set(31, 37, SHIRTs); set(32, 37, SHIRTs);
+  }
+
+  // ===== ARMS =====
+  fill(12, 28, 15, 38, SHIRT);
+  fill(48, 28, 51, 38, SHIRTs);
+  for (let y = 28; y <= 38; y++) { set(11, y, K); set(52, y, K); }
+  fill(12, 27, 15, 27, K);
+  fill(48, 27, 51, 27, K);
+  // sleeve cuff
+  fill(12, 38, 15, 38, SHIRTs);
+  fill(48, 38, 51, 38, K);
+  // forearm skin
+  fill(12, 39, 15, 44, SKIN);
+  fill(48, 39, 51, 44, SKINs);
+  for (let y = 39; y <= 44; y++) { set(11, y, K); set(52, y, K); }
+  // hands (fists)
+  fill(11, 45, 16, 48, SKIN);
+  fill(47, 45, 52, 48, SKINs);
+  outline(11, 45, 16, 48, K);
+  outline(47, 45, 52, 48, K);
+  // knuckles
+  set(12, 46, K); set(14, 46, K);
+  set(48, 46, K); set(50, 46, K);
+
+  // ===== HIPS / BELT =====
+  fill(16, 45, 47, 47, PANTS);
+  for (let y = 45; y <= 47; y++) { set(15, y, K); set(48, y, K); }
+  fill(16, 45, 47, 46, "#2a1a0a");
+  fill(30, 45, 33, 46, BUCKLE);
+  set(31, 46, K); set(32, 46, K);
+
+  // ===== LEGS =====
+  fill(18, 48, 30, 60, PANTS);
+  fill(33, 48, 45, 60, PANTS);
+  // shading
+  fill(27, 48, 30, 60, PANTSs);
+  fill(42, 48, 45, 60, PANTSs);
+  // outline
+  for (let y = 48; y <= 60; y++) {
+    set(17, y, K); set(31, y, K); set(32, y, K); set(46, y, K);
+  }
+  fill(18, 60, 30, 60, K);
+  fill(33, 60, 45, 60, K);
+
+  // ===== SHOES =====
+  fill(15, 61, 32, 63, SHOES);
+  fill(31, 61, 48, 63, SHOES);
+  outline(15, 61, 32, 63, K);
+  outline(31, 61, 48, 63, K);
+  // shine
+  fill(17, 62, 20, 62, "#4a4a4a");
+  fill(35, 62, 38, 62, "#4a4a4a");
+  // laces hint
+  set(22, 61, "#5a4a3a"); set(25, 61, "#5a4a3a");
+  set(40, 61, "#5a4a3a"); set(43, 61, "#5a4a3a");
+
+  // ===== Build horizontal-run rects =====
+  const rects: React.ReactNode[] = [];
+  for (let y = 0; y < SZ; y++) {
+    let x = 0;
+    while (x < SZ) {
+      const c = grid[y][x];
+      if (c === null) { x++; continue; }
+      let x2 = x;
+      while (x2 + 1 < SZ && grid[y][x2 + 1] === c) x2++;
+      rects.push(
+        <rect key={`${y}-${x}`} x={x} y={y} width={x2 - x + 1} height={1} fill={c} shapeRendering="crispEdges" />
+      );
+      x = x2 + 1;
     }
   }
 
-  // arms shading + hands
-  cells.push(px(2, 9, SKIN_S));
-  cells.push(px(13, 9, SKIN_S));
-  cells.push(px(2, 11, SKIN));
-  cells.push(px(13, 11, SKIN));
-
-  // LEGS
-  const PANTS = palette.pants;
-  const PANTS_S = palette.pantsShade;
-  cells.push(px(4, 12, PANTS, 3, 1));
-  cells.push(px(4, 13, PANTS, 3, 1));
-  cells.push(px(4, 14, PANTS_S, 3, 1));
-  cells.push(px(9, 12, PANTS, 3, 1));
-  cells.push(px(9, 13, PANTS, 3, 1));
-  cells.push(px(9, 14, PANTS_S, 3, 1));
-  cells.push(px(7, 12, K, 2, 3));
-  cells.push(px(3, 12, K, 1, 3));
-  cells.push(px(12, 12, K, 1, 3));
-
-  // SHOES
-  cells.push(px(3, 15, K, 4, 1));
-  cells.push(px(9, 15, K, 4, 1));
-  cells.push(px(4, 15, palette.shoes, 2, 1));
-  cells.push(px(10, 15, palette.shoes, 2, 1));
-
   return (
-    <svg width={size} height={size} viewBox="0 0 16 16"
+    <svg width={size} height={size} viewBox="0 0 64 64"
       style={{ transform: `scaleX(${facing})`, imageRendering: "pixelated", shapeRendering: "crispEdges" }}>
-      <ellipse cx="8" cy="15.85" rx="5" ry="0.35" fill="#000" opacity="0.5" />
-      {cells}
+      <ellipse cx="32" cy="63.5" rx="18" ry="1.2" fill="#000" opacity="0.5" />
+      {rects}
       {dead && (
         <>
-          <rect x="6" y="3" width="1" height="1" fill="#ff2222" />
-          <rect x="9" y="3" width="1" height="1" fill="#ff2222" />
-          <rect x="7" y="5" width="2" height="1" fill="#5a0000" />
+          <rect x="24" y="12" width="6" height="2" fill="#ff2222" />
+          <rect x="34" y="12" width="6" height="2" fill="#ff2222" />
         </>
       )}
     </svg>
