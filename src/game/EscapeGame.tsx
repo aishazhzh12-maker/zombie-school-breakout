@@ -64,8 +64,9 @@ type PixelPalette = {
 };
 
 /**
- * SIDE-VIEW chunky pixel sprite (16x22 grid). Default profile faces RIGHT.
- * Renders each cell as a square <rect>. With size=72 each pixel ≈ 4.5 real px → arcade look.
+ * FRONT-FACING chunky pixel sprite (16x22 grid) with HEAD TURNED to the side.
+ * Body stands frontal — both shoulders, both legs visible. Head + eyes look
+ * toward `facing` (1 = looks right, -1 = looks left).
  */
 function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead = false }:
   { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
@@ -102,171 +103,132 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) px(x, y, c);
   };
 
-  // ============ HEAD (profile facing right) ============
-  // outline
-  row(0, 6, 10, K);
-  px(5, 1, K); px(11, 1, K);
+  // ============ HEAD (front-facing oval, slightly turned) ============
+  row(0, 6, 9, K);
+  px(5, 1, K); px(10, 1, K);
   px(4, 2, K); px(11, 2, K);
   px(4, 3, K); px(11, 3, K);
   px(4, 4, K); px(11, 4, K);
   px(4, 5, K); px(11, 5, K);
-  px(5, 6, K); px(11, 6, K);
-  px(6, 7, K); px(10, 7, K);
+  px(5, 6, K); px(10, 6, K);
+  px(6, 7, K); px(9, 7, K);
   // skin fill
   box(5, 1, 10, 6, S);
-  // chin/jaw shading
-  px(10, 5, Sh); px(10, 6, Sh); px(9, 7, Sh);
+  // shading on the cheek opposite the turn (head looks right → shade left cheek)
+  px(5, 5, Sh); px(5, 6, Sh); px(6, 6, Sh);
 
-  // ============ HAIR (back of head + crown) ============
+  // ============ HAIR (top crown, bangs swept toward turn side) ============
   if (isBoss) {
-    // bald — just a thin grey strip + scar
-    row(1, 6, 10, S);
+    row(1, 6, 9, S);
     px(5, 1, Hh); px(10, 1, Hh);
-    // scar across forehead
-    px(8, 2, "#7a1a1a"); px(9, 3, "#7a1a1a");
+    px(8, 2, "#7a1a1a"); px(9, 3, "#7a1a1a"); // scar
   } else {
-    // crown
-    row(1, 6, 10, H);
-    px(5, 2, H); px(6, 2, H); px(7, 2, H);
-    // forelock / bangs hanging in front of forehead
-    px(7, 2, H); px(8, 2, H);
-    px(8, 3, H);
-    // back of head curve
-    px(4, 2, H); px(4, 3, H); px(4, 4, H);
-    px(3, 3, H); px(3, 4, H);
-    // small shade
-    px(10, 1, Hh); px(9, 1, Hh);
+    row(1, 6, 9, H);
+    px(5, 2, H); px(10, 2, H);
+    px(5, 3, H); px(10, 3, H);
+    // bangs on the turn side (right of face)
+    px(8, 2, H); px(9, 2, H); px(9, 3, H);
+    // highlight
+    px(7, 1, Hh); px(8, 1, Hh);
   }
 
-  // ============ PONYTAIL (girl) — sticks out BACK (to the left in profile) ============
+  // ============ PONYTAIL (girl) — behind head, OPPOSITE the turn side ============
   if (isGirl) {
-    // scrunchie/base
-    px(3, 2, PT); px(3, 3, PT);
-    px(2, 3, PT); px(2, 4, PT); px(2, 5, PT);
-    px(1, 4, PT); px(1, 5, PT); px(1, 6, PT);
-    px(0, 5, PT); px(0, 6, PT);
-    // ribbon highlight on scrunchie
-    px(3, 3, ACC); px(2, 4, ACC);
-    // shading along underside
-    px(1, 6, Hh); px(0, 6, Hh);
-    // outline of ponytail
-    px(0, 4, K); px(0, 7, K); px(1, 7, K); px(2, 6, K);
-    px(3, 4, K);
+    px(4, 4, PT); px(3, 4, PT);
+    px(3, 5, PT); px(2, 5, PT);
+    px(2, 6, PT); px(1, 6, PT);
+    px(1, 7, PT); px(2, 7, PT);
+    px(1, 8, PT);
+    // ribbon highlight
+    px(3, 5, ACC); px(2, 6, ACC);
+    // outline
+    px(0, 6, K); px(0, 7, K); px(0, 8, K);
+    px(1, 9, K); px(2, 8, K); px(3, 6, K);
   }
 
   // ============ PURPLE STREAK in bangs ============
   if (STREAK) {
-    px(7, 2, STREAK);
-    px(7, 3, STREAK);
-    // small accent in ponytail
-    if (isGirl) { px(2, 5, STREAK); px(1, 5, STREAK); }
+    px(8, 2, STREAK);
+    px(8, 3, STREAK);
+    if (isGirl) { px(2, 6, STREAK); px(1, 7, STREAK); }
   }
 
-  // ============ EYE (single big arcade eye in profile) ============
-  // white
-  px(9, 3, W); px(9, 4, W); px(10, 3, W);
-  // iris+pupil
-  px(9, 3, EYE);
-  // sparkle catchlight
-  px(10, 3, W);
-  if (isBoss) {
-    // glowing red eye — add halo
-    px(8, 3, "#7a0a0a");
-    px(9, 2, "#7a0a0a");
-  } else if (isGirl) {
-    // long eyelash
-    px(8, 2, K);
-    // lower lash
-    px(9, 4, K);
-  }
-  // eyebrow
+  // ============ EYES (both shifted toward turn side) ============
+  px(8, 3, W); px(10, 3, W);
+  px(8, 3, EYE);
+  px(10, 3, EYE);
+  // brows
   px(8, 2, isBoss ? K : Hh);
-  if (!isBoss) px(9, 2, Hh);
+  px(10, 2, isBoss ? K : Hh);
+  if (isBoss) {
+    px(7, 3, "#7a0a0a");
+    px(9, 3, "#7a0a0a");
+  } else if (isGirl) {
+    px(8, 2, K); px(10, 2, K); // lashes
+  }
 
-  // ============ NOSE & MOUTH (profile) ============
-  px(11, 4, S);            // nose bridge tip
-  px(11, 5, Sh);           // nostril shadow
-  // mouth
-  px(10, 6, MOUTH);
-  if (isGirl) px(9, 6, MOUTH);
-  if (isBoss) { px(10, 6, MOUTH); px(9, 6, K); }
+  // ============ NOSE & MOUTH (turn side) ============
+  px(10, 4, Sh);
+  px(10, 5, Sh);
+  px(9, 6, MOUTH); px(10, 6, MOUTH);
+  if (isBoss) px(9, 6, K);
 
   // ============ NECK ============
-  px(7, 7, S); px(8, 7, S); px(9, 7, S);
-  px(7, 8, S); px(8, 8, S); px(9, 8, Sh);
-  px(6, 8, K); px(10, 8, K);
+  box(7, 7, 8, 8, S);
+  px(8, 8, Sh);
+  px(6, 8, K); px(9, 8, K);
 
-  // ============ TORSO ============
-  // shoulders
-  row(9, 5, 11, T);
-  // body
-  box(5, 10, 11, 13, T);
-  // shading on back (right side in our facing-right base — back is LEFT)
-  for (let y = 10; y <= 13; y++) px(5, y, Tt);
-  // outline
-  for (let y = 9; y <= 13; y++) { px(4, y, K); px(12, y, K); }
-  row(14, 5, 11, K);
+  // ============ TORSO (front-facing) ============
+  row(9, 4, 11, T);
+  box(4, 10, 11, 13, T);
+  for (let y = 10; y <= 13; y++) px(4, y, Tt);
+  for (let y = 9; y <= 13; y++) { px(3, y, K); px(12, y, K); }
+  row(14, 4, 11, K);
 
   if (palette.armored) {
-    // tactical vest: front pouch + strap
-    box(7, 10, 10, 12, Tt);
-    px(7, 11, "#c8a838"); // buckle
-    px(10, 11, "#c8a838");
-    px(8, 10, "#3a2a18"); px(9, 10, "#3a2a18"); // strap across chest
+    box(6, 10, 9, 13, Tt);
+    px(6, 10, "#3a2a18"); px(9, 10, "#3a2a18");
+    px(6, 12, "#c8a838"); px(9, 12, "#c8a838");
+    px(7, 13, "#3a2a18"); px(8, 13, "#3a2a18");
   } else if (isBoss) {
-    // suit lapel + red tie
-    px(7, 10, Tt); px(8, 10, Tt);
-    px(8, 11, "#a01818"); px(8, 12, "#a01818"); px(8, 13, "#7a0a0a");
+    px(6, 10, Tt); px(9, 10, Tt);
+    px(7, 11, "#a01818"); px(8, 11, "#a01818");
+    px(7, 12, "#a01818"); px(8, 12, "#a01818");
+    px(7, 13, "#7a0a0a"); px(8, 13, "#7a0a0a");
   } else if (isGirl) {
-    // simple chest accent line (collar)
-    px(8, 10, ACC); px(9, 10, ACC);
-    // belt highlight at waist
-    px(7, 13, Tt); px(8, 13, Tt); px(9, 13, Tt);
+    px(7, 10, ACC); px(8, 10, ACC);
+    row(13, 5, 10, Tt);
   }
 
-  // ============ ARM (front arm swinging — drawn over torso) ============
-  // shoulder
-  px(11, 10, T);
-  // upper arm + sleeve cuff
-  px(11, 11, T); px(11, 12, Tt);
-  // forearm + hand
-  px(11, 13, S);
-  // outline
-  px(12, 10, K); px(12, 11, K); px(12, 12, K); px(12, 13, K);
-  px(11, 14, K);
+  // ============ ARMS (both sides) ============
+  px(3, 10, T); px(3, 11, T); px(3, 12, Tt); px(3, 13, S);
+  px(2, 10, K); px(2, 11, K); px(2, 12, K); px(2, 13, K); px(3, 14, K);
+  px(12, 10, T); px(12, 11, T); px(12, 12, Tt); px(12, 13, S);
+  px(13, 10, K); px(13, 11, K); px(13, 12, K); px(13, 13, K); px(12, 14, K);
 
   // ============ HIPS / BELT ============
-  row(14, 5, 11, "#2a1a0a");
-  // buckle
-  px(8, 14, "#c8a838");
+  row(14, 4, 11, "#2a1a0a");
+  px(7, 14, "#c8a838"); px(8, 14, "#c8a838");
 
-  // ============ LEGS (two legs in side view — front leg slightly forward) ============
-  // back leg (further from viewer)
-  box(6, 15, 7, 19, N);
-  // front leg (closer, slightly forward)
-  box(9, 15, 10, 19, N);
-  // shading
-  for (let y = 15; y <= 19; y++) { px(7, y, Nn); px(10, y, Nn); }
-  // outline
-  for (let y = 15; y <= 19; y++) { px(5, y, K); px(8, y, K); px(11, y, K); }
-  row(20, 6, 7, K); row(20, 9, 10, K);
+  // ============ LEGS (side-by-side front view) ============
+  box(5, 15, 7, 19, N);
+  box(8, 15, 10, 19, N);
+  for (let y = 15; y <= 19; y++) { px(7, y, Nn); px(8, y, Nn); }
+  for (let y = 15; y <= 19; y++) { px(4, y, K); px(11, y, K); }
+  row(20, 5, 10, K);
 
   // ============ SHOES ============
-  // back foot
-  box(5, 20, 8, 21, B);
-  // front foot (points forward — extra pixel to the right)
+  box(4, 20, 7, 21, B);
   box(8, 20, 11, 21, B);
-  // sole highlight
-  px(6, 21, "#3a3a3a"); px(9, 21, "#3a3a3a");
-  // outline
-  px(4, 20, K); px(4, 21, K);
+  px(5, 21, "#3a3a3a"); px(9, 21, "#3a3a3a");
+  px(3, 20, K); px(3, 21, K);
   px(12, 20, K); px(12, 21, K);
-  row(21, 5, 11, K);
+  row(21, 4, 11, K);
 
-  // ============ DEAD overlay (X over eye) ============
+  // ============ DEAD overlay ============
   if (dead) {
-    px(9, 3, "#ff2222"); px(10, 4, "#ff2222");
-    px(10, 3, "#ff2222"); px(9, 4, "#ff2222");
+    px(8, 3, "#ff2222"); px(10, 3, "#ff2222");
+    px(8, 4, "#ff2222"); px(10, 4, "#ff2222");
   }
 
   // ============ Build horizontal-run rects ============
@@ -285,8 +247,6 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
     }
   }
 
-  // Maintain visual width similar to old 64-grid → render at requested size, viewBox 16×22.
-  // Aspect: keep height ≈ size, width ≈ size * (16/22).
   const vbW = Wd;
   const vbH = Ht;
   const renderH = size;
@@ -300,7 +260,6 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
         shapeRendering: "crispEdges",
       }}
     >
-      {/* ground shadow */}
       <ellipse cx={Wd / 2} cy={vbH - 0.2} rx={Wd / 2.4} ry={0.5} fill="#000" opacity="0.45" />
       {rects}
     </svg>
