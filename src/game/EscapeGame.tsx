@@ -202,14 +202,34 @@ function PixelHuman({ palette, facing = 1, size = 64, variant = "student", dead 
   fill(34, 11, 38, 11, brow);
   if (isBoss) { fill(25, 12, 26, 12, K); fill(37, 12, 38, 12, K); }
 
-  // ===== EYES =====
-  fill(25, 13, 29, 15, WHITE);
-  fill(34, 13, 38, 15, WHITE);
-  outline(25, 13, 29, 15, K);
-  outline(34, 13, 38, 15, K);
-  fill(26, 13, 27, 15, EYE);
-  fill(35, 13, 36, 15, EYE);
-  set(27, 13, WHITE); set(36, 13, WHITE); // catchlight
+  // ===== EYES (pretty: iris + pupil + catchlight) =====
+  const IRIS = isBoss ? "#ff3030" : isGirl ? "#7a5ad6" : EYE;
+  const IRISs = isBoss ? "#7a0808" : isGirl ? "#3a2a6a" : "#0a1530";
+  // sclera
+  fill(24, 13, 29, 16, WHITE);
+  fill(34, 13, 39, 16, WHITE);
+  outline(24, 13, 29, 16, K);
+  outline(34, 13, 39, 16, K);
+  // iris ring
+  fill(25, 14, 28, 15, IRIS);
+  fill(35, 14, 38, 15, IRIS);
+  // iris shading bottom
+  set(25, 15, IRISs); set(28, 15, IRISs);
+  set(35, 15, IRISs); set(38, 15, IRISs);
+  // pupil
+  fill(26, 14, 27, 15, K);
+  fill(36, 14, 37, 15, K);
+  // big sparkly catchlight
+  set(26, 14, WHITE); set(36, 14, WHITE);
+  set(27, 13, WHITE); set(37, 13, WHITE);
+  // tiny secondary sparkle
+  set(28, 15, isBoss ? "#ffaaaa" : "#bcd6ff");
+  set(38, 15, isBoss ? "#ffaaaa" : "#bcd6ff");
+  if (isBoss) {
+    // glowing red aura under eyes
+    set(24, 16, "#7a0a0a"); set(29, 16, "#7a0a0a");
+    set(34, 16, "#7a0a0a"); set(39, 16, "#7a0a0a");
+  }
 
   // ===== NOSE =====
   fill(31, 15, 32, 18, SKINs);
