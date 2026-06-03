@@ -1909,7 +1909,14 @@ export default function EscapeGame() {
             <div className="px-3 py-1 bg-amber-900/40 border border-amber-700 rounded font-pixel text-amber-200 flex items-center gap-2">
               <Coins className="h-4 w-4" /> {coins} монет
             </div>
+            <button onClick={() => setMusicOff(v => !v)}
+              className="px-3 py-1 bg-black/40 border border-zinc-700 rounded font-pixel text-zinc-200 flex items-center gap-2 hover:bg-black/60"
+              title="Музыка вкл/выкл">
+              {musicOff ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              {musicOff ? "Музыка выкл" : "Музыка вкл"}
+            </button>
           </div>
+
 
           <div className="flex gap-2 justify-center">
             {[
