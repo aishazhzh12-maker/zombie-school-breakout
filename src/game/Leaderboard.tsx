@@ -39,17 +39,17 @@ export function Leaderboard({ refreshKey = 0 }: { refreshKey?: number }) {
     return () => { alive = false; };
   }, [refreshKey]);
 
-  if (err) return <div className="text-red-400 text-sm text-center">Не удалось загрузить: {err}</div>;
+  if (err) return <div className="text-red-400 text-sm text-center">Failed to load: {err}</div>;
   if (!rows) return <div className="flex justify-center text-zinc-400"><Loader2 className="h-5 w-5 animate-spin" /></div>;
-  if (rows.length === 0) return <div className="text-center text-zinc-400 text-sm py-6">Пока нет рекордов. Стань первым!</div>;
+  if (rows.length === 0) return <div className="text-center text-zinc-400 text-sm py-6">No records yet. Be the first!</div>;
 
   return (
     <div className="space-y-1">
       <div className="grid grid-cols-[28px_1fr_70px_60px_70px] gap-2 text-[10px] text-zinc-400 font-pixel px-2 pb-1 border-b border-zinc-700">
         <span>#</span>
-        <span>Игрок</span>
+        <span>Player</span>
         <span className="text-right flex items-center justify-end gap-1"><Coins className="h-3 w-3" /></span>
-        <span className="text-right">Этажи</span>
+        <span className="text-right">Floors</span>
         <span className="text-right flex items-center justify-end gap-1"><Clock className="h-3 w-3" /></span>
       </div>
       {rows.map((r, i) => (
@@ -79,7 +79,7 @@ export function Leaderboard({ refreshKey = 0 }: { refreshKey?: number }) {
 export async function submitScore(args: {
   name: string; coins: number; levels_completed: number; time_seconds: number; won: boolean;
 }) {
-  const name = args.name.trim().slice(0, 24) || "Лана";
+  const name = args.name.trim().slice(0, 24) || "Lana";
   const { error } = await supabase.from("leaderboard").insert({
     player_name: name,
     coins: Math.max(0, Math.floor(args.coins)),

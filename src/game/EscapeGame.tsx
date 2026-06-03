@@ -289,16 +289,16 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
 
 // ---- Lana speech bubble (rotating phrases) ----
 const LANA_LINES = [
-  "Где же ключ?..",
-  "Тише, не разбуди их",
-  "Надо найти выход!",
-  "Я справлюсь 💜",
-  "Хм, может в столе?",
-  "Слышишь шаги?",
-  "Только бы батарейка не села",
-  "Ещё немного…",
-  "Кажется, тут что-то есть",
-  "Спокойно, Лана",
+  "Where is the key?..",
+  "Shhh, don't wake them",
+  "Gotta find the exit!",
+  "I can do this 💜",
+  "Hmm, maybe in the desk?",
+  "Hear footsteps?",
+  "Hope the battery doesn't die",
+  "Almost there…",
+  "I think there's something here",
+  "Stay calm, Lana",
 ];
 function LanaSpeech({ side = "right" }: { side?: "left" | "right" }) {
   const [line, setLine] = useState<string | null>(null);
@@ -405,22 +405,22 @@ export type Outfit = {
   id: string; name: string; price: number; palette: PixelPalette;
 };
 const OUTFITS: Outfit[] = [
-  { id: "classic", name: "Школьная форма", price: 0, palette: PAL_LANA },
-  { id: "track", name: "Спортивный костюм", price: 80, palette: {
+  { id: "classic", name: "School Uniform", price: 0, palette: PAL_LANA },
+  { id: "track", name: "Tracksuit", price: 80, palette: {
     skin: "#f4c8a8", skinShade: "#d49a78",
     hair: "#2a1a14", hairShade: "#0a0506",
     shirt: "#1aa8a8", shirtShade: "#0a5a5a",
     pants: "#0a0a14", pantsShade: "#000000", shoes: "#ffffff",
     cap: "#1aa8a8",
   } },
-  { id: "punk", name: "Панк-куртка", price: 160, palette: {
+  { id: "punk", name: "Punk Jacket", price: 160, palette: {
     skin: "#f4c8a8", skinShade: "#c8946a",
     hair: "#ff2a6a", hairShade: "#8a0a3a",
     shirt: "#1a1a1a", shirtShade: "#000000",
     pants: "#2a1a2a", pantsShade: "#0a0a0a", shoes: "#3a0a0a",
     cap: "#1a1a1a",
   } },
-  { id: "armor", name: "Бронежилет (+10 HP)", price: 300, palette: {
+  { id: "armor", name: "Armor Vest (+10 HP)", price: 300, palette: {
     skin: "#f4c8a8", skinShade: "#c8946a",
     hair: "#2a1a14", hairShade: "#0a0506",
     shirt: "#2a3322", shirtShade: "#141a10",
@@ -428,7 +428,7 @@ const OUTFITS: Outfit[] = [
     cap: "#2a3322",
     armored: true,
   } },
-  { id: "ninja", name: "Ниндзя (-шум)", price: 420, palette: {
+  { id: "ninja", name: "Ninja (-noise)", price: 420, palette: {
     skin: "#e0b890", skinShade: "#a87a55",
     hair: "#000000", hairShade: "#000000",
     shirt: "#0a0a14", shirtShade: "#000000",
@@ -443,11 +443,11 @@ export type Upgrade = {
   id: UpgradeId; name: string; icon: typeof Swords; price: number; desc: string; max?: number;
 };
 const UPGRADES: Upgrade[] = [
-  { id: "bat",        name: "Бейсбольная бита",   icon: Swords,     price: 60,  desc: "1 удар — оглушить зомби без задания.", max: 5 },
-  { id: "gun",        name: "Пистолет",            icon: Crosshair,  price: 220, desc: "Выстрел — мгновенно убивает зомби.", max: 5 },
-  { id: "flashlight", name: "Фонарик",             icon: Flashlight, price: 140, desc: "Освещает тёмные коридоры (2–3 этаж)." },
-  { id: "hp",         name: "Усиленное здоровье",  icon: Heart,      price: 180, desc: "+25 к макс. HP." },
-  { id: "hint",       name: "Дополнительные подсказки", icon: Lightbulb, price: 90, desc: "Подробные подсказки во всех заданиях." },
+  { id: "bat",        name: "Baseball Bat",   icon: Swords,     price: 60,  desc: "1 hit — stun zombie without a task.", max: 5 },
+  { id: "gun",        name: "Pistol",            icon: Crosshair,  price: 220, desc: "Shot — instantly kills zombie.", max: 5 },
+  { id: "flashlight", name: "Flashlight",             icon: Flashlight, price: 140, desc: "Lights up dark hallways (floors 2–3)." },
+  { id: "hp",         name: "Enhanced Health",  icon: Heart,      price: 180, desc: "+25 to max HP." },
+  { id: "hint",       name: "Extra Hints", icon: Lightbulb, price: 90, desc: "Detailed hints in all tasks." },
 ];
 
 type Inventory = {
@@ -476,13 +476,13 @@ const writeSave = (s: SaveData) => {
 
 // ---- Per-task hints ----
 const TASK_HINTS: Record<TaskKind, { short: string; long: string }> = {
-  wires:    { short: "Тяни мышью провод от левой клеммы к правой того же цвета.", long: "Если ошибся — кликни левую клемму ещё раз, чтобы сбросить соединение. Цвета должны совпасть точно." },
-  download: { short: "Удерживай кнопку, не отпускай, пока полоса не достигнет 100%.", long: "Если отпустить — прогресс быстро падает. Не двигай мышью с кнопки." },
-  reactor:  { short: "Запомни цвета в нужном порядке и повтори.", long: "Если ошибся — последовательность покажут заново с начала. Считай вслух." },
-  trash:    { short: "Удерживай рычаг, пока бак не опустеет.", long: "Бак заполняется обратно, если отпустить. Не отвлекайся." },
-  switches: { short: "Включи ВСЕ рубильники (ON).", long: "Просто нажми на каждый OFF — нет ловушек, никаких комбинаций." },
-  quiz:     { short: "Прочитай вопрос внимательно, всего 2 попытки.", long: "Если не уверен — выбирай самый правдоподобный, времени мало." },
-  aim:      { short: "Кликай по красным мишеням как можно быстрее.", long: "Не води мышью — мишень появится случайно. Целься в центр." },
+  wires:    { short: "Drag the wire from the left terminal to the right one of the same color.", long: "If you make a mistake — click the left terminal again to reset the connection. Colors must match exactly." },
+  download: { short: "Hold the button and don't release until the bar reaches 100%.", long: "If you release — progress drops fast. Don't move the mouse off the button." },
+  reactor:  { short: "Remember the colors in order and repeat them.", long: "If you make a mistake — the sequence will be shown again from the start. Count out loud." },
+  trash:    { short: "Hold the lever until the tank is empty.", long: "The tank refills if you release. Don't get distracted." },
+  switches: { short: "Turn ALL switches ON.", long: "Just click each OFF switch — no traps, no combinations." },
+  quiz:     { short: "Read the question carefully, you have 2 tries.", long: "If unsure — pick the most believable one, time is short." },
+  aim:      { short: "Click the red targets as fast as you can.", long: "Don't wave the mouse — the target appears randomly. Aim for the center." },
 };
 
 function HintBox({ kind, advanced }: { kind: TaskKind; advanced: boolean }) {
@@ -493,7 +493,7 @@ function HintBox({ kind, advanced }: { kind: TaskKind; advanced: boolean }) {
       <button onClick={() => setOpen(o => !o)}
         className="flex items-center gap-2 text-[11px] font-pixel text-amber-300 hover:text-amber-100 bg-black/40 border border-amber-700/40 rounded px-2 py-1">
         <Lightbulb className="h-3 w-3" />
-        {open ? "Скрыть подсказку" : "Подсказка"}
+        {open ? "Hide hint" : "Hint"}
       </button>
       {open && (
         <div className="mt-2 text-[12px] text-amber-100/90 bg-amber-900/15 border border-amber-700/30 rounded p-2">
@@ -549,7 +549,7 @@ function WiresGame({ onDone }: { onDone: (ok: boolean) => void }) {
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">Перетащи провода: соедини одинаковые цвета.</p>
+      <p className="text-sm text-muted-foreground">Drag the wires: connect matching colors.</p>
       <svg ref={svgRef} width={360} height={320} onMouseMove={onMove} onMouseUp={() => setDragFrom(null)} className="bg-black/40 rounded">
         {/* connections */}
         {Object.entries(connections).map(([l, r]) => (
@@ -581,7 +581,7 @@ function WiresGame({ onDone }: { onDone: (ok: boolean) => void }) {
           </g>
         ))}
       </svg>
-      {allDone && <p className="text-primary font-bold">✓ Готово!</p>}
+      {allDone && <p className="text-primary font-bold">✓ Done!</p>}
     </div>
   );
 }
@@ -606,7 +606,7 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
   }, [onDone]);
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">Зажми и держи кнопку. Отпустишь — откатится.</p>
+      <p className="text-sm text-muted-foreground">Hold the button. Release — and it rolls back.</p>
       <div className="w-72 h-6 bg-black/60 rounded overflow-hidden border border-primary/40">
         <div className="h-full bg-gradient-to-r from-emerald-400 to-primary transition-[width]" style={{ width: `${progress}%` }} />
       </div>
@@ -616,7 +616,7 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
         onMouseLeave={() => (holding.current = false)}
         onTouchStart={() => (holding.current = true)}
         onTouchEnd={() => (holding.current = false)}>
-        <Download className="mr-2 h-4 w-4" /> ДЕРЖАТЬ
+        <Download className="mr-2 h-4 w-4" /> HOLD
       </Button>
       <p className="font-mono text-primary">{Math.floor(progress)}%</p>
     </div>
@@ -656,7 +656,7 @@ function ReactorGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const cols = ["#e84545", "#3aa3ff", "#ffd23a", "#7ad84a"];
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">{phase === "watch" ? "Запоминай…" : "Повтори последовательность"}</p>
+      <p className="text-sm text-muted-foreground">{phase === "watch" ? "Watch…" : "Repeat the sequence"}</p>
       <div className="grid grid-cols-2 gap-3">
         {cols.map((c, i) => (
           <button key={i} onClick={() => press(i)}
@@ -664,7 +664,7 @@ function ReactorGame({ onDone }: { onDone: (ok: boolean) => void }) {
             style={{ background: c, opacity: showing === i ? 1 : 0.45, transform: showing === i ? "scale(1.05)" : "scale(1)" }} />
         ))}
       </div>
-      <p className="text-xs text-muted-foreground">Шаг {step}/{seq.length}</p>
+      <p className="text-xs text-muted-foreground">Step {step}/{seq.length}</p>
     </div>
   );
 }
@@ -685,7 +685,7 @@ function TrashGame({ onDone }: { onDone: (ok: boolean) => void }) {
   }, [onDone]);
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">Тяни рычаг вниз, пока бак не опустеет.</p>
+      <p className="text-sm text-muted-foreground">Pull the lever down until the tank is empty.</p>
       <div className="w-32 h-56 bg-black/60 border-2 border-amber-700 rounded relative overflow-hidden">
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-amber-700 to-amber-500" style={{ height: `${level}%` }}>
           <div className="text-[10px] text-center pt-1">🗑️</div>
@@ -694,7 +694,7 @@ function TrashGame({ onDone }: { onDone: (ok: boolean) => void }) {
       <Button size="lg"
         onMouseDown={() => (holding.current = true)} onMouseUp={() => (holding.current = false)} onMouseLeave={() => (holding.current = false)}
         onTouchStart={() => (holding.current = true)} onTouchEnd={() => (holding.current = false)}>
-        <Trash2 className="mr-2 h-4 w-4" /> ТЯНУТЬ
+        <Trash2 className="mr-2 h-4 w-4" /> PULL
       </Button>
     </div>
   );
@@ -706,7 +706,7 @@ function SwitchesGame({ onDone }: { onDone: (ok: boolean) => void }) {
   useEffect(() => { if (s.every(Boolean)) setTimeout(() => onDone(true), 300); }, [s, onDone]);
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">Все рубильники должны быть ВКЛ.</p>
+      <p className="text-sm text-muted-foreground">All switches must be ON.</p>
       <div className="flex gap-3 bg-black/60 p-4 rounded border border-amber-700">
         {s.map((on, i) => (
           <button key={i} onClick={() => setS(p => p.map((v, j) => j === i ? !v : v))}
@@ -726,13 +726,13 @@ function SwitchesGame({ onDone }: { onDone: (ok: boolean) => void }) {
 
 // 8) QUIZ — school question
 const QUIZ_POOL = [
-  { q: "Столица Австралии?", o: ["Сидней", "Канберра", "Мельбурн", "Перт"], a: 1 },
-  { q: "Сколько планет в Солнечной системе?", o: ["7", "8", "9", "10"], a: 1 },
-  { q: "Автор «Войны и мира»?", o: ["Достоевский", "Чехов", "Толстой", "Пушкин"], a: 2 },
-  { q: "Химический символ золота?", o: ["Go", "Gd", "Au", "Ag"], a: 2 },
-  { q: "Сколько хромосом у человека?", o: ["23", "44", "46", "48"], a: 2 },
-  { q: "Самая длинная река мира?", o: ["Амазонка", "Нил", "Янцзы", "Волга"], a: 1 },
-  { q: "Кто открыл закон тяготения?", o: ["Эйнштейн", "Ньютон", "Галилей", "Кеплер"], a: 1 },
+  { q: "Capital of Australia?", o: ["Sydney", "Canberra", "Melbourne", "Perth"], a: 1 },
+  { q: "How many planets in the Solar System?", o: ["7", "8", "9", "10"], a: 1 },
+  { q: "Author of War and Peace?", o: ["Dostoevsky", "Chekhov", "Tolstoy", "Pushkin"], a: 2 },
+  { q: "Chemical symbol for gold?", o: ["Go", "Gd", "Au", "Ag"], a: 2 },
+  { q: "How many chromosomes do humans have?", o: ["23", "44", "46", "48"], a: 2 },
+  { q: "Longest river in the world?", o: ["Amazon", "Nile", "Yangtze", "Volga"], a: 1 },
+  { q: "Who discovered the law of gravity?", o: ["Einstein", "Newton", "Galileo", "Kepler"], a: 1 },
 ];
 function QuizGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const item = useMemo(() => QUIZ_POOL[Math.floor(Math.random() * QUIZ_POOL.length)], []);
@@ -747,7 +747,7 @@ function QuizGame({ onDone }: { onDone: (ok: boolean) => void }) {
   };
   return (
     <div className="flex flex-col items-center gap-4 max-w-md">
-      <p className="text-sm text-muted-foreground">Школьный вопрос. Попыток: {tries}</p>
+      <p className="text-sm text-muted-foreground">School question. Tries: {tries}</p>
       <h3 className="text-lg font-display text-center">{item.q}</h3>
       <div className="grid grid-cols-2 gap-2 w-full">
         {item.o.map((o, i) => (
@@ -766,13 +766,13 @@ function LockGame({ onDone }: { onDone: (ok: boolean) => void }) {
     if (dials.every((d, i) => d === target[i])) setTimeout(() => onDone(true), 300);
   }, [dials, target, onDone]);
   const hints = [
-    `Сумма цифр = ${target.reduce((a, b) => a + b, 0)}`,
-    `Первая цифра ${target[0] % 2 === 0 ? "чётная" : "нечётная"}`,
-    `Последняя цифра = ${target[2]}`,
+    `Sum of digits = ${target.reduce((a, b) => a + b, 0)}`,
+    `First digit is ${target[0] % 2 === 0 ? "even" : "odd"}`,
+    `Last digit = ${target[2]}`,
   ];
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">Подбери код по подсказкам:</p>
+      <p className="text-sm text-muted-foreground">Guess the code from the hints:</p>
       <ul className="text-xs text-amber-300 list-disc list-inside">
         {hints.map((h, i) => <li key={i}>{h}</li>)}
       </ul>
@@ -813,7 +813,7 @@ function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
   };
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">Попади 5 раз. Осталось: <b className="text-red-400">{time}s</b></p>
+      <p className="text-sm text-muted-foreground">Hit 5 times. Time left: <b className="text-red-400">{time}s</b></p>
       <div className="relative w-80 h-64 bg-black/70 rounded border-2 border-red-500/50 overflow-hidden">
         <button onClick={hit}
           className="absolute w-10 h-10 rounded-full bg-red-500 hover:bg-red-400 border-2 border-red-200 transition-all"
@@ -821,7 +821,7 @@ function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
           <Target className="h-5 w-5 mx-auto text-white" />
         </button>
       </div>
-      <p className="font-mono text-primary">Попаданий: {hits}/5</p>
+      <p className="font-mono text-primary">Hits: {hits}/5</p>
     </div>
   );
 }
@@ -876,7 +876,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
   return (
     <div className="flex flex-col items-center gap-4 max-w-md">
       <Impostor size={120} />
-      <h3 className="font-display text-red-400 text-lg">ДИРЕКТОР-ИМПОСТОР</h3>
+      <h3 className="font-display text-red-400 text-lg">PRINCIPAL IMPOSTOR</h3>
       <div className="flex gap-1">{Array.from({ length: 3 }).map((_, i) => (
         <Heart key={i} className={`h-5 w-5 ${i < hp ? "fill-red-500 text-red-500" : "text-zinc-700"}`} />
       ))}</div>
@@ -886,7 +886,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
           <Button key={i} variant="secondary" onClick={() => answer(i)}>{o}</Button>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground">Загадка {step + 1} / {bossRiddles.length}</p>
+      <p className="text-xs text-muted-foreground">Riddle {step + 1} / {bossRiddles.length}</p>
     </div>
   );
 }
@@ -925,7 +925,7 @@ function TaskTimer({ seconds, onTimeout }: { seconds: number; onTimeout: () => v
   return (
     <div className="mb-3">
       <div className="flex justify-between text-[11px] font-pixel mb-1">
-        <span className={danger ? "text-red-400 animate-pulse" : "text-amber-300"}>⏱ Время на задание</span>
+        <span className={danger ? "text-red-400 animate-pulse" : "text-amber-300"}>⏱ Task time</span>
         <span className={`font-mono ${danger ? "text-red-400" : "text-amber-200"}`}>{left.toFixed(1)}s</span>
       </div>
       <div className="h-2 bg-black/70 rounded overflow-hidden border border-amber-700/40">
@@ -977,7 +977,7 @@ function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
         <div className="absolute left-0 right-0 top-0 h-3 bg-[#8a6a3a] border-2 border-[#3a2a14]" />
         <div className="absolute left-2 top-3 bottom-0 w-3 bg-[#5a3a1a] border-2 border-[#1a0a00]" />
         <div className="absolute right-2 top-3 bottom-0 w-3 bg-[#5a3a1a] border-2 border-[#1a0a00]" />
-        <div className="absolute left-12 top-1 w-5 h-2 bg-[#c9bfa8]" title="бумаги" />
+        <div className="absolute left-12 top-1 w-5 h-2 bg-[#c9bfa8]" title="papers" />
       </div>
     );
     labelTop = 8;
@@ -988,7 +988,7 @@ function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
         <div className="absolute left-0 right-0 top-0 h-3 bg-[#7a5a2a] border-2 border-[#2a1a08]" />
         <div className="absolute left-2 top-3 bottom-0 w-3 bg-[#4a2a14] border-2 border-[#1a0a00]" />
         <div className="absolute right-2 top-3 bottom-0 w-3 bg-[#4a2a14] border-2 border-[#1a0a00]" />
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-2 text-[9px] font-pixel text-amber-200/70">↓ под партой</div>
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-2 text-[9px] font-pixel text-amber-200/70">↓ under desk</div>
       </div>
     );
     labelTop = 56;
@@ -1050,7 +1050,7 @@ function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
               textShadow: "0 0 10px rgba(255,220,120,0.95), 0 2px 4px rgba(0,0,0,0.9)",
               filter: "drop-shadow(0 0 6px rgba(255,200,80,0.8))",
             }}
-            title={hasKey ? "Ключ" : hasBat ? "Бита" : spot.item?.name}
+            title={hasKey ? "Key" : hasBat ? "Bat" : spot.item?.name}
           >
             {hasKey ? "🗝" : hasBat ? "🏏" : spot.item!.emoji}
           </div>
@@ -1058,7 +1058,7 @@ function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
         {!taken && (
           <div className={`absolute font-pixel text-[10px] rounded px-1 animate-pulse border ${lit ? "text-amber-200 bg-black/80 border-amber-400/50" : "text-zinc-400 bg-black/80 border-zinc-700"}`}
             style={{ left: x - 24, bottom: 160 + labelTop }}>
-            {lit ? "🔍 искать" : "???"}
+            {lit ? "🔍 search" : "???"}
           </div>
         )}
         {taken && (spot.item || hasKey || hasBat) && (
@@ -1070,7 +1070,7 @@ function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
         {taken && !spot.item && !hasKey && !hasBat && (
           <div className="absolute font-pixel text-zinc-500 text-[10px]"
             style={{ left: x - 14, bottom: 135 + labelTop }}>
-            ✗ пусто
+            ✗ empty
           </div>
         )}
       </div>
@@ -1091,8 +1091,8 @@ function getClassroomQuest(classroom: Classroom, levelId: number) {
   return { keyIdx, batIdx, hasBat };
 }
 
-const KEY_ITEM: LootItem = { name: "Ключ от двери", emoji: "🗝", strengthGain: 0 };
-const BAT_ITEM: LootItem = { name: "Бейсбольная бита", emoji: "🏏", strengthGain: 0 };
+const KEY_ITEM: LootItem = { name: "Door key", emoji: "🗝", strengthGain: 0 };
+const BAT_ITEM: LootItem = { name: "Baseball bat", emoji: "🏏", strengthGain: 0 };
 
 // ====== Сцена внутри класса ======
 function ClassroomScene({
@@ -1154,14 +1154,14 @@ function ClassroomScene({
   }, []);
 
   const openDoor = () => {
-    if (!keyFound) { onToast("🔒 Сначала найди ключ"); return; }
+    if (!keyFound) { onToast("🔒 Find the key first"); return; }
     setDoorOpen(true);
-    onToast("🚪 Дверь открыта! +15 монет");
-    onCollect({ name: "Открытая дверь", emoji: "🚪", hpGain: 0 }, classroom.spots[0]);
+    onToast("🚪 Door open! +15 coins");
+    onCollect({ name: "Open door", emoji: "🚪", hpGain: 0 }, classroom.spots[0]);
   };
 
   const tryLeave = () => {
-    if (!doorOpen) { onToast("🔒 Дверь закрыта — выполни квест"); return; }
+    if (!doorOpen) { onToast("🔒 Door locked — complete the quest"); return; }
     onLeave();
   };
 
@@ -1218,14 +1218,14 @@ function ClassroomScene({
         <div className="absolute" style={{ left: 92, bottom: -38, transform: "rotate(8deg)" }}><ZombieHand delay={0.4} /></div>
         <div className="absolute" style={{ right: -6, bottom: -28, transform: "rotate(20deg) scaleX(-1)" }}><ZombieHand delay={0.8} /></div>
         <div className="absolute -bottom-1 left-2 right-2 h-2 bg-[#5a0a0a] opacity-80" />
-        <div className="absolute -top-4 left-2 text-[9px] font-pixel text-red-300 animate-pulse">⚠ они снаружи</div>
+        <div className="absolute -top-4 left-2 text-[9px] font-pixel text-red-300 animate-pulse">⚠ they are outside</div>
       </div>
 
       {/* Доска */}
       <div className="absolute" style={{ left: 24, top: 28, width: 180, height: 90 }}>
         <div className="absolute inset-0 bg-[#0a2a1a] border-4 border-[#3a2a1a]" />
         <div className="absolute inset-2 text-[10px] font-pixel text-red-400 leading-tight">
-          ВЫХОДА НЕТ...<br/>НАЙДИ КЛЮЧ 🗝
+          NO WAY OUT...<br/>FIND THE KEY 🗝
         </div>
       </div>
 
@@ -1248,9 +1248,9 @@ function ClassroomScene({
         {/* статус двери */}
         <div className="absolute -bottom-1 left-0 right-0 text-center text-[10px] font-pixel">
           {doorOpen ? (
-            <span className="text-emerald-300">✓ ОТКРЫТО</span>
+            <span className="text-emerald-300">✓ OPEN</span>
           ) : (
-            <span className="text-amber-200">{keyFound ? "Поверни ключ →" : "🔒 нужен ключ"}</span>
+            <span className="text-amber-200">{keyFound ? "Turn key →" : "🔒 need key"}</span>
           )}
         </div>
       </div>
@@ -1297,11 +1297,11 @@ function ClassroomScene({
               if (isKeySpot) {
                 setKeyFound(true);
                 onCollect(KEY_ITEM, spot);
-                onToast("🗝 Ключ от двери найден!");
+                onToast("🗝 Door key found!");
               } else if (isBatSpot) {
                 setBatFound(true);
                 onCollect(BAT_ITEM, spot);
-                onToast("🏏 Бита найдена! Удар по зомби — клавиша G");
+                onToast("🏏 Bat found! Hit zombie — G key");
               } else if (spot.item) {
                 onCollect(spot.item, spot);
               }
@@ -1325,14 +1325,14 @@ function ClassroomScene({
       {/* Панель квеста сверху */}
       <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-pixel bg-black/85 px-3 py-1 rounded border border-amber-400/40 flex items-center gap-3 z-10">
         <span className={keyFound ? "text-emerald-300" : "text-amber-200"}>
-          {keyFound ? "✓ Ключ 🗝" : "✗ Найди ключ 🗝"}
+          {keyFound ? "✓ Key 🗝" : "✗ Find key 🗝"}
         </span>
         {quest.hasBat && (
           <span className={batFound ? "text-emerald-300" : "text-amber-200"}>
-            {batFound ? "✓ Бита 🏏" : "✗ Найди биту 🏏"}
+            {batFound ? "✓ Bat 🏏" : "✗ Find bat 🏏"}
           </span>
         )}
-        <span className="text-zinc-400">· Точек: {remaining}/{classroom.spots.length}</span>
+        <span className="text-zinc-400">· Spots: {remaining}/{classroom.spots.length}</span>
       </div>
 
       {/* Панель двери — управление квестом */}
@@ -1340,15 +1340,15 @@ function ClassroomScene({
         <div className="flex items-center gap-2 bg-black/85 border border-amber-700/60 rounded p-2">
           {!doorOpen && (
             <Button size="sm" onClick={openDoor} disabled={!keyFound}>
-              {keyFound ? "🗝 Открыть дверь" : "🔒 Нужен ключ"}
+              {keyFound ? "🗝 Open door" : "🔒 Need key"}
             </Button>
           )}
           {doorOpen && (
-            <span className="text-emerald-300 font-pixel text-xs px-2">🚪 Дверь открыта</span>
+            <span className="text-emerald-300 font-pixel text-xs px-2">🚪 Door open</span>
           )}
         </div>
         <Button size="sm" variant={doorOpen ? "default" : "secondary"} onClick={tryLeave} disabled={!doorOpen}>
-          {doorOpen ? "→ Выйти в коридор" : "🔒 Заперто"}
+          {doorOpen ? "→ Exit to hallway" : "🔒 Locked"}
         </Button>
       </div>
     </div>
@@ -1360,13 +1360,13 @@ export default function EscapeGame() {
   // Persisted (menu / shop)
   const [save, setSave] = useState<SaveData>(() => ({ coins: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] }));
   const [menuTab, setMenuTab] = useState<"play" | "outfit" | "shop" | "leaderboard">("play");
-  const [playerName, setPlayerName] = useState<string>("Лана");
+  const [playerName, setPlayerName] = useState<string>("Lana");
   useEffect(() => {
     const s = loadSave();
     setSave(s);
     setCoins(s.coins);
     if (typeof window !== "undefined") {
-      setPlayerName(localStorage.getItem("lana_player_name") || "Лана");
+      setPlayerName(localStorage.getItem("lana_player_name") || "Lana");
     }
   }, []);
 
@@ -1497,7 +1497,7 @@ export default function EscapeGame() {
           setKilled(prev => new Set(prev).add(z.id));
           sfxGunshot();
           setCoins(c => c + 25);
-          setToast(`🔫 ${z.name} — выстрел! +25 монет`);
+          setToast(`🔫 ${z.name} — shot! +25 coins`);
           setTimeout(() => setToast(""), 1600);
           return;
         }
@@ -1516,11 +1516,11 @@ export default function EscapeGame() {
           setKilled(prev => new Set(prev).add(z.id));
           sfxBat();
           setCoins(c => c + 15);
-          setToast(`🏏 ${z.name} — оглушён битой! +15 монет`);
+          setToast(`🏏 ${z.name} — stunned with bat! +15 coins`);
           setTimeout(() => setToast(""), 1600);
           return;
         }
-        setToast(k === "f" ? "🔫 Нет патронов" : "🏏 Нет бит");
+        setToast(k === "f" ? "🔫 No ammo" : "🏏 No bats");
         setTimeout(() => setToast(""), 1200);
         return;
       }
@@ -1535,7 +1535,7 @@ export default function EscapeGame() {
       // exit door
       if (Math.abs(EXIT_X - px) < REACH) {
         if (!allKilled) {
-          setToast("Дверь не откроется — впереди ещё зомби.");
+          setToast("The door won't open — zombies ahead.");
           setTimeout(() => setToast(""), 1800);
         } else setModal({ kind: isFinalLevel ? "doorTask" : "exit" });
       }
@@ -1602,7 +1602,7 @@ export default function EscapeGame() {
             });
             setShake(true);
             setTimeout(() => setShake(false), 600);
-            setToast(`😱 ${z.name} проснулся и накинулся! -${dmg} HP`);
+            setToast(`😱 ${z.name} woke up and attacked! -${dmg} HP`);
             setTimeout(() => setToast(""), 2200);
             lastBiteRef.current = nowT;
             break;
@@ -1631,7 +1631,7 @@ export default function EscapeGame() {
             });
             setShake(true);
             setTimeout(() => setShake(false), 350);
-            setToast(`🩸 ${z.name} кусает! -${dmg} HP${isRun ? " (шумно!)" : ""}`);
+            setToast(`🩸 ${z.name} bites! -${dmg} HP${isRun ? " (noisy!)" : ""}`);
             setTimeout(() => setToast(""), 1200);
             break;
           }
@@ -1648,11 +1648,11 @@ export default function EscapeGame() {
     const id = setInterval(() => {
       const px = xRef.current;
       const z = zombies.find((z, i) => !killed.has(z.id) && Math.abs((zomPosRef.current[z.id] ?? zx(z, i)) - px) < REACH);
-      if (z) { setHint(`[E] Победить ${z.name}`); return; }
+      if (z) { setHint(`[E] Defeat ${z.name}`); return; }
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
-      if (c) { setHint(`[E] Осмотреть · ${c.name}`); return; }
+      if (c) { setHint(`[E] Inspect · ${c.name}`); return; }
       if (Math.abs(EXIT_X - px) < REACH) {
-        setHint(allKilled ? (isFinalLevel ? "[E] К директору!" : "[E] Подняться на этаж выше") : "Путь заблокирован");
+        setHint(allKilled ? (isFinalLevel ? "[E] To the Principal!" : "[E] Go up a floor") : "Path blocked");
         return;
       }
       setHint("");
@@ -1674,7 +1674,7 @@ export default function EscapeGame() {
       sfxKill();
       const reward = 10 + level * 5;
       setCoins(c => c + reward);
-      setToast(`💀 ${z.name} повержен! +${reward} 🪙`);
+      setToast(`💀 ${z.name} defeated! +${reward} 🪙`);
     } else {
       const dmg = Math.max(8, 25 - strength * 3);
       sfxBite();
@@ -1685,7 +1685,7 @@ export default function EscapeGame() {
       });
       setShake(true);
       setTimeout(() => setShake(false), 500);
-      setToast(`💢 Зомби укусил! -${dmg} HP`);
+      setToast(`💢 Zombie bit you! -${dmg} HP`);
     }
     setTimeout(() => setToast(""), 1800);
     setModal({ kind: "none" });
@@ -1694,13 +1694,13 @@ export default function EscapeGame() {
   // Подобрать предмет внутри сцены класса.
   const collectSpotItem = useCallback((loot: LootItem, _spot: SearchSpot) => {
     // Found bat — give a single-use stun weapon, hold it in hand.
-    if (loot.name === "Бейсбольная бита") {
+    if (loot.name === "Baseball bat") {
       setBatLeft(n => {
         const nn = n + 1;
         setSave(s => { const ns = { ...s, owned: { ...s.owned, bat: nn } }; writeSave(ns); return ns; });
         return nn;
       });
-      setToast("🏏 Лана подобрала биту! 1 удар — нажми G рядом с зомби.");
+      setToast("🏏 Lana picked up a bat! 1 hit — press G near a zombie.");
       setTimeout(() => setToast(""), 2200);
       setCoins(c => c + 10);
       return;
@@ -1709,7 +1709,7 @@ export default function EscapeGame() {
     if (loot.givesFlashlight) {
       setFoundFlashlight(true);
       setBattery(b => Math.max(b, loot.battery ?? MAX_BATTERY));
-      setToast(`🔦 Найден ${loot.name}! Теперь Лана видит в темноте.`);
+      setToast(`🔦 Found ${loot.name}! Now Lana can see in the dark.`);
       setTimeout(() => setToast(""), 1800);
       setCoins(c => c + 8);
       return;
@@ -1732,7 +1732,7 @@ export default function EscapeGame() {
       ].filter(Boolean).join(", ");
       setToast(`🎒 ${loot.emoji} ${loot.name}${bonus ? ` (${bonus})` : ""}`);
     } else {
-      setToast(`Найдено: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} 💪)` : ""}`);
+      setToast(`Found: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} 💪)` : ""}`);
     }
     setCoins(c => c + 3);
     setTimeout(() => setToast(""), 1600);
@@ -1756,13 +1756,13 @@ export default function EscapeGame() {
     if (it.strength) setStrength(s => s + it.strength);
     if (it.battery) {
       if (!hasFlashlight) {
-        setToast(`🪫 ${it.emoji} ${it.name}: нет фонарика — батарейка не нужна сейчас.`);
+        setToast(`🪫 ${it.emoji} ${it.name}: no flashlight — battery not needed now.`);
       } else {
         setBattery(b => Math.min(MAX_BATTERY, b + it.battery!));
-        setToast(`🔋 ${it.emoji} +${it.battery}% заряда фонаря`);
+        setToast(`🔋 ${it.emoji} +${it.battery}% flashlight charge`);
       }
     } else {
-      setToast(`💊 ${it.emoji} ${it.name} использовано`);
+      setToast(`💊 ${it.emoji} ${it.name} used`);
     }
     setTimeout(() => setToast(""), 1400);
   }, [maxHp, hasFlashlight]);
@@ -1781,7 +1781,7 @@ export default function EscapeGame() {
       setInv(p => p.filter((_, i) => i !== bestIdx));
       setHp(h => Math.min(maxHp, h + item.hp));
       if (item.food) setHunger(h => Math.min(MAX_HUNGER, h + item.food));
-      setToast(`💊 Авто: ${item.emoji} ${item.name} (+${item.hp} HP)`);
+      setToast(`💊 Auto: ${item.emoji} ${item.name} (+${item.hp} HP)`);
       setTimeout(() => setToast(""), 1800);
     }
   }, [hp, started, modal.kind, maxHp]);
@@ -1796,7 +1796,7 @@ export default function EscapeGame() {
         if (nh === 0) {
           // голодаем — теряем 2 HP
           setHp(hh => Math.max(0, hh - 2));
-          setToast("🍴 Лана голодна! -2 HP");
+          setToast("🍴 Lana is hungry! -2 HP");
           setTimeout(() => setToast(""), 1200);
         }
         return nh;
@@ -1817,7 +1817,7 @@ export default function EscapeGame() {
       setBattery(b => {
         const nb = Math.max(0, b - 1);
         if (nb === 0 && b > 0) {
-          setToast("🪫 Батарейка села! Нужна новая.");
+          setToast("🪫 Battery died! Need a new one.");
           setTimeout(() => setToast(""), 1600);
         }
         return nb;
@@ -1846,7 +1846,7 @@ export default function EscapeGame() {
     if (scoreSubmitted || submittingScore) return;
     setSubmittingScore(true);
     try {
-      const name = (playerName || "Лана").trim().slice(0, 24) || "Лана";
+      const name = (playerName || "Lana").trim().slice(0, 24) || "Lana";
       if (typeof window !== "undefined") localStorage.setItem("lana_player_name", name);
       const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
       await submitScore({
@@ -1858,9 +1858,9 @@ export default function EscapeGame() {
       });
       setScoreSubmitted(true);
       setLeaderboardKey(k => k + 1);
-      setToast("Рекорд отправлен!");
+      setToast("Record submitted!");
     } catch (e: any) {
-      setToast("Ошибка отправки: " + (e?.message ?? "неизвестно"));
+      setToast("Submit error: " + (e?.message ?? "unknown"));
     } finally {
       setSubmittingScore(false);
       setTimeout(() => setToast(""), 2000);
@@ -1869,11 +1869,11 @@ export default function EscapeGame() {
 
   const buyOutfit = (o: Outfit) => {
     if (save.ownedOutfits.includes(o.id)) return;
-    if (coins < o.price) { setToast("Не хватает монет"); setTimeout(() => setToast(""), 1500); return; }
+    if (coins < o.price) { setToast("Not enough coins"); setTimeout(() => setToast(""), 1500); return; }
     const ownedOutfits = Array.from(new Set([...save.ownedOutfits, o.id]));
     const ns = { ...save, coins: coins - o.price, outfit: o.id, ownedOutfits };
     setCoins(ns.coins); setSave(ns); writeSave(ns);
-    setToast(`Куплено: ${o.name}`); setTimeout(() => setToast(""), 1500);
+    setToast(`Bought: ${o.name}`); setTimeout(() => setToast(""), 1500);
   };
   const equipOutfit = (o: Outfit) => {
     if (!save.ownedOutfits.includes(o.id)) return;
@@ -1881,7 +1881,7 @@ export default function EscapeGame() {
     setSave(ns); writeSave(ns);
   };
   const buyUpgrade = (u: Upgrade) => {
-    if (coins < u.price) { setToast("Не хватает монет"); setTimeout(() => setToast(""), 1500); return; }
+    if (coins < u.price) { setToast("Not enough coins"); setTimeout(() => setToast(""), 1500); return; }
     const owned = { ...save.owned };
     if (u.id === "bat" || u.id === "gun") {
       if ((owned[u.id] ?? 0) >= (u.max ?? 99)) return;
@@ -1904,26 +1904,26 @@ export default function EscapeGame() {
             <PixelZombie facing={1} />
             <Impostor size={80} />
           </div>
-          <h1 className="font-display text-3xl md:text-4xl text-primary text-center">СБЕГИ ИЗ ШКОЛЫ</h1>
+          <h1 className="font-display text-3xl md:text-4xl text-primary text-center">ESCAPE THE SCHOOL</h1>
           <div className="flex items-center justify-center gap-2">
             <div className="px-3 py-1 bg-amber-900/40 border border-amber-700 rounded font-pixel text-amber-200 flex items-center gap-2">
-              <Coins className="h-4 w-4" /> {coins} монет
+              <Coins className="h-4 w-4" /> {coins} coins
             </div>
             <button onClick={() => setMusicOff(v => !v)}
               className="px-3 py-1 bg-black/40 border border-zinc-700 rounded font-pixel text-zinc-200 flex items-center gap-2 hover:bg-black/60"
-              title="Музыка вкл/выкл">
+              title="Music on/off">
               {musicOff ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              {musicOff ? "Музыка выкл" : "Музыка вкл"}
+              {musicOff ? "Music off" : "Music on"}
             </button>
           </div>
 
 
           <div className="flex gap-2 justify-center">
             {[
-              { id: "play", label: "Игра", icon: ArrowUp },
-              { id: "outfit", label: "Одежда", icon: Shirt },
-              { id: "shop", label: "Магазин", icon: ShoppingBag },
-              { id: "leaderboard", label: "Рекорды", icon: Trophy },
+              { id: "play", label: "Play", icon: ArrowUp },
+              { id: "outfit", label: "Outfits", icon: Shirt },
+              { id: "shop", label: "Shop", icon: ShoppingBag },
+              { id: "leaderboard", label: "Records", icon: Trophy },
             ].map(t => (
               <button key={t.id} onClick={() => setMenuTab(t.id as typeof menuTab)}
                 className={`px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border ${menuTab === t.id ? "bg-primary text-primary-foreground border-primary" : "bg-black/40 border-zinc-700 text-zinc-300"}`}>
@@ -1935,21 +1935,21 @@ export default function EscapeGame() {
           {menuTab === "play" && (
             <div className="bg-black/40 rounded p-4 space-y-3">
               <p className="text-sm text-muted-foreground text-center">
-                Школа захвачена зомби. Лана зачищает 3 этажа, выполняет задания, чтобы открыть выход.
+                The school is overrun by zombies. Lana clears 3 floors, completes tasks to open the exit.
               </p>
               <div className="text-left text-[12px] grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
-                <p>🎮 <b>A/D</b> · <b>←/→</b> — идти</p>
-                <p>🏃 <b>Shift</b> — бежать (шумно!)</p>
-                <p>🤫 <b>C</b> / <b>Ctrl</b> — присесть (тихо, мимо спящих)</p>
-                <p>🎒 <b>B</b> — рюкзак / использовать предметы</p>
-                <p>⚡ <b>E</b> / <b>Enter</b> — взаимодействие</p>
-                <p>🏏 <b>G</b> — бита · 🔫 <b>F</b> — пистолет</p>
-                <p>🍴 Не забывай есть — голод отнимает HP</p>
-                <p>😴 Спящие зомби съедят, если их услышать</p>
-                <p>🌑 На 2–3 этаже темно — нужен фонарик</p>
+                <p>🎮 <b>A/D</b> · <b>←/→</b> — walk</p>
+                <p>🏃 <b>Shift</b> — run (noisy!)</p>
+                <p>🤫 <b>C</b> / <b>Ctrl</b> — crouch (quiet, past sleepers)</p>
+                <p>🎒 <b>B</b> — backpack / use items</p>
+                <p>⚡ <b>E</b> / <b>Enter</b> — interact</p>
+                <p>🏏 <b>G</b> — bat · 🔫 <b>F</b> — pistol</p>
+                <p>🍴 Don't forget to eat — hunger drains HP</p>
+                <p>😴 Sleeping zombies will bite if they hear you</p>
+                <p>🌑 Floors 2–3 are dark — you need a flashlight</p>
               </div>
               <div className="flex justify-center">
-                <Button size="lg" onClick={beginGame} className="font-display">НАЧАТЬ ИГРУ</Button>
+                <Button size="lg" onClick={beginGame} className="font-display">START GAME</Button>
               </div>
             </div>
           )}
@@ -1964,9 +1964,9 @@ export default function EscapeGame() {
                     <PixelHuman palette={o.palette} variant="girl" size={43} />
                     <div className="text-xs font-pixel text-center">{o.name}</div>
                     {equipped
-                      ? <div className="text-[10px] text-primary font-pixel">НАДЕТО</div>
+                      ? <div className="text-[10px] text-primary font-pixel">EQUIPPED</div>
                       : owned
-                        ? <Button size="sm" variant="secondary" onClick={() => equipOutfit(o)}>Надеть</Button>
+                        ? <Button size="sm" variant="secondary" onClick={() => equipOutfit(o)}>Equip</Button>
                         : <Button size="sm" onClick={() => buyOutfit(o)} disabled={coins < o.price}>
                             <Coins className="h-3 w-3 mr-1" /> {o.price}
                           </Button>}
@@ -1990,19 +1990,19 @@ export default function EscapeGame() {
                       <div className="text-[11px] text-muted-foreground">{u.desc}</div>
                     </div>
                     <Button size="sm" disabled={maxed || coins < u.price} onClick={() => buyUpgrade(u)}>
-                      {maxed ? "Куплено" : <><Coins className="h-3 w-3 mr-1" /> {u.price}</>}
+                      {maxed ? "Owned" : <><Coins className="h-3 w-3 mr-1" /> {u.price}</>}
                     </Button>
                   </div>
                 );
               })}
-              <p className="text-[11px] text-muted-foreground text-center pt-1">Покупки сохраняются между играми.</p>
+              <p className="text-[11px] text-muted-foreground text-center pt-1">Purchases persist between games.</p>
             </div>
           )}
 
           {menuTab === "leaderboard" && (
             <div className="bg-black/40 rounded p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <label className="text-xs text-zinc-400 font-pixel shrink-0">Имя:</label>
+                <label className="text-xs text-zinc-400 font-pixel shrink-0">Name:</label>
                 <Input
                   value={playerName}
                   maxLength={24}
@@ -2011,13 +2011,13 @@ export default function EscapeGame() {
                     if (typeof window !== "undefined") localStorage.setItem("lana_player_name", e.target.value);
                   }}
                   className="h-8 text-sm"
-                  placeholder="Лана"
+                  placeholder="Lana"
                 />
                 <Button size="sm" variant="secondary" onClick={() => setLeaderboardKey(k => k + 1)}>↻</Button>
               </div>
               <Leaderboard refreshKey={leaderboardKey} />
               <p className="text-[10px] text-muted-foreground text-center">
-                Топ-20 игроков по монетам. Рекорд отправляется после победы или поражения.
+                Top-20 players by coins. Record is submitted after victory or defeat.
               </p>
             </div>
           )}
@@ -2033,7 +2033,7 @@ export default function EscapeGame() {
         <div className="flex items-center gap-3">
           <Crewmate color="#ff66aa" palette={lanaPalette} size={36} />
           <div>
-            <div className="font-display text-sm text-primary">ЛАНА</div>
+            <div className="font-display text-sm text-primary">LANA</div>
             <div className="text-[10px] text-muted-foreground">{cur.name}</div>
           </div>
         </div>
@@ -2046,7 +2046,7 @@ export default function EscapeGame() {
           </div>
           <div>
             <div className="flex justify-between text-[11px] mb-1">
-              <span className="flex items-center gap-1"><Utensils className="h-3 w-3 text-amber-300" /> Сытость</span>
+              <span className="flex items-center gap-1"><Utensils className="h-3 w-3 text-amber-300" /> Hunger</span>
               <span className={`font-mono ${hunger < 25 ? "text-red-400 animate-pulse" : "text-amber-200"}`}>{hunger}</span>
             </div>
             <div className="h-2 bg-black/60 rounded border border-amber-700/40 overflow-hidden">
@@ -2056,12 +2056,12 @@ export default function EscapeGame() {
         </div>
         <div className="text-right text-xs space-y-1">
           <div className="flex gap-3 justify-end flex-wrap">
-            <span className="text-amber-300">🏫 Этаж {cur.id}/{levels.length}</span>
+            <span className="text-amber-300">🏫 Floor {cur.id}/{levels.length}</span>
             <span className="flex items-center gap-1"><Coins className="h-3 w-3 text-amber-300" />{coins}</span>
-            <span title="Бита (G)">🏏 {batLeft}</span>
-            <span title="Пистолет (F)">🔫 {gunLeft}</span>
+            <span title="Bat (G)">🏏 {batLeft}</span>
+            <span title="Pistol (F)">🔫 {gunLeft}</span>
             {hasFlashlight && (
-              <span title={`Фонарик · батарея ${battery}%`} className={`flex items-center gap-1 ${battery === 0 ? "text-red-400 animate-pulse" : (battery < 25 ? "text-amber-400" : "text-amber-200")}`}>
+              <span title={`Flashlight · battery ${battery}%`} className={`flex items-center gap-1 ${battery === 0 ? "text-red-400 animate-pulse" : (battery < 25 ? "text-amber-400" : "text-amber-200")}`}>
                 <Flashlight className="h-3 w-3 inline" />
                 {battery > 25 ? <BatteryFull className="h-3 w-3 inline" /> : <BatteryLow className="h-3 w-3 inline" />}
                 {battery}%
@@ -2069,14 +2069,14 @@ export default function EscapeGame() {
             )}
             <span>💀 {killed.size}/{zombies.length}</span>
             <span>🔍 {searched.size}/{classrooms.length}</span>
-            <span className={crouching ? "text-emerald-400" : (running ? "text-red-400" : "text-zinc-500")} title={crouching ? "Сидит — тихо" : (running ? "Бежит — шумно" : "Идёт")}>
+            <span className={crouching ? "text-emerald-400" : (running ? "text-red-400" : "text-zinc-500")} title={crouching ? "Crouching — quiet" : (running ? "Running — noisy" : "Walking")}>
               {crouching ? <ArrowDown className="h-3 w-3 inline" /> : (running ? <Volume2 className="h-3 w-3 inline" /> : <VolumeX className="h-3 w-3 inline" />)}
             </span>
           </div>
           <div className="flex gap-1 justify-end items-center min-h-[18px]">
             <button onClick={() => setModal({ kind: "backpack" })}
               className="flex items-center gap-1 text-[10px] text-amber-200 hover:text-amber-100 bg-black/60 border border-amber-700/60 rounded px-2 py-0.5 font-pixel">
-              <Backpack className="h-3 w-3" /> Рюкзак [B] · {inv.length}
+              <Backpack className="h-3 w-3" /> Backpack [B] · {inv.length}
             </button>
             {inv.slice(0, 5).map((it, i) => (
               <span key={it.id + i} title={`${it.name}${it.hp ? ` +${it.hp} HP` : ""}${it.food ? ` +${it.food} 🍴` : ""}`}
@@ -2086,18 +2086,18 @@ export default function EscapeGame() {
             ))}
             {inv.length > 5 && <span className="text-[10px] text-amber-300">+{inv.length - 5}</span>}
             <button onClick={beginGame}
-              title="Начать заново"
+              title="Restart"
               className="ml-2 flex items-center gap-1 text-[10px] text-amber-200 hover:text-amber-100 bg-black/60 border border-amber-700/60 rounded px-2 py-0.5 font-pixel">
-              ↻ Заново
+              ↻ Restart
             </button>
             <button onClick={() => { setStarted(false); setMenuTab("play"); setModal({ kind: "none" }); }}
-              title="Выйти в меню"
+              title="Exit to menu"
               className="flex items-center gap-1 text-[10px] text-red-200 hover:text-red-100 bg-black/60 border border-red-700/60 rounded px-2 py-0.5 font-pixel">
-              ✕ В меню
+              ✕ Menu
             </button>
           </div>
           {allKilled && <div className="text-emerald-400 font-bold animate-pulse">
-            → {isFinalLevel ? "Беги к директору!" : "Лестница наверх!"}
+            → {isFinalLevel ? "Run to the Principal!" : "Stairs up!"}
           </div>}
         </div>
       </div>
@@ -2263,7 +2263,7 @@ export default function EscapeGame() {
             <div className={`relative w-24 h-40 border-4 rounded-t-md ${allKilled ? "border-emerald-400 glow-toxic" : "border-red-700"}`}
               style={{ background: allKilled ? "linear-gradient(180deg,#1a3a1a,#0a1a0a)" : "linear-gradient(180deg,#2a0a0a,#1a0505)" }}>
               <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/90 text-[10px] text-emerald-300 px-2 py-0.5 rounded whitespace-nowrap font-pixel">
-                {allKilled ? (isFinalLevel ? "ВЫХОД ОТКРЫТ" : "ЛЕСТНИЦА ▲") : (isFinalLevel ? "ВЫХОД ⛔" : "ЛЕСТНИЦА ⛔")}
+                {allKilled ? (isFinalLevel ? "EXIT OPEN" : "STAIRS ▲") : (isFinalLevel ? "EXIT ⛔" : "STAIRS ⛔")}
               </div>
               {isFinalLevel
                 ? <DoorClosed className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-white/60" />
@@ -2328,14 +2328,14 @@ export default function EscapeGame() {
                     transformOrigin: "50% 100%",
                     filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.8))",
                   }}
-                  title="Бита — 1 удар (G)"
+                  title="Bat — 1 hit (G)"
                 >
                   🏏
                 </div>
               )}
             </div>
             {crouching && (
-              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-emerald-900/80 text-emerald-100 text-[9px] px-1 rounded font-pixel">🤫 тихо</div>
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-emerald-900/80 text-emerald-100 text-[9px] px-1 rounded font-pixel">🤫 quiet</div>
             )}
           </div>
 
@@ -2358,8 +2358,8 @@ export default function EscapeGame() {
       {level >= 1 && !flashlightOn && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 bg-red-900/80 border border-red-500 text-red-100 px-3 py-1 rounded font-pixel text-xs">
           {!hasFlashlight
-            ? "🌑 Темно! Найди фонарик в классе или купи в магазине · ходи тихо"
-            : "🪫 Батарейка села! Используй новую из рюкзака [B]"}
+            ? "🌑 Dark! Find a flashlight in class or buy in shop · walk quietly"
+            : "🪫 Battery died! Use a new one from backpack [B]"}
         </div>
       )}
 
@@ -2393,7 +2393,7 @@ export default function EscapeGame() {
                     <h2 className="font-display text-lg text-red-400">{modal.zombie.name}</h2>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <TaskIcon kind={modal.zombie.kind} className="h-3 w-3" />
-                      Реши задачу, чтобы повергнуть зомби
+                      Solve the puzzle to defeat the zombie
                     </p>
                   </div>
                 </div>
@@ -2421,7 +2421,7 @@ export default function EscapeGame() {
                   <div>
                     <h3 className="font-display text-lg text-primary">{modal.classroom.name}</h3>
                     <p className="text-[11px] text-muted-foreground">
-                      Внутри класса. Ищи фонарик, батарейки, еду и аптечки. За окном — зомби.
+                      Inside the classroom. Look for flashlights, batteries, food and medkits. Outside the window — zombies.
                     </p>
                   </div>
                   <div className="text-[11px] font-pixel text-amber-200 flex items-center gap-2">
@@ -2431,7 +2431,7 @@ export default function EscapeGame() {
                         🔦 {battery}%
                       </span>
                     ) : (
-                      <span className="text-red-300">🔦 нет фонарика</span>
+                      <span className="text-red-300">🔦 no flashlight</span>
                     )}
                   </div>
                 </div>
@@ -2474,15 +2474,15 @@ export default function EscapeGame() {
               isFinalLevel ? (
                 <div className="flex flex-col items-center gap-4 text-center max-w-md">
                   <Impostor size={80} />
-                  <h3 className="font-display text-lg text-red-400">У выхода ждёт Директор</h3>
-                  <p>«Лана… последний рубеж. Ответь на загадки — и ты свободна.»</p>
-                  <Button onClick={() => setModal({ kind: "boss" })}>Принять бой</Button>
+                  <h3 className="font-display text-lg text-red-400">The Principal waits at the exit</h3>
+                  <p>«Lana… the last stand. Answer the riddles — and you are free.»</p>
+                  <Button onClick={() => setModal({ kind: "boss" })}>Accept challenge</Button>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4 text-center max-w-md">
                   <ArrowUp className="h-12 w-12 text-emerald-400" />
-                  <h3 className="font-display text-lg text-emerald-400">Лестница на следующий этаж</h3>
-                  <p>Этаж {cur.id} зачищен. Поднимайся выше — там ещё опаснее.</p>
+                  <h3 className="font-display text-lg text-emerald-400">Stairs to the next floor</h3>
+                  <p>Floor {cur.id} cleared. Go higher — it gets more dangerous.</p>
                   <Button onClick={() => {
                     setLevel(level + 1);
                     setX(120);
@@ -2494,9 +2494,9 @@ export default function EscapeGame() {
                     wokenRef.current = new Set();
                     setHp(h => Math.min(maxHp, h + 20));
                     setModal({ kind: "none" });
-                    setToast(`▲ Этаж ${cur.id + 1}`);
+                    setToast(`▲ Floor ${cur.id + 1}`);
                     setTimeout(() => setToast(""), 1800);
-                  }}>Подняться ▲</Button>
+                  }}>Climb ▲</Button>
                 </div>
               )
             )}
@@ -2506,20 +2506,20 @@ export default function EscapeGame() {
                 <div className="flex items-center gap-3 mb-3">
                   <DoorClosed className="h-10 w-10 text-amber-400" />
                   <div>
-                    <h2 className="font-display text-lg text-amber-300">Замок на двери</h2>
-                    <p className="text-xs text-muted-foreground">Соедини провода, чтобы открыть путь к директору.</p>
+                    <h2 className="font-display text-lg text-amber-300">Door lock</h2>
+                    <p className="text-xs text-muted-foreground">Connect the wires to open the path to the Principal.</p>
                   </div>
                 </div>
                 <HintBox kind="wires" advanced={save.owned.hint} />
                 <TaskTimer seconds={30} onTimeout={() => {
                   setHp(h => Math.max(0, h - 15));
                   setShake(true); setTimeout(() => setShake(false), 400);
-                  setToast("🩸 Зомби подкрался у двери! -15 HP");
+                  setToast("🩸 A zombie crept up at the door! -15 HP");
                   setTimeout(() => setToast(""), 1600);
                   setModal({ kind: "none" });
                 }} />
                 <WiresGame onDone={(ok) => {
-                  if (ok) { setToast("🚪 Дверь открыта!"); setTimeout(() => setToast(""), 1500); setModal({ kind: "boss" }); }
+                  if (ok) { setToast("🚪 Door open!"); setTimeout(() => setToast(""), 1500); setModal({ kind: "boss" }); }
                   else { setHp(h => Math.max(0, h - 10)); setModal({ kind: "none" }); }
                 }} />
               </div>
@@ -2534,8 +2534,8 @@ export default function EscapeGame() {
                 <div className="flex items-center gap-3 mb-1">
                   <Backpack className="h-7 w-7 text-amber-300" />
                   <div>
-                    <h2 className="font-display text-lg text-amber-300">Рюкзак Ланы</h2>
-                    <p className="text-xs text-muted-foreground">Используй предметы, чтобы лечиться, есть или стать сильнее.</p>
+                    <h2 className="font-display text-lg text-amber-300">Lana's Backpack</h2>
+                    <p className="text-xs text-muted-foreground">Use items to heal, eat, or get stronger.</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
@@ -2543,22 +2543,22 @@ export default function EscapeGame() {
                     <div className="text-red-300">HP</div><div className="font-mono">{hp}/{maxHp}</div>
                   </div>
                   <div className="bg-black/40 border border-amber-700/40 rounded p-2 text-center">
-                    <div className="text-amber-300">Сытость</div><div className="font-mono">{hunger}/{MAX_HUNGER}</div>
+                    <div className="text-amber-300">Hunger</div><div className="font-mono">{hunger}/{MAX_HUNGER}</div>
                   </div>
                   <div className="bg-black/40 border border-emerald-700/40 rounded p-2 text-center">
-                    <div className="text-emerald-300">Сила</div><div className="font-mono">×{strength}</div>
+                    <div className="text-emerald-300">Strength</div><div className="font-mono">×{strength}</div>
                   </div>
                 </div>
                 {hasFlashlight && (
                   <div className="bg-black/40 border border-amber-600/40 rounded p-2 text-xs flex items-center justify-between">
-                    <span className="flex items-center gap-2"><Flashlight className="h-4 w-4 text-amber-200" /> Фонарик</span>
+                    <span className="flex items-center gap-2"><Flashlight className="h-4 w-4 text-amber-200" /> Flashlight</span>
                     <span className={`font-mono ${battery === 0 ? "text-red-400" : battery < 25 ? "text-amber-400" : "text-amber-200"}`}>
                       🔋 {battery}%
                     </span>
                   </div>
                 )}
                 {inv.length === 0 ? (
-                  <p className="text-center text-muted-foreground text-sm py-6">Рюкзак пуст. Ищи предметы в кабинетах.</p>
+                  <p className="text-center text-muted-foreground text-sm py-6">Backpack is empty. Search classrooms for items.</p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto">
                     {inv.map((it, idx) => (
@@ -2573,67 +2573,67 @@ export default function EscapeGame() {
                             {it.battery ? `+${it.battery}% 🔋` : ""}
                           </div>
                         </div>
-                        <Button size="sm" onClick={() => useItem(idx)}>Исп.</Button>
+                        <Button size="sm" onClick={() => useItem(idx)}>Use</Button>
                       </div>
                     ))}
                   </div>
                 )}
                 <div className="flex justify-end">
-                  <Button variant="secondary" onClick={() => setModal({ kind: "none" })}>Закрыть</Button>
+                  <Button variant="secondary" onClick={() => setModal({ kind: "none" })}>Close</Button>
                 </div>
               </div>
             )}
 
             {modal.kind === "win" && (
               <div className="text-center space-y-4">
-                <h2 className="font-display text-2xl text-emerald-400">ПОБЕДА!</h2>
-                <p>Лана выбежала из школы. Солнце. Свобода.</p>
+                <h2 className="font-display text-2xl text-emerald-400">VICTORY!</h2>
+                <p>Lana ran out of the school. Sun. Freedom.</p>
                 <div className="flex justify-center"><Crewmate color="#ff66aa" palette={lanaPalette} size={80} /></div>
-                <p className="text-amber-300 font-pixel">Бонус за победу: +200 🪙</p>
+                <p className="text-amber-300 font-pixel">Victory bonus: +200 🪙</p>
                 <div className="flex items-center gap-2 justify-center">
                   <Input
                     value={playerName}
                     maxLength={24}
                     onChange={(e) => setPlayerName(e.target.value)}
                     className="h-8 text-sm max-w-[180px]"
-                    placeholder="Твоё имя"
+                    placeholder="Your name"
                     disabled={scoreSubmitted}
                   />
                   <Button size="sm" variant="secondary" disabled={scoreSubmitted || submittingScore}
                     onClick={() => submitMyScore(true)}>
                     <Trophy className="h-3 w-3 mr-1" />
-                    {scoreSubmitted ? "Отправлено" : "В рекорды"}
+                    {scoreSubmitted ? "Submitted" : "To records"}
                   </Button>
                 </div>
                 <Button onClick={() => {
                   setCoins(c => c + 200);
                   setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" });
-                }}>В меню</Button>
+                }}>Menu</Button>
               </div>
             )}
 
             {modal.kind === "lose" && (
               <div className="text-center space-y-4">
                 <Skull className="h-16 w-16 text-red-500 mx-auto" />
-                <h2 className="font-display text-2xl text-red-400">ПОРАЖЕНИЕ</h2>
-                <p>Зомби оказались сильнее. Купи улучшения и попробуй снова.</p>
-                <p className="text-xs text-zinc-400">Этажей пройдено: {level} · Монет: {coins}</p>
+                <h2 className="font-display text-2xl text-red-400">DEFEAT</h2>
+                <p>The zombies were stronger. Buy upgrades and try again.</p>
+                <p className="text-xs text-zinc-400">Floors cleared: {level} · Coins: {coins}</p>
                 <div className="flex items-center gap-2 justify-center">
                   <Input
                     value={playerName}
                     maxLength={24}
                     onChange={(e) => setPlayerName(e.target.value)}
                     className="h-8 text-sm max-w-[180px]"
-                    placeholder="Твоё имя"
+                    placeholder="Your name"
                     disabled={scoreSubmitted}
                   />
                   <Button size="sm" variant="secondary" disabled={scoreSubmitted || submittingScore}
                     onClick={() => submitMyScore(false)}>
                     <Trophy className="h-3 w-3 mr-1" />
-                    {scoreSubmitted ? "Отправлено" : "В рекорды"}
+                    {scoreSubmitted ? "Submitted" : "To records"}
                   </Button>
                 </div>
-                <Button onClick={() => { setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" }); }}>В меню</Button>
+                <Button onClick={() => { setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" }); }}>Menu</Button>
               </div>
             )}
           </div>
