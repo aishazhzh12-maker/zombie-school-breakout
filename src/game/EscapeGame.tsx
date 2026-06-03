@@ -57,7 +57,7 @@ type PixelPalette = {
   cap?: string;
 };
 
-function PixelHuman({ palette, facing = 1, size = 80, variant = "student", dead = false }:
+function PixelHuman({ palette, facing = 1, size = 43, variant = "student", dead = false }:
   { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
   // 64x64 detailed sprite. Built into a pixel grid then emitted as horizontal-run rects.
   const isGirl = variant === "girl";
@@ -1269,7 +1269,7 @@ function ClassroomScene({
 
       {/* Лана — ходит по классу (A/D или ← →) */}
       <div className="absolute transition-none" style={{ left: lanaX, bottom: 28 }}>
-        <PixelHuman palette={lanaPalette} facing={facing} size={88} variant="girl" />
+        <PixelHuman palette={lanaPalette} facing={facing} size={43} variant="girl" />
       </div>
 
       {/* Точки поиска */}
@@ -1909,7 +1909,7 @@ export default function EscapeGame() {
                 const equipped = save.outfit === o.id;
                 return (
                   <div key={o.id} className={`p-3 rounded border ${equipped ? "border-primary bg-primary/10" : "border-zinc-700 bg-black/40"} flex flex-col items-center gap-2`}>
-                    <PixelHuman palette={o.palette} variant="girl" size={88} />
+                    <PixelHuman palette={o.palette} variant="girl" size={43} />
                     <div className="text-xs font-pixel text-center">{o.name}</div>
                     {equipped
                       ? <div className="text-[10px] text-primary font-pixel">НАДЕТО</div>
