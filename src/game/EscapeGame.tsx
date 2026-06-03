@@ -59,78 +59,172 @@ type PixelPalette = {
 
 function PixelHuman({ palette, facing = 1, size = 80, variant = "student", dead = false }:
   { palette: PixelPalette; facing?: 1 | -1; size?: number; variant?: "student" | "girl" | "boss"; dead?: boolean }) {
-  // Classic 8x8 NES-style sprite. Tiny grid, hard outlines, max readability.
-  // Layout:
-  //   row 0-1: hair / cap
-  //   row 2  : face (eyes)
-  //   row 3-5: torso (shirt / vest)
-  //   row 6  : pants
-  //   row 7  : shoes
+  // 16x16 sprite — richer detail, realistic proportions, soft shading.
   const px = (x: number, y: number, c: string, w = 1, h = 1) =>
-    <rect key={`${x}-${y}-${c}-${w}-${h}`} x={x} y={y} width={w} height={h} fill={c} shapeRendering="crispEdges" />;
+    <rect key={`${x}-${y}-${c}-${w}-${h}-${Math.random()}`} x={x} y={y} width={w} height={h} fill={c} shapeRendering="crispEdges" />;
 
   const isGirl = variant === "girl";
   const isBoss = variant === "boss";
   const K = "#0a0a0a";
   const W = "#ffffff";
+  const SKIN = palette.skin;
+  const SKIN_S = palette.skinShade;
+  const HAIR = palette.hair;
+  const HAIR_S = palette.hairShade;
   const cells: React.ReactNode[] = [];
 
-  // ===== HAIR / CAP (rows 0..1) =====
-  cells.push(px(2, 0, palette.hair, 4, 1));
-  cells.push(px(1, 1, palette.hair));
-  cells.push(px(6, 1, palette.hairShade));
+  // HEAD outline + fill (rows 1..6, cols 5..10)
+  cells.push(px(5, 1, K, 6, 1));
+  cells.push(px(4, 2, K), px(11, 2, K));
+  cells.push(px(4, 3, K), px(11, 3, K));
+  cells.push(px(4, 4, K), px(11, 4, K));
+  cells.push(px(4, 5, K), px(11, 5, K));
+  cells.push(px(5, 6, K, 6, 1));
+  cells.push(px(5, 2, SKIN, 6, 1));
+  cells.push(px(5, 3, SKIN, 6, 1));
+  cells.push(px(5, 4, SKIN, 6, 1));
+  cells.push(px(5, 5, SKIN, 6, 1));
+  // cheek shading
+  cells.push(px(10, 4, SKIN_S));
+  cells.push(px(10, 5, SKIN_S));
+  cells.push(px(9, 5, SKIN_S));
+
+  // HAIR
+  cells.push(px(5, 0, HAIR, 6, 1));
+  cells.push(px(4, 1, HAIR));
+  cells.push(px(11, 1, HAIR));
+  cells.push(px(5, 2, HAIR));
+  cells.push(px(6, 2, HAIR_S));
+  cells.push(px(10, 2, HAIR));
   if (isGirl) {
-    // long dark hair down sides
-    cells.push(px(1, 2, palette.hair));
-    cells.push(px(6, 2, palette.hairShade));
-    cells.push(px(1, 3, palette.hair));
-    cells.push(px(6, 3, palette.hairShade));
-  }
-
-  // ===== FACE (row 2) =====
-  cells.push(px(2, 1, palette.skin, 4, 1));
-  cells.push(px(2, 2, palette.skin, 4, 1));
-  // eyes
-  const pupil = isBoss ? "#ff2020" : (palette.eyes ?? K);
-  cells.push(px(3, 2, pupil));
-  cells.push(px(5, 2, pupil));
-
-  // ===== TORSO (rows 3..5) =====
-  if (palette.armored) {
-    const VEST = "#2a3322";
-    const STRAP = "#7a6a3a";
-    cells.push(px(1, 3, VEST, 6, 3));
-    // strap
-    cells.push(px(2, 3, STRAP));
-    cells.push(px(5, 3, STRAP));
-    // pouch
-    cells.push(px(3, 4, K, 2, 1));
+    cells.push(px(4, 3, HAIR));
+    cells.push(px(4, 4, HAIR));
+    cells.push(px(4, 5, HAIR));
+    cells.push(px(4, 6, HAIR));
+    cells.push(px(11, 3, HAIR_S));
+    cells.push(px(11, 4, HAIR_S));
+    cells.push(px(11, 5, HAIR_S));
+    cells.push(px(11, 6, HAIR_S));
+    cells.push(px(7, 2, HAIR));
+  } else if (isBoss) {
+    cells.push(px(5, 1, HAIR_S));
+    cells.push(px(10, 1, HAIR_S));
+    cells.push(px(7, 1, SKIN));
+    cells.push(px(8, 1, SKIN));
+    cells.push(px(9, 3, "#7a1a1a"));
   } else {
-    cells.push(px(1, 3, palette.shirt, 6, 1));
-    cells.push(px(1, 4, palette.shirt, 6, 1));
-    cells.push(px(1, 5, palette.shirtShade, 6, 1));
-    // arms hint
-    cells.push(px(0, 4, palette.skin));
-    cells.push(px(7, 4, palette.skin));
+    cells.push(px(9, 2, HAIR_S));
   }
 
-  // ===== PANTS (row 6) =====
-  cells.push(px(2, 6, palette.pants, 4, 1));
-  cells.push(px(4, 6, palette.pantsShade, 2, 1));
+  // EYES
+  cells.push(px(6, 3, W));
+  cells.push(px(9, 3, W));
+  const pupil = isBoss ? "#d61a1a" : (palette.eyes ?? "#1a2a4a");
+  cells.push(px(6, 3, pupil));
+  cells.push(px(9, 3, pupil));
+  if (isBoss) {
+    cells.push(px(6, 2, K));
+    cells.push(px(9, 2, K));
+  }
 
-  // ===== SHOES (row 7) =====
-  cells.push(px(1, 7, palette.shoes, 3, 1));
-  cells.push(px(4, 7, palette.shoes, 3, 1));
+  // NOSE + MOUTH
+  cells.push(px(7, 4, SKIN_S));
+  cells.push(px(8, 4, SKIN_S));
+  if (isBoss) {
+    cells.push(px(7, 5, "#5a1010", 2, 1));
+  } else if (isGirl) {
+    cells.push(px(7, 5, "#c84060", 2, 1));
+  } else {
+    cells.push(px(7, 5, "#7a3a2a", 2, 1));
+  }
+  if (isGirl) {
+    cells.push(px(5, 4, "#f0a8a8"));
+    cells.push(px(10, 4, "#f0a8a8"));
+  }
+
+  // NECK
+  cells.push(px(7, 6, SKIN, 2, 1));
+  cells.push(px(7, 7, SKIN_S, 2, 1));
+
+  // TORSO outline
+  cells.push(px(3, 7, K), px(12, 7, K));
+  cells.push(px(2, 8, K), px(13, 8, K));
+  cells.push(px(2, 9, K), px(13, 9, K));
+  cells.push(px(2, 10, K), px(13, 10, K));
+  cells.push(px(2, 11, K), px(13, 11, K));
+  cells.push(px(3, 12, K, 10, 1));
+
+  if (palette.armored) {
+    const VEST = palette.shirt;
+    const VEST_S = palette.shirtShade;
+    const STRAP = "#3a2a18";
+    const BUCKLE = "#c8a838";
+    cells.push(px(4, 7, VEST, 8, 1));
+    cells.push(px(3, 8, VEST, 10, 1));
+    cells.push(px(3, 9, VEST, 10, 1));
+    cells.push(px(3, 10, VEST, 10, 1));
+    cells.push(px(3, 11, VEST_S, 10, 1));
+    cells.push(px(7, 8, K), px(8, 8, K));
+    cells.push(px(7, 9, VEST_S), px(8, 9, VEST_S));
+    cells.push(px(4, 10, STRAP, 2, 1));
+    cells.push(px(10, 10, STRAP, 2, 1));
+    cells.push(px(5, 10, BUCKLE));
+    cells.push(px(10, 10, BUCKLE));
+    cells.push(px(7, 7, K), px(8, 7, K));
+  } else {
+    const SHIRT = palette.shirt;
+    const SHIRT_S = palette.shirtShade;
+    cells.push(px(4, 7, SHIRT, 8, 1));
+    cells.push(px(3, 8, SHIRT, 10, 1));
+    cells.push(px(3, 9, SHIRT, 10, 1));
+    cells.push(px(3, 10, SHIRT, 10, 1));
+    cells.push(px(3, 11, SHIRT_S, 10, 1));
+    cells.push(px(11, 8, SHIRT_S));
+    cells.push(px(11, 9, SHIRT_S));
+    cells.push(px(11, 10, SHIRT_S));
+    cells.push(px(7, 7, SKIN_S), px(8, 7, SKIN_S));
+    if (isBoss) {
+      cells.push(px(7, 8, "#c41818"));
+      cells.push(px(7, 9, "#c41818"));
+      cells.push(px(7, 10, "#7a0a0a"));
+    }
+  }
+
+  // arms shading + hands
+  cells.push(px(2, 9, SKIN_S));
+  cells.push(px(13, 9, SKIN_S));
+  cells.push(px(2, 11, SKIN));
+  cells.push(px(13, 11, SKIN));
+
+  // LEGS
+  const PANTS = palette.pants;
+  const PANTS_S = palette.pantsShade;
+  cells.push(px(4, 12, PANTS, 3, 1));
+  cells.push(px(4, 13, PANTS, 3, 1));
+  cells.push(px(4, 14, PANTS_S, 3, 1));
+  cells.push(px(9, 12, PANTS, 3, 1));
+  cells.push(px(9, 13, PANTS, 3, 1));
+  cells.push(px(9, 14, PANTS_S, 3, 1));
+  cells.push(px(7, 12, K, 2, 3));
+  cells.push(px(3, 12, K, 1, 3));
+  cells.push(px(12, 12, K, 1, 3));
+
+  // SHOES
+  cells.push(px(3, 15, K, 4, 1));
+  cells.push(px(9, 15, K, 4, 1));
+  cells.push(px(4, 15, palette.shoes, 2, 1));
+  cells.push(px(10, 15, palette.shoes, 2, 1));
 
   return (
-    <svg width={size} height={size} viewBox="0 0 8 8"
+    <svg width={size} height={size} viewBox="0 0 16 16"
       style={{ transform: `scaleX(${facing})`, imageRendering: "pixelated", shapeRendering: "crispEdges" }}>
-      <ellipse cx="4" cy="7.85" rx="2.6" ry="0.18" fill="#000" opacity="0.55" />
+      <ellipse cx="8" cy="15.85" rx="5" ry="0.35" fill="#000" opacity="0.5" />
       {cells}
       {dead && (
         <>
-          <rect x="3" y="2" width="1" height="1" fill="#ff2222" />
-          <rect x="5" y="2" width="1" height="1" fill="#ff2222" />
+          <rect x="6" y="3" width="1" height="1" fill="#ff2222" />
+          <rect x="9" y="3" width="1" height="1" fill="#ff2222" />
+          <rect x="7" y="5" width="2" height="1" fill="#5a0000" />
         </>
       )}
     </svg>
