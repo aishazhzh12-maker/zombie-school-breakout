@@ -103,8 +103,8 @@ export const levels: Level[] = [
       { id: "l1-z2", x: 950, kind: "trash", name: "Спящий уборщик", sleeping: true },
       { id: "l1-z3", x: 1050, kind: "trash", name: "Зомби-уборщик" },
       { id: "l1-z4", x: 1750, kind: "wires", name: "Зомби-электрик" },
-      { id: "l1-z5", x: 2050, kind: "quiz", name: "Спящий учитель", sleeping: true },
-      { id: "l1-z6", x: 2450, kind: "quiz", name: "Зомби-учитель" },
+      { id: "l1-z5", x: 2050, kind: "trash", name: "Спящий учитель", sleeping: true },
+      { id: "l1-z6", x: 2450, kind: "trash", name: "Зомби-учитель" },
     ],
   },
   {
@@ -148,7 +148,7 @@ export const levels: Level[] = [
       { id: "l2-z1", x: 600, kind: "switches", name: "Зомби-завуч" },
       { id: "l2-z2", x: 1000, kind: "download", name: "Спящий секретарь", sleeping: true },
       { id: "l2-z3", x: 1200, kind: "download", name: "Зомби-секретарь" },
-      { id: "l2-z4", x: 1800, kind: "reactor", name: "Зомби-повар" },
+      { id: "l2-z4", x: 1800, kind: "switches", name: "Зомби-повар" },
       { id: "l2-z5", x: 2200, kind: "trash", name: "Спящий охранник", sleeping: true },
       { id: "l2-z6", x: 2400, kind: "aim", name: "Зомби-физрук" },
       { id: "l2-z7", x: 2950, kind: "trash", name: "Зомби-уборщик" },
@@ -160,8 +160,8 @@ export const levels: Level[] = [
     worldW: 3200,
     exitX: 3050,
     classrooms: [
-      { id: "l3a-art", x: 350, name: "Кабинет ИЗО", loot: ACID, spots: [
-        { id: "s1", where: "desk", x: 180, item: ACID },
+      { id: "l3a-art", x: 350, name: "Кабинет ИЗО", loot: BOOK, spots: [
+        { id: "s1", where: "desk", x: 180 },
         { id: "s2", where: "shelf", x: 360, item: BOOK },
         { id: "s3", where: "underDesk", x: 540, item: BATTERY_S },
         { id: "s4", where: "drawer", x: 700, item: BANDAGE },
@@ -195,9 +195,9 @@ export const levels: Level[] = [
       { id: "l3a-z1", x: 550, kind: "aim", name: "Зомби-художник" },
       { id: "l3a-z2", x: 1100, kind: "wires", name: "Спящий трудовик", sleeping: true },
       { id: "l3a-z3", x: 1300, kind: "switches", name: "Зомби-трудовик" },
-      { id: "l3a-z4", x: 1750, kind: "quiz", name: "Зомби-географ" },
+      { id: "l3a-z4", x: 1750, kind: "trash", name: "Зомби-географ" },
       { id: "l3a-z5", x: 2300, kind: "download", name: "Спящий историк", sleeping: true },
-      { id: "l3a-z6", x: 2550, kind: "reactor", name: "Зомби-астроном" },
+      { id: "l3a-z6", x: 2550, kind: "switches", name: "Зомби-астроном" },
     ],
   },
   {
@@ -243,8 +243,8 @@ export const levels: Level[] = [
       { id: "l4-z3", x: 1250, kind: "wires", name: "Зомби-монтёр" },
       { id: "l4-z4", x: 1750, kind: "download", name: "Зомби-сисадмин" },
       { id: "l4-z5", x: 2300, kind: "aim", name: "Спящий физрук", sleeping: true },
-      { id: "l4-z6", x: 2600, kind: "reactor", name: "Зомби-завхоз" },
-      { id: "l4-z7", x: 2950, kind: "quiz", name: "Зомби-методист" },
+      { id: "l4-z6", x: 2600, kind: "switches", name: "Зомби-завхоз" },
+      { id: "l4-z7", x: 2950, kind: "trash", name: "Зомби-методист" },
     ],
   },
   {
@@ -265,8 +265,8 @@ export const levels: Level[] = [
         { id: "s3", where: "desk", x: 540, item: BANDAGE },
         { id: "s4", where: "underDesk", x: 700, item: BATTERY_M },
       ]},
-      { id: "l3-lab", x: 1600, name: "Лаборатория", loot: ACID, spots: [
-        { id: "s1", where: "desk", x: 180, item: ACID },
+      { id: "l3-lab", x: 1600, name: "Лаборатория", loot: BOOK, spots: [
+        { id: "s1", where: "desk", x: 180 },
         { id: "s2", where: "shelf", x: 360, item: FLASHLIGHT },
         { id: "s3", where: "drawer", x: 540, item: BATTERY_M },
         { id: "s4", where: "underDesk", x: 700, item: BATTERY_M },
@@ -285,13 +285,13 @@ export const levels: Level[] = [
       ]},
     ],
     zombies: [
-      { id: "l3-z1", x: 600, kind: "reactor", name: "Зомби-завкафедрой" },
-      { id: "l3-z2", x: 1000, kind: "quiz", name: "Спящий психолог", sleeping: true },
-      { id: "l3-z3", x: 1200, kind: "quiz", name: "Зомби-психолог" },
+      { id: "l3-z1", x: 600, kind: "switches", name: "Зомби-завкафедрой" },
+      { id: "l3-z2", x: 1000, kind: "trash", name: "Спящий психолог", sleeping: true },
+      { id: "l3-z3", x: 1200, kind: "trash", name: "Зомби-психолог" },
       { id: "l3-z4", x: 1800, kind: "wires", name: "Зомби-электрик" },
       { id: "l3-z5", x: 2150, kind: "switches", name: "Спящий охранник", sleeping: true },
       { id: "l3-z6", x: 2500, kind: "switches", name: "Зомби-охранник" },
-      { id: "l3-z7", x: 2850, kind: "reactor", name: "Спящий завхоз", sleeping: true },
+      { id: "l3-z7", x: 2850, kind: "switches", name: "Спящий завхоз", sleeping: true },
       { id: "l3-z8", x: 3100, kind: "download", name: "Зомби-заместитель" },
     ],
   },
