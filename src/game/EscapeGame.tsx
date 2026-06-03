@@ -2395,6 +2395,7 @@ export default function EscapeGame() {
 
           {/* Lana */}
           <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 }}>
+            <LanaSpeech side={facing === 1 ? "left" : "right"} />
             <div className={moving ? "lana-walk" : "lana-idle"}
               style={crouching ? { transform: "scaleY(0.7) translateY(18px)", transformOrigin: "50% 100%" } : undefined}>
               <Crewmate color="#ff66aa" palette={lanaPalette} facing={facing} size={80} />
