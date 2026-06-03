@@ -6,7 +6,7 @@ import {
   FLOOR_Y, CEIL_Y,
   type Classroom, type Zombie, type TaskKind, type LootItem, type SearchSpot,
 } from "./data";
-import { sfxGunshot, sfxBat, sfxKill, sfxBite, sfxDeath, sfxGrowl } from "./sounds";
+import { sfxGunshot, sfxBat, sfxKill, sfxBite, sfxDeath, sfxGrowl, playMusic, stopMusic, setMusicMuted } from "./sounds";
 import {
   Zap, Download, Flame, Trash2, ToggleRight,
   HelpCircle, Target,
@@ -1376,6 +1376,24 @@ export default function EscapeGame() {
   const [submittingScore, setSubmittingScore] = useState(false);
 
   const [started, setStarted] = useState(false);
+  const [musicOff, setMusicOff] = useState(false);
+
+  // Background music: menu vs game. Needs a user gesture to start AudioContext.
+  useEffect(() => {
+    const track: "menu" | "game" = started ? "game" : "menu";
+    const start = () => playMusic(track);
+    start();
+    const onGesture = () => start();
+    window.addEventListener("pointerdown", onGesture);
+    window.addEventListener("keydown", onGesture);
+    return () => {
+      window.removeEventListener("pointerdown", onGesture);
+      window.removeEventListener("keydown", onGesture);
+    };
+  }, [started]);
+  useEffect(() => () => { stopMusic(); }, []);
+  useEffect(() => { setMusicMuted(musicOff); }, [musicOff]);
+
   const [level, setLevel] = useState(0);
   const [x, setX] = useState(120);
   const [facing, setFacing] = useState<1 | -1>(1);
@@ -1891,7 +1909,14 @@ export default function EscapeGame() {
             <div className="px-3 py-1 bg-amber-900/40 border border-amber-700 rounded font-pixel text-amber-200 flex items-center gap-2">
               <Coins className="h-4 w-4" /> {coins} монет
             </div>
+            <button onClick={() => setMusicOff(v => !v)}
+              className="px-3 py-1 bg-black/40 border border-zinc-700 rounded font-pixel text-zinc-200 flex items-center gap-2 hover:bg-black/60"
+              title="Музыка вкл/выкл">
+              {musicOff ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              {musicOff ? "Музыка выкл" : "Музыка вкл"}
+            </button>
           </div>
+
 
           <div className="flex gap-2 justify-center">
             {[
