@@ -6,7 +6,7 @@ import {
   FLOOR_Y, CEIL_Y,
   type Classroom, type Zombie, type TaskKind, type LootItem, type SearchSpot,
 } from "./data";
-import { sfxGunshot, sfxBat, sfxKill, sfxBite, sfxDeath, sfxGrowl } from "./sounds";
+import { sfxGunshot, sfxBat, sfxKill, sfxBite, sfxDeath, sfxGrowl, playMusic, stopMusic, setMusicMuted } from "./sounds";
 import {
   Zap, Download, Flame, Trash2, ToggleRight,
   HelpCircle, Target,
