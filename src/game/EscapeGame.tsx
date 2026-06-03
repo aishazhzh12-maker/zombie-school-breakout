@@ -1496,6 +1496,7 @@ export default function EscapeGame() {
             return nn;
           });
           setKilled(prev => new Set(prev).add(z.id));
+          sfxBat();
           setCoins(c => c + 15);
           setToast(`🏏 ${z.name} — оглушён битой! +15 монет`);
           setTimeout(() => setToast(""), 1600);
