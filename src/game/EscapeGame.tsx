@@ -136,6 +136,50 @@ function PixelHuman({ palette, facing = 1, size = 64, variant = "student", dead 
     fill(42, 34, 44, 34, K);
     // forward strand on left cheek
     set(22, 11, HAIRs); set(22, 12, HAIRs);
+
+    // === HIGH PONYTAIL (sticks out on facing side) ===
+    const PT = palette.ponytail ?? HAIR;
+    const PTs = HAIRs;
+    // pony base / scrunchie
+    fill(38, 5, 44, 8, PT);
+    outline(38, 5, 44, 8, K);
+    // ribbon highlight
+    fill(39, 6, 43, 6, palette.accent ?? "#c84060");
+    // tail flowing back/up-right
+    const tail: [number, number][] = [
+      [44,4],[45,4],[46,4],[47,5],[48,6],[49,7],[50,8],[51,9],[52,10],
+      [52,11],[53,12],[53,13],[52,14],[51,15],[50,16],[49,17],[48,18],
+      [47,18],[46,19],[45,19],[44,19],
+      // thicker body of tail
+      [46,5],[47,6],[48,7],[49,8],[50,9],[51,10],[51,11],[52,12],
+      [50,13],[51,13],[49,14],[50,14],[48,15],[49,15],[47,16],[48,16],
+      [46,17],[47,17],[45,18],[46,18],
+    ];
+    for (const [tx, ty] of tail) set(tx, ty, PT);
+    // shading on tail
+    for (const [tx, ty] of tail) {
+      if (ty > 9 && (tx + ty) % 2 === 0) set(tx, ty, PTs);
+    }
+    // ponytail outline (right edge)
+    set(53,11,K); set(53,14,K); set(52,15,K); set(51,16,K); set(50,17,K); set(49,18,K); set(48,19,K);
+    set(43,4,K); set(46,3,K); set(47,4,K);
+
+    // === PURPLE STREAK in front (if streak color provided) ===
+    if (palette.streak) {
+      const S = palette.streak;
+      // a clear strand falling over right side of face/bangs
+      fill(36, 8, 38, 9, S);
+      fill(37, 10, 38, 12, S);
+      set(38, 13, S); set(38, 14, S);
+      // a small accent in ponytail
+      fill(40, 7, 41, 8, S);
+      set(46, 9, S); set(47, 10, S);
+    }
+
+    // === LONG EYELASHES ===
+    set(24, 12, K); set(29, 12, K);
+    set(34, 12, K); set(39, 12, K);
+    set(24, 13, K); set(39, 13, K);
   } else if (isBoss) {
     // bald top + grey temples
     fill(27, 4, 36, 6, SKIN);
