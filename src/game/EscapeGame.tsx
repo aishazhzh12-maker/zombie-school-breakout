@@ -51,6 +51,10 @@ type PixelPalette = {
   pants: string; pantsShade: string;
   shoes: string;
   eyes?: string;
+  /** Renders tactical vest with straps and pouches over the torso */
+  armored?: boolean;
+  /** Optional Mario-style cap color (defaults to hair) */
+  cap?: string;
 };
 
 function PixelHuman({ palette, facing = 1, size = 80, variant = "student", dead = false }:
