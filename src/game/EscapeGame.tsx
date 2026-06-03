@@ -413,11 +413,14 @@ function PixelHuman({ palette, facing = 1, size = 64, variant = "student", dead 
 
 // Palettes
 const PAL_LANA: PixelPalette = {
-  skin: "#e8b894", skinShade: "#b8855f",
-  hair: "#1a0f0a", hairShade: "#000000",
-  shirt: "#3a2a3a", shirtShade: "#1a121a",
-  pants: "#1a1a22", pantsShade: "#000000",
-  shoes: "#0a0a0a",
+  skin: "#f0c8a4", skinShade: "#c08a68",
+  hair: "#5a3418", hairShade: "#2a180a",
+  shirt: "#6a3a9a", shirtShade: "#3a1a5a",
+  pants: "#2a1a3a", pantsShade: "#150a1f",
+  shoes: "#1a0a1a",
+  streak: "#c84afe",
+  accent: "#e8a8ff",
+  ponytail: "#5a3418",
 };
 const PAL_MILA: PixelPalette = {
   skin: "#f0c098", skinShade: "#c89070",
