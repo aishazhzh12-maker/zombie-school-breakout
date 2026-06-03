@@ -1631,7 +1631,7 @@ export default function EscapeGame() {
             });
             setShake(true);
             setTimeout(() => setShake(false), 350);
-            setToast(`🩸 ${z.name} кусает! -${dmg} HP${isRun ? " (шумно!)" : ""}`);
+            setToast(`🩸 ${z.name} bites! -${dmg} HP${isRun ? " (noisy!)" : ""}`);
             setTimeout(() => setToast(""), 1200);
             break;
           }
