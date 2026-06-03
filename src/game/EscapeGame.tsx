@@ -1575,8 +1575,13 @@ export default function EscapeGame() {
           if (killedRef.current.has(z.id) || wokenRef.current.has(z.id)) continue;
           if (Math.abs(z.x - xRef.current) < hearRange) {
             wokenRef.current.add(z.id);
+            sfxGrowl();
             const dmg = 35 + level * 5 + (isRun ? 15 : 0);
-            setHp(h => Math.max(0, h - dmg));
+            setHp(h => {
+              const nh = Math.max(0, h - dmg);
+              if (nh === 0) { sfxDeath(); setTimeout(() => setModal({ kind: "lose" }), 200); }
+              return nh;
+            });
             setShake(true);
             setTimeout(() => setShake(false), 600);
             setToast(`😱 ${z.name} проснулся и накинулся! -${dmg} HP`);
