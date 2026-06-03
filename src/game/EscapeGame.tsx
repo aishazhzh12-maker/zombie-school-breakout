@@ -6,6 +6,7 @@ import {
   FLOOR_Y, CEIL_Y,
   type Classroom, type Zombie, type TaskKind, type LootItem, type SearchSpot,
 } from "./data";
+import { sfxGunshot, sfxBat, sfxKill, sfxBite, sfxDeath, sfxGrowl } from "./sounds";
 import {
   Zap, Download, Flame, Trash2, ToggleRight,
   HelpCircle, Target,
@@ -1476,6 +1477,7 @@ export default function EscapeGame() {
         if (k === "f" && gunLeft > 0) {
           setGunLeft(n => { const nn = n - 1; setSave(s => { const ns = { ...s, owned: { ...s.owned, gun: nn } }; writeSave(ns); return ns; }); return nn; });
           setKilled(prev => new Set(prev).add(z.id));
+          sfxGunshot();
           setCoins(c => c + 25);
           setToast(`🔫 ${z.name} — выстрел! +25 монет`);
           setTimeout(() => setToast(""), 1600);
@@ -1494,6 +1496,7 @@ export default function EscapeGame() {
             return nn;
           });
           setKilled(prev => new Set(prev).add(z.id));
+          sfxBat();
           setCoins(c => c + 15);
           setToast(`🏏 ${z.name} — оглушён битой! +15 монет`);
           setTimeout(() => setToast(""), 1600);
@@ -1572,8 +1575,13 @@ export default function EscapeGame() {
           if (killedRef.current.has(z.id) || wokenRef.current.has(z.id)) continue;
           if (Math.abs(z.x - xRef.current) < hearRange) {
             wokenRef.current.add(z.id);
+            sfxGrowl();
             const dmg = 35 + level * 5 + (isRun ? 15 : 0);
-            setHp(h => Math.max(0, h - dmg));
+            setHp(h => {
+              const nh = Math.max(0, h - dmg);
+              if (nh === 0) { sfxDeath(); setTimeout(() => setModal({ kind: "lose" }), 200); }
+              return nh;
+            });
             setShake(true);
             setTimeout(() => setShake(false), 600);
             setToast(`😱 ${z.name} проснулся и накинулся! -${dmg} HP`);
@@ -1597,7 +1605,12 @@ export default function EscapeGame() {
             lastBiteRef.current = nowT;
             const base = 4 + Math.floor(Math.random() * 5);
             const dmg = base + (level * 2) + (isRun ? 3 : 0);
-            setHp(h => Math.max(0, h - dmg));
+            sfxBite();
+            setHp(h => {
+              const nh = Math.max(0, h - dmg);
+              if (nh === 0) { sfxDeath(); setTimeout(() => setModal({ kind: "lose" }), 200); }
+              return nh;
+            });
             setShake(true);
             setTimeout(() => setShake(false), 350);
             setToast(`🩸 ${z.name} кусает! -${dmg} HP${isRun ? " (шумно!)" : ""}`);
@@ -1640,14 +1653,16 @@ export default function EscapeGame() {
     const z = modal.zombie;
     if (ok) {
       setKilled(prev => new Set(prev).add(z.id));
+      sfxKill();
       const reward = 10 + level * 5;
       setCoins(c => c + reward);
       setToast(`💀 ${z.name} повержен! +${reward} 🪙`);
     } else {
       const dmg = Math.max(8, 25 - strength * 3);
+      sfxBite();
       setHp(h => {
         const nh = Math.max(0, h - dmg);
-        if (nh === 0) setTimeout(() => setModal({ kind: "lose" }), 200);
+        if (nh === 0) { sfxDeath(); setTimeout(() => setModal({ kind: "lose" }), 200); }
         return nh;
       });
       setShake(true);
