@@ -837,23 +837,103 @@ function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string
   return <I className={className} />;
 }
 
-// ---- Pixel zombie sprite ----
-function PixelZombie({ size = 80, facing = -1, hurt = false }: { size?: number; facing?: 1 | -1; hurt?: boolean }) {
+// ---- Mr. Hopp-style plush horror sprite ----
+// Replaces the old pixel zombie with a ragged plush rabbit-monster: long
+// floppy ears, oversized round black button eyes with red pinpoint pupils,
+// stitched mouth full of jagged teeth, torn fabric body.
+function PixelZombie({ size = 80, facing = -1, hurt = false, boss = false }:
+  { size?: number; facing?: 1 | -1; hurt?: boolean; boss?: boolean }) {
+  // Plush body palette — sickly violet/blue for normal, deep blood-red for boss
+  const FUR = boss ? "#3a0a14" : "#5a4470";
+  const FURD = boss ? "#1a0408" : "#3a2a50";
+  const FURL = boss ? "#6a1a24" : "#7a5fa0";
+  const BELLY = boss ? "#2a0408" : "#3a2a4a";
+  const STITCH = "#1a1014";
+  const EYE_W = "#1a1018";     // black button eye
+  const PUPIL = "#ff1818";     // glowing red pupil
+  const PUPIL_HOT = "#ffd0d0"; // hot center
+  const TOOTH = boss ? "#cfc8b8" : "#e8e0c8";
+  const MOUTH = "#3a0408";
+  const W = boss ? 28 : 22;
+  const H = boss ? 36 : 28;
+  // viewBox-based hand-drawn SVG with pixel-perfect rendering
   return (
-    <PixelHuman
-      facing={facing}
-      size={size}
-      variant="student"
-      dead={hurt}
-      palette={{
-        skin: "#8fb86a", skinShade: "#4a6a2a",
-        hair: "#2a2a1a", hairShade: "#000000",
-        shirt: "#5a3a2a", shirtShade: "#2a1a0a",
-        pants: "#3a3020", pantsShade: "#1a1410",
-        shoes: "#000000",
-        eyes: "#ffeb3b",
+    <svg
+      width={Math.round((size * W) / H)}
+      height={size}
+      viewBox={`0 0 ${W} ${H}`}
+      style={{
+        transform: `scaleX(${facing})`,
+        imageRendering: "pixelated",
+        shapeRendering: "crispEdges",
+        filter: hurt ? "brightness(2) saturate(2) hue-rotate(-20deg)" : (boss ? "drop-shadow(0 0 6px rgba(255,30,30,0.55))" : "none"),
       }}
-    />
+    >
+      {/* Long floppy ears */}
+      <rect x={boss ? 5 : 3} y="0" width={boss ? 4 : 3} height={boss ? 13 : 10} fill={FUR} />
+      <rect x={boss ? 5 : 3} y={boss ? 11 : 8} width={boss ? 4 : 3} height={2} fill={FURD} />
+      <rect x={boss ? 19 : 16} y="0" width={boss ? 4 : 3} height={boss ? 13 : 10} fill={FUR} />
+      <rect x={boss ? 19 : 16} y={boss ? 11 : 8} width={boss ? 4 : 3} height={2} fill={FURD} />
+      {/* inner ear pink */}
+      <rect x={boss ? 6 : 4} y="2" width={boss ? 2 : 1} height={boss ? 7 : 5} fill={boss ? "#7a0a14" : "#a86fdc"} />
+      <rect x={boss ? 20 : 17} y="2" width={boss ? 2 : 1} height={boss ? 7 : 5} fill={boss ? "#7a0a14" : "#a86fdc"} />
+      {/* Head — round plush */}
+      <rect x={boss ? 4 : 2} y={boss ? 8 : 5} width={boss ? 20 : 18} height={boss ? 14 : 11} fill={FUR} />
+      <rect x={boss ? 4 : 2} y={boss ? 8 : 5} width={boss ? 20 : 18} height={2} fill={FURL} />
+      <rect x={boss ? 4 : 2} y={boss ? 20 : 14} width={boss ? 20 : 18} height={2} fill={FURD} />
+      {/* Stitch seam across head */}
+      <rect x={boss ? 13 : 11} y={boss ? 8 : 5} width="1" height={boss ? 14 : 11} fill={STITCH} opacity="0.7" />
+      {/* Big round button EYES */}
+      <rect x={boss ? 6 : 4} y={boss ? 12 : 8} width={boss ? 6 : 5} height={boss ? 5 : 4} fill={EYE_W} />
+      <rect x={boss ? 16 : 13} y={boss ? 12 : 8} width={boss ? 6 : 5} height={boss ? 5 : 4} fill={EYE_W} />
+      {/* white highlight on top-left of each eye */}
+      <rect x={boss ? 7 : 5} y={boss ? 13 : 9} width="1" height="1" fill="#fff" opacity="0.6" />
+      <rect x={boss ? 17 : 14} y={boss ? 13 : 9} width="1" height="1" fill="#fff" opacity="0.6" />
+      {/* Red pinpoint pupils */}
+      <rect x={boss ? 8 : 6} y={boss ? 14 : 10} width={boss ? 2 : 2} height={boss ? 2 : 1} fill={PUPIL} />
+      <rect x={boss ? 18 : 15} y={boss ? 14 : 10} width={boss ? 2 : 2} height={boss ? 2 : 1} fill={PUPIL} />
+      <rect x={boss ? 8 : 6} y={boss ? 14 : 10} width="1" height="1" fill={PUPIL_HOT} />
+      <rect x={boss ? 18 : 15} y={boss ? 14 : 10} width="1" height="1" fill={PUPIL_HOT} />
+      {/* Third eye on boss forehead */}
+      {boss && (
+        <>
+          <rect x="13" y="9" width="3" height="3" fill={EYE_W} />
+          <rect x="14" y="10" width="1" height="1" fill={PUPIL} />
+        </>
+      )}
+      {/* Stitched MOUTH with jagged teeth */}
+      <rect x={boss ? 8 : 6} y={boss ? 18 : 13} width={boss ? 12 : 10} height={boss ? 2 : 1} fill={MOUTH} />
+      {[0,1,2,3,4].map(i => (
+        <rect key={`t-${i}`} x={(boss ? 9 : 7) + i * 2} y={boss ? 18 : 13} width="1" height="1" fill={TOOTH} />
+      ))}
+      {/* mouth stitch lines */}
+      <rect x={boss ? 8 : 6} y={boss ? 20 : 14} width="1" height="1" fill={STITCH} />
+      <rect x={boss ? 19 : 15} y={boss ? 20 : 14} width="1" height="1" fill={STITCH} />
+      {/* Body — torn plush torso */}
+      <rect x={boss ? 6 : 4} y={boss ? 22 : 16} width={boss ? 16 : 14} height={boss ? 9 : 7} fill={FUR} />
+      {/* belly patch */}
+      <rect x={boss ? 9 : 7} y={boss ? 23 : 17} width={boss ? 10 : 8} height={boss ? 7 : 5} fill={BELLY} />
+      {/* stitches down belly */}
+      <rect x={boss ? 14 : 11} y={boss ? 22 : 16} width="1" height={boss ? 9 : 7} fill={STITCH} opacity="0.7" />
+      {/* blood drips from mouth */}
+      <rect x={boss ? 11 : 9} y={boss ? 21 : 14} width="1" height={boss ? 3 : 2} fill="#7a0808" />
+      <rect x={boss ? 16 : 13} y={boss ? 21 : 14} width="1" height={boss ? 4 : 3} fill="#7a0808" />
+      {/* Arms hanging long */}
+      <rect x={boss ? 3 : 1} y={boss ? 23 : 17} width="3" height={boss ? 7 : 5} fill={FUR} />
+      <rect x={boss ? 22 : 19} y={boss ? 23 : 17} width="3" height={boss ? 7 : 5} fill={FUR} />
+      {/* claws */}
+      <rect x={boss ? 3 : 1} y={boss ? 29 : 21} width="1" height="1" fill="#1a0408" />
+      <rect x={boss ? 5 : 3} y={boss ? 29 : 21} width="1" height="1" fill="#1a0408" />
+      <rect x={boss ? 22 : 19} y={boss ? 29 : 21} width="1" height="1" fill="#1a0408" />
+      <rect x={boss ? 24 : 21} y={boss ? 29 : 21} width="1" height="1" fill="#1a0408" />
+      {/* Legs / nubs */}
+      <rect x={boss ? 8 : 6} y={boss ? 31 : 22} width={boss ? 4 : 4} height={boss ? 5 : 4} fill={FURD} />
+      <rect x={boss ? 16 : 12} y={boss ? 31 : 22} width={boss ? 4 : 4} height={boss ? 5 : 4} fill={FURD} />
+      {/* tear patches on body */}
+      <rect x={boss ? 7 : 5} y={boss ? 26 : 19} width="2" height="1" fill={STITCH} opacity="0.5" />
+      {/* shadow */}
+      <ellipse cx={W/2} cy={H - 0.3} rx={W/2.4} ry="0.6" fill="#000" opacity="0.5" />
+    </svg>
   );
 }
 
