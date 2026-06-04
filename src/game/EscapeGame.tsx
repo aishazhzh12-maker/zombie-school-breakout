@@ -1995,8 +1995,9 @@ export default function EscapeGame() {
       food: loot.foodGain ?? 0,
       strength: loot.strengthGain ?? 0,
       battery: loot.battery,
+      noise: loot.noise,
     };
-    if (item.hp || item.food || item.battery) {
+    if (item.hp || item.food || item.battery || item.noise) {
       setInv(prev => [...prev, item]);
       const bonus = [
         item.hp ? `+${item.hp} HP` : null,
