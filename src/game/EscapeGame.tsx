@@ -1495,6 +1495,59 @@ export default function EscapeGame() {
   const invRef = useRef(inv); invRef.current = inv;
   const lastBiteRef = useRef(0);
 
+  // ===== Jump physics + obstacle collisions =====
+  const [jumpY, setJumpY] = useState(0);
+  const jumpYRef = useRef(0); jumpYRef.current = jumpY;
+  const jumpVRef = useRef(0);
+  const lastGlassRef = useRef(0);
+  useEffect(() => {
+    const dn = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      if ((k === " " || k === "w" || k === "arrowup" || k === "ц") && jumpYRef.current === 0 && jumpVRef.current === 0 && modal.kind === "none" && started) {
+        jumpVRef.current = -11;
+      }
+    };
+    window.addEventListener("keydown", dn);
+    return () => window.removeEventListener("keydown", dn);
+  }, [modal.kind, started]);
+  useEffect(() => {
+    if (!started || modal.kind !== "none") return;
+    let raf = 0;
+    const tick = () => {
+      // gravity
+      if (jumpVRef.current !== 0 || jumpYRef.current > 0) {
+        jumpVRef.current += 0.7;
+        const ny = Math.max(0, jumpYRef.current - jumpVRef.current);
+        jumpYRef.current = ny;
+        if (ny === 0) jumpVRef.current = 0;
+        setJumpY(ny);
+      }
+      // obstacle damage — glass
+      const obs = cur.obstacles ?? [];
+      const now = performance.now();
+      if (jumpYRef.current < 18 && now - lastGlassRef.current > 900) {
+        for (const o of obs) {
+          if (Math.abs(o.x - xRef.current) < 24) {
+            lastGlassRef.current = now;
+            sfxBite();
+            setShake(true); setTimeout(() => setShake(false), 250);
+            setHp(h => {
+              const nh = Math.max(0, h - 8);
+              if (nh === 0) { sfxDeath(); setTimeout(() => setModal({ kind: "lose" }), 200); }
+              return nh;
+            });
+            setToast("🩸 Stepped on glass! -8 HP (jump with SPACE)");
+            setTimeout(() => setToast(""), 1500);
+            break;
+          }
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [started, modal.kind, cur]);
+
   // Hunger 0..100. Tick down over time; at 0 starts damaging HP.
   const MAX_HUNGER = 100;
   const [hunger, setHunger] = useState(MAX_HUNGER);
