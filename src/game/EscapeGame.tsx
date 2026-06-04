@@ -514,7 +514,7 @@ function Crewmate({ color, facing = 1, size = 80, dead = false, palette }:
 }
 
 function Impostor({ size = 80 }: { size?: number }) {
-  return <PixelHuman palette={PAL_BOSS} size={size} variant="boss" />;
+  return <PixelZombie size={size} boss facing={-1} />;
 }
 
 
