@@ -938,35 +938,161 @@ function PixelZombie({ size = 80, facing = -1, hurt = false, boss = false }:
 }
 
 
-// ============== BOSS RIDDLE ==============
+// ============== BOSS ARENA — bat-vs-Hopp combat ==============
 function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void }) {
-  const [step, setStep] = useState(0);
-  const [hp, setHp] = useState(3);
-  const q = bossRiddles[step];
-  const answer = (i: number) => {
-    if (i === q.answer) {
-      if (step + 1 >= bossRiddles.length) onWin();
-      else setStep(step + 1);
-    } else {
-      const nh = hp - 1;
-      setHp(nh);
-      if (nh <= 0) onLose();
-    }
-  };
+  const ARENA_W = 720;
+  const ARENA_H = 360;
+  const FLOOR_PX = 60;
+  const [bossHp, setBossHp] = useState(10);
+  const [lanaHp, setLanaHp] = useState(100);
+  const [lanaX, setLanaX] = useState(100);
+  const lanaXRef = useRef(100); lanaXRef.current = lanaX;
+  const [lanaY, setLanaY] = useState(0);
+  const jumpV = useRef(0);
+  const jumpY = useRef(0);
+  const [facing, setFacing] = useState<1 | -1>(1);
+  const bossX = 580;
+  const [bossY, setBossY] = useState(0);
+  const bossYRef = useRef(0);
+  const [hasBat, setHasBat] = useState(false);
+  const hasBatRef = useRef(false); hasBatRef.current = hasBat;
+  const [batSpawn, setBatSpawn] = useState<{ x: number } | null>({ x: 240 });
+  const batSpawnRef = useRef<{x:number}|null>({ x: 240 }); batSpawnRef.current = batSpawn;
+  const [debris, setDebris] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [shake, setShake] = useState(false);
+  const [bossHurt, setBossHurt] = useState(false);
+  const bossInvul = useRef(0);
+  const lanaInvul = useRef(0);
+  const keys = useRef<Record<string, boolean>>({});
+  const phase = useRef<{ k: "idle"|"jump"|"land"; t: number }>({ k: "idle", t: 0 });
+  const debrisId = useRef(0);
+
+  useEffect(() => {
+    const dn = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      keys.current[k] = true;
+      if ((k === " " || k === "w" || k === "arrowup" || k === "ц") && jumpY.current === 0 && jumpV.current === 0) {
+        jumpV.current = -11;
+      }
+    };
+    const up = (e: KeyboardEvent) => { keys.current[e.key.toLowerCase()] = false; };
+    window.addEventListener("keydown", dn);
+    window.addEventListener("keyup", up);
+    return () => { window.removeEventListener("keydown", dn); window.removeEventListener("keyup", up); };
+  }, []);
+
+  useEffect(() => {
+    let raf = 0; let last = performance.now();
+    const tick = () => {
+      const now = performance.now();
+      const dt = Math.min(50, now - last); last = now;
+      // movement
+      let dx = 0;
+      if (keys.current["a"] || keys.current["arrowleft"] || keys.current["ф"]) { dx -= 1; setFacing(-1); }
+      if (keys.current["d"] || keys.current["arrowright"] || keys.current["в"]) { dx += 1; setFacing(1); }
+      if (dx) setLanaX(p => clamp(p + dx * 4.2, 30, ARENA_W - 60));
+      // gravity
+      if (jumpV.current !== 0 || jumpY.current > 0) {
+        jumpV.current += 0.7;
+        jumpY.current = Math.max(0, jumpY.current - jumpV.current);
+        if (jumpY.current === 0) jumpV.current = 0;
+        setLanaY(jumpY.current);
+      }
+      // boss AI
+      const ph = phase.current; ph.t += dt;
+      if (ph.k === "idle" && ph.t > 1800) { ph.k = "jump"; ph.t = 0; sfxGrowl(); }
+      else if (ph.k === "jump") {
+        const p = Math.min(1, ph.t / 1100);
+        const yy = Math.sin(p * Math.PI) * 130;
+        bossYRef.current = yy; setBossY(yy);
+        if (p >= 1) {
+          ph.k = "land"; ph.t = 0; bossYRef.current = 0; setBossY(0);
+          sfxBoom(); setShake(true); setTimeout(() => setShake(false), 600);
+          const nd = Array.from({ length: 4 }, () => ({ id: ++debrisId.current, x: 80 + Math.random() * (ARENA_W - 160), y: 0 }));
+          setDebris(d => [...d, ...nd]);
+          if (!hasBatRef.current && !batSpawnRef.current) {
+            setBatSpawn({ x: 120 + Math.random() * (ARENA_W - 280) });
+          }
+        }
+      } else if (ph.k === "land" && ph.t > 1400) { ph.k = "idle"; ph.t = 0; }
+      // debris fall + hit detection
+      setDebris(prev => prev.map(d => ({ ...d, y: d.y + 7 })).filter(d => {
+        if (d.y >= ARENA_H - FLOOR_PX - 20) {
+          if (Math.abs(d.x - lanaXRef.current) < 22 && jumpY.current < 20 && now - lanaInvul.current > 600) {
+            lanaInvul.current = now; sfxBite();
+            setLanaHp(h => { const nh = Math.max(0, h - 12); if (nh === 0) { sfxDeath(); setTimeout(onLose, 200); } return nh; });
+          }
+          return false;
+        }
+        return true;
+      }));
+      // pickup bat
+      if (batSpawnRef.current && Math.abs(batSpawnRef.current.x - lanaXRef.current) < 28 && jumpY.current < 18) {
+        sfxPickup(); setHasBat(true); setBatSpawn(null);
+      }
+      // hit boss
+      if (hasBatRef.current && now - bossInvul.current > 700) {
+        if (Math.abs(bossX - lanaXRef.current) < 70 && bossYRef.current < 30) {
+          bossInvul.current = now; sfxSwing(); sfxBat();
+          setHasBat(false); setBossHurt(true); setTimeout(() => setBossHurt(false), 350);
+          setBossHp(h => { const nh = h - 1; if (nh <= 0) { sfxKill(); setTimeout(onWin, 400); } return nh; });
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [onWin, onLose]);
+
   return (
-    <div className="flex flex-col items-center gap-4 max-w-md">
-      <Impostor size={120} />
-      <h3 className="font-display text-red-400 text-lg">PRINCIPAL IMPOSTOR</h3>
-      <div className="flex gap-1">{Array.from({ length: 3 }).map((_, i) => (
-        <Heart key={i} className={`h-5 w-5 ${i < hp ? "fill-red-500 text-red-500" : "text-zinc-700"}`} />
-      ))}</div>
-      <p className="text-center text-base">{q.question}</p>
-      <div className="grid grid-cols-2 gap-2 w-full">
-        {q.options.map((o, i) => (
-          <Button key={i} variant="secondary" onClick={() => answer(i)}>{o}</Button>
-        ))}
+    <div className="flex flex-col items-center gap-2 max-w-full">
+      <div className="flex items-center justify-between w-full px-2">
+        <div className="font-display text-red-400">PRINCIPAL HOPP — BOSS</div>
+        <div className="flex gap-0.5">{Array.from({ length: 10 }).map((_, i) => (
+          <Heart key={i} className={`h-4 w-4 ${i < bossHp ? "fill-red-500 text-red-500" : "text-zinc-700"}`} />
+        ))}</div>
       </div>
-      <p className="text-xs text-muted-foreground">Riddle {step + 1} / {bossRiddles.length}</p>
+      <div className={`relative overflow-hidden border-2 border-red-700 bg-[#0a0410] ${shake ? "shake" : ""}`}
+        style={{ width: ARENA_W, height: ARENA_H, maxWidth: "100%" }}>
+        <div className="absolute inset-x-0 top-0" style={{ height: ARENA_H - FLOOR_PX, background: "linear-gradient(180deg,#1a0510 0%,#0a0410 70%)" }} />
+        <div className="absolute left-0 right-0 bottom-0" style={{ height: FLOOR_PX, background: "repeating-linear-gradient(90deg,#5a3a1a 0 50px,#3a2410 50px 100px)", boxShadow: "inset 0 4px 0 #0a0606" }} />
+        <div className="absolute top-2 right-2 text-[10px] font-pixel text-amber-300/60">GYM</div>
+        {/* Boss */}
+        <div className="absolute" style={{ left: bossX - 100, bottom: FLOOR_PX + bossY - 6 }}>
+          <div style={{ filter: bossHurt ? "brightness(2.5) hue-rotate(-40deg)" : "drop-shadow(0 0 10px rgba(255,0,0,0.6))" }}>
+            <PixelZombie size={240} boss facing={lanaXRef.current > bossX ? 1 : -1} />
+          </div>
+        </div>
+        {/* Debris */}
+        {debris.map(d => (
+          <div key={d.id} className="absolute" style={{ left: d.x - 10, top: d.y, width: 22, height: 14, background: "linear-gradient(180deg,#8a5a2a,#3a1a08)", boxShadow: "inset -2px -2px 0 #1a0a04, 0 0 4px rgba(0,0,0,0.8)", transform: `rotate(${(d.id * 37) % 360}deg)` }} />
+        ))}
+        {/* Glowing bat pickup */}
+        {batSpawn && (
+          <div className="absolute" style={{ left: batSpawn.x - 22, bottom: FLOOR_PX - 4, width: 44, height: 44 }}>
+            <div className="absolute inset-0 rounded-full animate-pulse" style={{ background: "radial-gradient(circle,#fff48a 0%,rgba(255,200,40,0.6) 35%,transparent 70%)", filter: "blur(3px)" }} />
+            <div className="absolute inset-0 flex items-center justify-center text-3xl" style={{ filter: "drop-shadow(0 0 8px #ffec8a)" }}>🏏</div>
+          </div>
+        )}
+        {/* Lana */}
+        <div className="absolute" style={{ left: lanaX - 28, bottom: FLOOR_PX - 6 + lanaY }}>
+          <PixelHuman palette={PAL_LANA} facing={facing} size={70} variant="girl" />
+          {hasBat && (
+            <div className="absolute" style={{ top: 14, left: facing === 1 ? 36 : -14, fontSize: 24, transform: `scaleX(${facing}) rotate(${facing === 1 ? -28 : 28}deg)`, filter: "drop-shadow(0 0 8px #ffec8a)" }}>🏏</div>
+          )}
+        </div>
+        {/* Lana HP */}
+        <div className="absolute top-2 left-2 right-24 flex items-center gap-2 z-10">
+          <span className="font-pixel text-[10px] text-rose-300">LANA</span>
+          <div className="flex-1 h-3 bg-black/70 border border-rose-700 rounded overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-red-600 to-rose-400" style={{ width: `${lanaHp}%` }} />
+          </div>
+          <span className="font-mono text-[10px]">{lanaHp}</span>
+        </div>
+        <div className="absolute bottom-1 left-2 text-[9px] font-pixel text-amber-300/80 bg-black/70 px-2 py-0.5 rounded">
+          A/D move · SPACE jump · grab 🏏 then ram boss · dodge debris!
+        </div>
+      </div>
     </div>
   );
 }
