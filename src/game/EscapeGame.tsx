@@ -32,7 +32,7 @@ type Modal =
   | { kind: "backpack" }
   | { kind: "boss" };
 
-type InvItem = { id: string; name: string; emoji: string; hp: number; food: number; strength: number; battery?: number; givesFlashlight?: boolean };
+type InvItem = { id: string; name: string; emoji: string; hp: number; food: number; strength: number; battery?: number; givesFlashlight?: boolean; noise?: number };
 
 
 // ---- helpers ----
@@ -146,6 +146,16 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
     // outline
     px(0, 5, K); px(0, 6, K); px(0, 7, K); px(0, 8, K);
     px(1, 8, K); px(2, 8, K); px(3, 5, K);
+  }
+
+  // ============ RED BOW on top of head (girl, Ruby-style) ============
+  if (isGirl) {
+    // bow loops
+    px(6, 0, ACC); px(9, 0, ACC);
+    px(5, 0, K); px(10, 0, K);
+    // bow knot
+    px(7, 0, ACC); px(8, 0, ACC);
+    px(7, 1, ACC); px(8, 1, ACC);
   }
 
   // ============ PURPLE STREAK ============
@@ -349,15 +359,15 @@ function LanaSpeech({ side = "right" }: { side?: "left" | "right" }) {
 
 
 // Palettes
+// Ruby-style (Mr Hopp's Playhouse): pale skin, red hair, pink dress, red bow
 const PAL_LANA: PixelPalette = {
-  skin: "#f0c8a4", skinShade: "#c08a68",
-  hair: "#5a3418", hairShade: "#2a180a",
-  shirt: "#6a3a9a", shirtShade: "#3a1a5a",
-  pants: "#2a1a3a", pantsShade: "#150a1f",
-  shoes: "#1a0a1a",
-  streak: "#c84afe",
-  accent: "#e8a8ff",
-  ponytail: "#5a3418",
+  skin: "#fde0cc", skinShade: "#e0a890",
+  hair: "#d62828", hairShade: "#7a1010",
+  shirt: "#f088b0", shirtShade: "#a04068",
+  pants: "#3a1428", pantsShade: "#1a0814",
+  shoes: "#1a0a14",
+  accent: "#e84545",
+  ponytail: "#d62828",
 };
 const PAL_MILA: PixelPalette = {
   skin: "#f0c098", skinShade: "#c89070",
@@ -843,16 +853,16 @@ function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string
 // stitched mouth full of jagged teeth, torn fabric body.
 function PixelZombie({ size = 80, facing = -1, hurt = false, boss = false }:
   { size?: number; facing?: 1 | -1; hurt?: boolean; boss?: boolean }) {
-  // Plush body palette — sickly violet/blue for normal, deep blood-red for boss
-  const FUR = boss ? "#3a0a14" : "#5a4470";
-  const FURD = boss ? "#1a0408" : "#3a2a50";
-  const FURL = boss ? "#6a1a24" : "#7a5fa0";
-  const BELLY = boss ? "#2a0408" : "#3a2a4a";
+  // Plush body palette — sickly rotted green for normal zombies, pink Mr Hopp plush for boss
+  const FUR = boss ? "#e89cb4" : "#4a7a38";
+  const FURD = boss ? "#a4607a" : "#2a4a1a";
+  const FURL = boss ? "#f8c0d4" : "#6aa050";
+  const BELLY = boss ? "#d488a4" : "#3a5028";
   const STITCH = "#1a1014";
-  const EYE_W = "#1a1018";     // black button eye
+  const EYE_W = boss ? "#1a0810" : "#0a0a0a";    // black button eye
   const PUPIL = "#ff1818";     // glowing red pupil
   const PUPIL_HOT = "#ffd0d0"; // hot center
-  const TOOTH = boss ? "#cfc8b8" : "#e8e0c8";
+  const TOOTH = boss ? "#f4ecd4" : "#d8d0b4";
   const MOUTH = "#3a0408";
   const W = boss ? 28 : 22;
   const H = boss ? 36 : 28;
@@ -875,8 +885,9 @@ function PixelZombie({ size = 80, facing = -1, hurt = false, boss = false }:
       <rect x={boss ? 19 : 16} y="0" width={boss ? 4 : 3} height={boss ? 13 : 10} fill={FUR} />
       <rect x={boss ? 19 : 16} y={boss ? 11 : 8} width={boss ? 4 : 3} height={2} fill={FURD} />
       {/* inner ear pink */}
-      <rect x={boss ? 6 : 4} y="2" width={boss ? 2 : 1} height={boss ? 7 : 5} fill={boss ? "#7a0a14" : "#a86fdc"} />
-      <rect x={boss ? 20 : 17} y="2" width={boss ? 2 : 1} height={boss ? 7 : 5} fill={boss ? "#7a0a14" : "#a86fdc"} />
+      <rect x={boss ? 6 : 4} y="2" width={boss ? 2 : 1} height={boss ? 7 : 5} fill={boss ? "#c8587a" : "#2a3a18"} />
+      <rect x={boss ? 20 : 17} y="2" width={boss ? 2 : 1} height={boss ? 7 : 5} fill={boss ? "#c8587a" : "#2a3a18"} />
+
       {/* Head — round plush */}
       <rect x={boss ? 4 : 2} y={boss ? 8 : 5} width={boss ? 20 : 18} height={boss ? 14 : 11} fill={FUR} />
       <rect x={boss ? 4 : 2} y={boss ? 8 : 5} width={boss ? 20 : 18} height={2} fill={FURL} />
@@ -1621,6 +1632,14 @@ export default function EscapeGame() {
   const invRef = useRef(inv); invRef.current = inv;
   const lastBiteRef = useRef(0);
 
+  // ===== Noise lure (thrown toy) — zombies walk to this x =====
+  const [lure, setLure] = useState<{ x: number; until: number; emoji: string } | null>(null);
+  const lureRef = useRef<typeof lure>(null); lureRef.current = lure;
+
+  // ===== Hiding in a locker =====
+  const [hiding, setHiding] = useState<string | null>(null);
+  const hidingRef = useRef<string | null>(null); hidingRef.current = hiding;
+
   // ===== Jump physics + obstacle collisions =====
   const [jumpY, setJumpY] = useState(0);
   const jumpYRef = useRef(0); jumpYRef.current = jumpY;
@@ -1725,11 +1744,13 @@ export default function EscapeGame() {
   const zomPosRef = useRef<Record<string, number>>({});
   const [, setZomTick] = useState(0);
   const tStartRef = useRef(performance.now());
+  const zomHomeRef = useRef<Record<string, number>>({});
   const zx = useCallback((z: Zombie, idx: number) => {
     // Sleeping (and not yet woken) — стоят на месте.
     if (z.sleeping && !wokenRef.current.has(z.id)) return z.x;
+    const home = zomHomeRef.current[z.id] ?? z.x;
     const t = (performance.now() - tStartRef.current) / 1000;
-    return z.x + Math.sin(t * 0.9 + idx * 1.7) * 60;
+    return home + Math.sin(t * 0.9 + idx * 1.7) * 60;
   }, []);
   const killedRef = useRef(killed); killedRef.current = killed;
 
@@ -1787,6 +1808,44 @@ export default function EscapeGame() {
         return;
       }
       if (k === "b") { setModal({ kind: "backpack" }); return; }
+      // T — throw nearest noise toy from backpack to lure zombies
+      if (k === "t" || k === "е") {
+        const list = invRef.current;
+        const toyIdx = list.findIndex(it => it.noise && it.noise > 0);
+        if (toyIdx === -1) {
+          setToast("🐰 No toys to throw. Find a plush, music box, or bell.");
+          setTimeout(() => setToast(""), 1500);
+          return;
+        }
+        const toy = list[toyIdx];
+        setInv(p => p.filter((_, i) => i !== toyIdx));
+        const throwX = clamp(px + (facing === 1 ? 220 : -220), 80, WORLD_W - 80);
+        sfxPickup();
+        setLure({ x: throwX, until: performance.now() + (toy.noise ?? 4000), emoji: toy.emoji });
+        setToast(`${toy.emoji} Thrown! Zombies follow the sound…`);
+        setTimeout(() => setToast(""), 1500);
+        return;
+      }
+      // H — hide / unhide in nearest locker
+      if (k === "h" || k === "р") {
+        if (hidingRef.current) {
+          setHiding(null);
+          setToast("🚪 Stepped out of the locker");
+          setTimeout(() => setToast(""), 1200);
+          return;
+        }
+        const spot = (cur.hideSpots ?? []).find(s => Math.abs(s.x - px) < REACH);
+        if (spot) {
+          setHiding(spot.id);
+          sfxPickup();
+          setToast("🚪 Hidden in the locker. Hold quiet… (H to leave)");
+          setTimeout(() => setToast(""), 1800);
+        } else {
+          setToast("No locker nearby");
+          setTimeout(() => setToast(""), 1000);
+        }
+        return;
+      }
       if (k !== "e" && e.key !== "Enter") return;
       // nearest zombie
       const z = zombies.find((zz, i) => !killed.has(zz.id) && Math.abs(zx(zz, i) - px) < REACH);
@@ -1811,6 +1870,23 @@ export default function EscapeGame() {
     if (!started || modal.kind !== "none") { setMoving(false); return; }
     let raf = 0;
     const tick = () => {
+      // Lure pull — drift each zombie's home toward the lure x while active
+      const lureNow = lureRef.current;
+      if (lureNow && performance.now() < lureNow.until) {
+        for (const z of zombies) {
+          if (killedRef.current.has(z.id)) continue;
+          // wake sleeping zombies — noise reaches them
+          if (z.sleeping) wokenRef.current.add(z.id);
+          const home = zomHomeRef.current[z.id] ?? z.x;
+          const dist = Math.abs(home - lureNow.x);
+          if (dist > 5) {
+            const dir = lureNow.x > home ? 1 : -1;
+            zomHomeRef.current[z.id] = home + dir * Math.min(2.4, dist);
+          }
+        }
+      } else if (lureNow && performance.now() >= lureNow.until) {
+        setLure(null);
+      }
       // Update zombie patrol positions
       const pos: Record<string, number> = {};
       zombies.forEach((z, i) => { pos[z.id] = zx(z, i); });
@@ -1827,6 +1903,7 @@ export default function EscapeGame() {
       let dx = 0;
       if (keys.current["a"] || keys.current["arrowleft"]) { dx -= 1; setFacing(-1); }
       if (keys.current["d"] || keys.current["arrowright"]) { dx += 1; setFacing(1); }
+      if (dx !== 0 && hidingRef.current) setHiding(null);
       if (dx !== 0) {
         setMoving(true);
         setX(p => {
@@ -1847,7 +1924,7 @@ export default function EscapeGame() {
       // ===== Sleeping zombies: hearing detection =====
       // Сидя на корточках — полностью тихо. Стоя — слышат. Бегом — слышат издалека.
       // Услышали = просыпаются и сразу кусают за огромный урон.
-      if (!isCrouch) {
+      if (!isCrouch && !hidingRef.current) {
         const hearRange = isRun ? 130 : (dx !== 0 ? 75 : 40) - (isNinja ? 10 : 0);
         for (let i = 0; i < zombies.length; i++) {
           const z = zombies[i];
@@ -1875,7 +1952,7 @@ export default function EscapeGame() {
       // Contact damage — patrolling zombie within bite range.
       const biteCD = isRun ? 500 : 800;
       const biteRange = (isCrouch ? 22 : (isRun ? 48 : 32)) - (isNinja ? 6 : 0);
-      if (nowT - lastBiteRef.current > biteCD) {
+      if (nowT - lastBiteRef.current > biteCD && !hidingRef.current) {
         for (let i = 0; i < zombies.length; i++) {
           const z = zombies[i];
           if (killedRef.current.has(z.id)) continue;
@@ -1984,8 +2061,9 @@ export default function EscapeGame() {
       food: loot.foodGain ?? 0,
       strength: loot.strengthGain ?? 0,
       battery: loot.battery,
+      noise: loot.noise,
     };
-    if (item.hp || item.food || item.battery) {
+    if (item.hp || item.food || item.battery || item.noise) {
       setInv(prev => [...prev, item]);
       const bonus = [
         item.hp ? `+${item.hp} HP` : null,
@@ -2206,6 +2284,9 @@ export default function EscapeGame() {
                 <p>🎒 <b>B</b> — backpack / use items</p>
                 <p>⚡ <b>E</b> / <b>Enter</b> — interact</p>
                 <p>🏏 <b>G</b> — bat · 🔫 <b>F</b> — pistol</p>
+                <p>🐰 <b>T</b> — throw a toy (lures zombies to the sound)</p>
+                <p>🚪 <b>H</b> — hide in a locker (silent &amp; invisible)</p>
+                <p>🆙 <b>Space</b> — jump over glass shards</p>
                 <p>🍴 Don't forget to eat — hunger drains HP</p>
                 <p>😴 Sleeping zombies will bite if they hear you</p>
                 <p>🌑 Floors 2–3 are dark — you need a flashlight</p>
@@ -2546,6 +2627,52 @@ export default function EscapeGame() {
             </div>
           ))}
 
+          {/* Hide spots — lockers along the wall */}
+          {(cur.hideSpots ?? []).map(s => {
+            const near = Math.abs(s.x - x) < REACH;
+            const inUse = hiding === s.id;
+            return (
+              <div key={s.id} className="absolute" style={{ left: s.x - 22, top: FLOOR_Y - 130 }}>
+                <div className="relative" style={{ width: 44, height: 130 }}>
+                  {/* locker body */}
+                  <div className="absolute inset-0 border-2 border-zinc-900"
+                    style={{ background: "linear-gradient(180deg,#4a5a4a,#2a3a2a)", boxShadow: "inset -3px -3px 0 #1a2218, inset 3px 3px 0 #6a7a68" }} />
+                  {/* slats */}
+                  <div className="absolute left-1 right-1 top-3 h-1 bg-black/50" />
+                  <div className="absolute left-1 right-1 top-6 h-1 bg-black/50" />
+                  <div className="absolute left-1 right-1 top-9 h-1 bg-black/50" />
+                  {/* handle */}
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2 w-1 h-3 bg-amber-400" />
+                  {/* door split */}
+                  <div className="absolute left-1/2 top-0 bottom-0 w-px bg-black/70" />
+                  {inUse && (
+                    <div className="absolute inset-0 flex items-center justify-center text-[18px]">👁️</div>
+                  )}
+                  {near && !inUse && (
+                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black/80 text-emerald-200 text-[9px] px-1 rounded font-pixel whitespace-nowrap">
+                      [H] Hide
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Thrown toy lure marker */}
+          {lure && (
+            <div className="absolute" style={{ left: lure.x - 14, top: FLOOR_Y - 20, width: 28, height: 28 }}>
+              <div className="relative w-full h-full flex items-center justify-center text-[22px] animate-pulse"
+                style={{ filter: "drop-shadow(0 0 6px #ffd23a)" }}>
+                {lure.emoji}
+              </div>
+              {/* sound rings */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-amber-300/70 animate-ping" style={{ width: 60, height: 60 }} />
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-[8px] font-pixel text-amber-200">♪ ♫ ♪</div>
+            </div>
+          )}
+
+
+
           {/* Zombies */}
           {zombies.map((z, i) => {
             if (killed.has(z.id)) {
@@ -2586,7 +2713,12 @@ export default function EscapeGame() {
           })}
 
           {/* Lana */}
-          <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 - jumpY, transition: jumpY === 0 ? "top 0.1s" : "none" }}>
+          <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 - jumpY, transition: jumpY === 0 ? "top 0.1s" : "none", opacity: hiding ? 0.15 : 1 }}>
+            {hiding && (
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/85 text-emerald-200 text-[9px] px-2 py-0.5 rounded font-pixel whitespace-nowrap">
+                🚪 Hidden — H to leave
+              </div>
+            )}
             <LanaSpeech side={facing === 1 ? "left" : "right"} />
             <div className={moving ? "lana-walk" : "lana-idle"}
               style={crouching ? { transform: "scaleY(0.7) translateY(18px)", transformOrigin: "50% 100%" } : undefined}>

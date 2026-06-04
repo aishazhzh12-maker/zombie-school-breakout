@@ -11,6 +11,7 @@ export type LootItem = {
   foodGain?: number;
   battery?: number;     // charges flashlight by N% when used
   givesFlashlight?: boolean; // gives flashlight if you didn't have one
+  noise?: number;       // throwable distraction toy — duration in ms zombies are lured
 };
 
 export type SearchSpot = {
@@ -45,6 +46,12 @@ export type Obstacle = {
   kind: "glass";
 };
 
+export type HideSpot = {
+  id: string;
+  x: number;
+  kind: "locker";
+};
+
 export type Level = {
   id: number;
   name: string;
@@ -53,6 +60,7 @@ export type Level = {
   classrooms: Classroom[];
   zombies: Zombie[];
   obstacles?: Obstacle[];
+  hideSpots?: HideSpot[];
 };
 
 export const FLOOR_Y = 410;
@@ -73,6 +81,11 @@ const BOOK:      LootItem = { name: "Textbook", emoji: "📕", strengthGain: 1 }
 const ACID:      LootItem = { name: "Acid", emoji: "🧪", strengthGain: 2 };
 const MOP:       LootItem = { name: "Mop", emoji: "🧹", strengthGain: 1 };
 
+// Throwable noise toys — lure zombies when thrown (press T)
+const PLUSH:     LootItem = { name: "Plush Bunny", emoji: "🐰", noise: 4000 };
+const MUSIC_BOX: LootItem = { name: "Music Box", emoji: "🎵", noise: 6500 };
+const BELL:      LootItem = { name: "Bell", emoji: "🔔", noise: 3000 };
+
 export const levels: Level[] = [
   {
     id: 1,
@@ -84,25 +97,25 @@ export const levels: Level[] = [
         { id: "s1", where: "desk", x: 200, item: SANDWICH },
         { id: "s2", where: "underDesk", x: 380, item: BATTERY_S },
         { id: "s3", where: "shelf", x: 560, item: BOOK },
-        { id: "s4", where: "drawer", x: 680 },
+        { id: "s4", where: "drawer", x: 680, item: PLUSH },
       ]},
       { id: "l1-18", x: 750, name: "Math Room #18", loot: APTECHKA, spots: [
         { id: "s1", where: "shelf", x: 180, item: APTECHKA },
         { id: "s2", where: "desk", x: 360, item: BOOK },
         { id: "s3", where: "underDesk", x: 540, item: BATTERY_S },
-        { id: "s4", where: "trash", x: 700 },
+        { id: "s4", where: "trash", x: 700, item: BELL },
       ]},
       { id: "l1-7", x: 1450, name: "Literature Room", loot: ENERGY, spots: [
         { id: "s1", where: "desk", x: 200, item: ENERGY },
         { id: "s2", where: "desk", x: 380, item: BOOK },
         { id: "s3", where: "underDesk", x: 560, item: FLASHLIGHT },
-        { id: "s4", where: "drawer", x: 700, item: BATTERY_M },
+        { id: "s4", where: "drawer", x: 700, item: MUSIC_BOX },
       ]},
       { id: "l1-bio", x: 2150, name: "Biology Room", loot: MOP, spots: [
         { id: "s1", where: "shelf", x: 180, item: MOP },
         { id: "s2", where: "underDesk", x: 380, item: BANDAGE },
         { id: "s3", where: "desk", x: 560, item: BATTERY_S },
-        { id: "s4", where: "trash", x: 700, item: CHOCO },
+        { id: "s4", where: "trash", x: 700, item: PLUSH },
       ]},
     ],
     zombies: [
@@ -118,6 +131,12 @@ export const levels: Level[] = [
       { id: "l1-g2", x: 1350, kind: "glass" },
       { id: "l1-g3", x: 1950, kind: "glass" },
       { id: "l1-g4", x: 2650, kind: "glass" },
+    ],
+    hideSpots: [
+      { id: "l1-h1", x: 600, kind: "locker" },
+      { id: "l1-h2", x: 1250, kind: "locker" },
+      { id: "l1-h3", x: 1900, kind: "locker" },
+      { id: "l1-h4", x: 2350, kind: "locker" },
     ],
   },
   {
@@ -173,6 +192,13 @@ export const levels: Level[] = [
       { id: "l2-g4", x: 2550, kind: "glass" },
       { id: "l2-g5", x: 3050, kind: "glass" },
     ],
+    hideSpots: [
+      { id: "l2-h1", x: 500, kind: "locker" },
+      { id: "l2-h2", x: 1150, kind: "locker" },
+      { id: "l2-h3", x: 1700, kind: "locker" },
+      { id: "l2-h4", x: 2350, kind: "locker" },
+      { id: "l2-h5", x: 2850, kind: "locker" },
+    ],
   },
   {
     id: 3,
@@ -224,6 +250,12 @@ export const levels: Level[] = [
       { id: "l3a-g2", x: 1350, kind: "glass" },
       { id: "l3a-g3", x: 2000, kind: "glass" },
       { id: "l3a-g4", x: 2650, kind: "glass" },
+    ],
+    hideSpots: [
+      { id: "l3a-h1", x: 650, kind: "locker" },
+      { id: "l3a-h2", x: 1200, kind: "locker" },
+      { id: "l3a-h3", x: 1900, kind: "locker" },
+      { id: "l3a-h4", x: 2400, kind: "locker" },
     ],
   },
   {
@@ -279,6 +311,13 @@ export const levels: Level[] = [
       { id: "l4-g4", x: 2700, kind: "glass" },
       { id: "l4-g5", x: 3100, kind: "glass" },
     ],
+    hideSpots: [
+      { id: "l4-h1", x: 600, kind: "locker" },
+      { id: "l4-h2", x: 1300, kind: "locker" },
+      { id: "l4-h3", x: 1900, kind: "locker" },
+      { id: "l4-h4", x: 2500, kind: "locker" },
+      { id: "l4-h5", x: 3000, kind: "locker" },
+    ],
   },
   {
     id: 5,
@@ -331,6 +370,12 @@ export const levels: Level[] = [
       { id: "l5-g1", x: 800, kind: "glass" },
       { id: "l5-g2", x: 1500, kind: "glass" },
       { id: "l5-g3", x: 2200, kind: "glass" },
+    ],
+    hideSpots: [
+      { id: "l5-h1", x: 700, kind: "locker" },
+      { id: "l5-h2", x: 1400, kind: "locker" },
+      { id: "l5-h3", x: 2050, kind: "locker" },
+      { id: "l5-h4", x: 2700, kind: "locker" },
     ],
   },
 ];
