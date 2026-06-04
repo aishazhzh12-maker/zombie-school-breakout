@@ -1885,7 +1885,7 @@ export default function EscapeGame() {
       // ===== Sleeping zombies: hearing detection =====
       // Сидя на корточках — полностью тихо. Стоя — слышат. Бегом — слышат издалека.
       // Услышали = просыпаются и сразу кусают за огромный урон.
-      if (!isCrouch) {
+      if (!isCrouch && !hidingRef.current) {
         const hearRange = isRun ? 130 : (dx !== 0 ? 75 : 40) - (isNinja ? 10 : 0);
         for (let i = 0; i < zombies.length; i++) {
           const z = zombies[i];
