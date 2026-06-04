@@ -46,6 +46,12 @@ export type Obstacle = {
   kind: "glass";
 };
 
+export type HideSpot = {
+  id: string;
+  x: number;
+  kind: "locker";
+};
+
 export type Level = {
   id: number;
   name: string;
@@ -54,6 +60,7 @@ export type Level = {
   classrooms: Classroom[];
   zombies: Zombie[];
   obstacles?: Obstacle[];
+  hideSpots?: HideSpot[];
 };
 
 export const FLOOR_Y = 410;
