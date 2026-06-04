@@ -1744,11 +1744,13 @@ export default function EscapeGame() {
   const zomPosRef = useRef<Record<string, number>>({});
   const [, setZomTick] = useState(0);
   const tStartRef = useRef(performance.now());
+  const zomHomeRef = useRef<Record<string, number>>({});
   const zx = useCallback((z: Zombie, idx: number) => {
     // Sleeping (and not yet woken) — стоят на месте.
     if (z.sleeping && !wokenRef.current.has(z.id)) return z.x;
+    const home = zomHomeRef.current[z.id] ?? z.x;
     const t = (performance.now() - tStartRef.current) / 1000;
-    return z.x + Math.sin(t * 0.9 + idx * 1.7) * 60;
+    return home + Math.sin(t * 0.9 + idx * 1.7) * 60;
   }, []);
   const killedRef = useRef(killed); killedRef.current = killed;
 
