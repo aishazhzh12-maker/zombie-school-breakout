@@ -1078,17 +1078,20 @@ function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
   );
 }
 
-// Детерминированный квест для класса: определяет, какая точка прячет ключ и биту.
+// Детерминированный квест для класса: определяет, какая точка прячет ключ.
+// Бита спавнится РЕДКО — только в одном классе на этаж (классу с наименьшим x).
 function getClassroomQuest(classroom: Classroom, levelId: number) {
   let h = 0;
   for (let i = 0; i < classroom.id.length; i++) h = (h * 31 + classroom.id.charCodeAt(i)) >>> 0;
   h = (h + levelId * 997) >>> 0;
   const n = classroom.spots.length;
   const keyIdx = h % n;
-  const hasBat = (h % 2) === 0; // 50% шанс найти биту в классе
-  let batIdx = hasBat ? ((h * 7 + 3) % n) : -1;
+  // Бита — только в первом классе уровня (один на этаж)
+  const lvl = levels.find(l => l.id === levelId);
+  const isBatClass = !!lvl && lvl.classrooms[0]?.id === classroom.id;
+  let batIdx = isBatClass ? ((h * 7 + 3) % n) : -1;
   if (batIdx === keyIdx) batIdx = (batIdx + 1) % n;
-  return { keyIdx, batIdx, hasBat };
+  return { keyIdx, batIdx, hasBat: isBatClass };
 }
 
 const KEY_ITEM: LootItem = { name: "Door key", emoji: "🗝", strengthGain: 0 };
