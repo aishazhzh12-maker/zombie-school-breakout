@@ -2710,7 +2710,12 @@ export default function EscapeGame() {
           })}
 
           {/* Lana */}
-          <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 - jumpY, transition: jumpY === 0 ? "top 0.1s" : "none" }}>
+          <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 - jumpY, transition: jumpY === 0 ? "top 0.1s" : "none", opacity: hiding ? 0.15 : 1 }}>
+            {hiding && (
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/85 text-emerald-200 text-[9px] px-2 py-0.5 rounded font-pixel whitespace-nowrap">
+                🚪 Hidden — H to leave
+              </div>
+            )}
             <LanaSpeech side={facing === 1 ? "left" : "right"} />
             <div className={moving ? "lana-walk" : "lana-idle"}
               style={crouching ? { transform: "scaleY(0.7) translateY(18px)", transformOrigin: "50% 100%" } : undefined}>
