@@ -1632,6 +1632,14 @@ export default function EscapeGame() {
   const invRef = useRef(inv); invRef.current = inv;
   const lastBiteRef = useRef(0);
 
+  // ===== Noise lure (thrown toy) — zombies walk to this x =====
+  const [lure, setLure] = useState<{ x: number; until: number; emoji: string } | null>(null);
+  const lureRef = useRef<typeof lure>(null); lureRef.current = lure;
+
+  // ===== Hiding in a locker =====
+  const [hiding, setHiding] = useState<string | null>(null);
+  const hidingRef = useRef<string | null>(null); hidingRef.current = hiding;
+
   // ===== Jump physics + obstacle collisions =====
   const [jumpY, setJumpY] = useState(0);
   const jumpYRef = useRef(0); jumpYRef.current = jumpY;
