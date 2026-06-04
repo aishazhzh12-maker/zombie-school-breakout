@@ -853,16 +853,16 @@ function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string
 // stitched mouth full of jagged teeth, torn fabric body.
 function PixelZombie({ size = 80, facing = -1, hurt = false, boss = false }:
   { size?: number; facing?: 1 | -1; hurt?: boolean; boss?: boolean }) {
-  // Plush body palette — sickly violet/blue for normal, deep blood-red for boss
-  const FUR = boss ? "#3a0a14" : "#5a4470";
-  const FURD = boss ? "#1a0408" : "#3a2a50";
-  const FURL = boss ? "#6a1a24" : "#7a5fa0";
-  const BELLY = boss ? "#2a0408" : "#3a2a4a";
+  // Plush body palette — sickly rotted green for normal zombies, pink Mr Hopp plush for boss
+  const FUR = boss ? "#e89cb4" : "#4a7a38";
+  const FURD = boss ? "#a4607a" : "#2a4a1a";
+  const FURL = boss ? "#f8c0d4" : "#6aa050";
+  const BELLY = boss ? "#d488a4" : "#3a5028";
   const STITCH = "#1a1014";
-  const EYE_W = "#1a1018";     // black button eye
+  const EYE_W = boss ? "#1a0810" : "#0a0a0a";    // black button eye
   const PUPIL = "#ff1818";     // glowing red pupil
   const PUPIL_HOT = "#ffd0d0"; // hot center
-  const TOOTH = boss ? "#cfc8b8" : "#e8e0c8";
+  const TOOTH = boss ? "#f4ecd4" : "#d8d0b4";
   const MOUTH = "#3a0408";
   const W = boss ? 28 : 22;
   const H = boss ? 36 : 28;
