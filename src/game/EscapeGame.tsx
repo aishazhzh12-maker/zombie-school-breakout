@@ -1903,6 +1903,7 @@ export default function EscapeGame() {
       let dx = 0;
       if (keys.current["a"] || keys.current["arrowleft"]) { dx -= 1; setFacing(-1); }
       if (keys.current["d"] || keys.current["arrowright"]) { dx += 1; setFacing(1); }
+      if (dx !== 0 && hidingRef.current) setHiding(null);
       if (dx !== 0) {
         setMoving(true);
         setX(p => {
