@@ -192,6 +192,13 @@ export const levels: Level[] = [
       { id: "l2-g4", x: 2550, kind: "glass" },
       { id: "l2-g5", x: 3050, kind: "glass" },
     ],
+    hideSpots: [
+      { id: "l2-h1", x: 500, kind: "locker" },
+      { id: "l2-h2", x: 1150, kind: "locker" },
+      { id: "l2-h3", x: 1700, kind: "locker" },
+      { id: "l2-h4", x: 2350, kind: "locker" },
+      { id: "l2-h5", x: 2850, kind: "locker" },
+    ],
   },
   {
     id: 3,
