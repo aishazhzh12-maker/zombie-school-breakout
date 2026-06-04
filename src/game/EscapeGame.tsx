@@ -148,6 +148,16 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
     px(1, 8, K); px(2, 8, K); px(3, 5, K);
   }
 
+  // ============ RED BOW on top of head (girl, Ruby-style) ============
+  if (isGirl) {
+    // bow loops
+    px(6, 0, ACC); px(9, 0, ACC);
+    px(5, 0, K); px(10, 0, K);
+    // bow knot
+    px(7, 0, ACC); px(8, 0, ACC);
+    px(7, 1, ACC); px(8, 1, ACC);
+  }
+
   // ============ PURPLE STREAK ============
   if (STREAK) {
     px(6, 2, STREAK);
