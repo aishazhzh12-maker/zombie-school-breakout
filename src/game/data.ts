@@ -81,6 +81,11 @@ const BOOK:      LootItem = { name: "Textbook", emoji: "📕", strengthGain: 1 }
 const ACID:      LootItem = { name: "Acid", emoji: "🧪", strengthGain: 2 };
 const MOP:       LootItem = { name: "Mop", emoji: "🧹", strengthGain: 1 };
 
+// Throwable noise toys — lure zombies when thrown (press T)
+const PLUSH:     LootItem = { name: "Plush Bunny", emoji: "🐰", noise: 4000 };
+const MUSIC_BOX: LootItem = { name: "Music Box", emoji: "🎵", noise: 6500 };
+const BELL:      LootItem = { name: "Bell", emoji: "🔔", noise: 3000 };
+
 export const levels: Level[] = [
   {
     id: 1,
