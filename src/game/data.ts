@@ -39,6 +39,12 @@ export type Zombie = {
   sleeping?: boolean;
 };
 
+export type Obstacle = {
+  id: string;
+  x: number;
+  kind: "glass";
+};
+
 export type Level = {
   id: number;
   name: string;
@@ -46,6 +52,7 @@ export type Level = {
   exitX: number;
   classrooms: Classroom[];
   zombies: Zombie[];
+  obstacles?: Obstacle[];
 };
 
 export const FLOOR_Y = 410;
@@ -106,6 +113,12 @@ export const levels: Level[] = [
       { id: "l1-z5", x: 2050, kind: "trash", name: "Sleeping Teacher", sleeping: true },
       { id: "l1-z6", x: 2450, kind: "trash", name: "Zombie Teacher" },
     ],
+    obstacles: [
+      { id: "l1-g1", x: 700, kind: "glass" },
+      { id: "l1-g2", x: 1350, kind: "glass" },
+      { id: "l1-g3", x: 1950, kind: "glass" },
+      { id: "l1-g4", x: 2650, kind: "glass" },
+    ],
   },
   {
     id: 2,
@@ -139,7 +152,7 @@ export const levels: Level[] = [
       ]},
       { id: "l2-gym", x: 2700, name: "Gym", loot: PROTEIN, spots: [
         { id: "s1", where: "shelf", x: 180, item: PROTEIN },
-        { id: "s2", where: "desk", x: 360, item: { name: "Bat", emoji: "🏏", strengthGain: 1 } },
+        { id: "s2", where: "desk", x: 360, item: { name: "Whistle", emoji: "📣", strengthGain: 1 } },
         { id: "s3", where: "underDesk", x: 540, item: BATTERY_M },
         { id: "s4", where: "trash", x: 700, item: APTECHKA },
       ]},
@@ -152,6 +165,13 @@ export const levels: Level[] = [
       { id: "l2-z5", x: 2200, kind: "trash", name: "Sleeping Guard", sleeping: true },
       { id: "l2-z6", x: 2400, kind: "aim", name: "Zombie Coach" },
       { id: "l2-z7", x: 2950, kind: "trash", name: "Zombie Janitor" },
+    ],
+    obstacles: [
+      { id: "l2-g1", x: 600, kind: "glass" },
+      { id: "l2-g2", x: 1300, kind: "glass" },
+      { id: "l2-g3", x: 1900, kind: "glass" },
+      { id: "l2-g4", x: 2550, kind: "glass" },
+      { id: "l2-g5", x: 3050, kind: "glass" },
     ],
   },
   {
@@ -198,6 +218,12 @@ export const levels: Level[] = [
       { id: "l3a-z4", x: 1750, kind: "trash", name: "Zombie Geographer" },
       { id: "l3a-z5", x: 2300, kind: "download", name: "Sleeping Historian", sleeping: true },
       { id: "l3a-z6", x: 2550, kind: "switches", name: "Zombie Astronomer" },
+    ],
+    obstacles: [
+      { id: "l3a-g1", x: 750, kind: "glass" },
+      { id: "l3a-g2", x: 1350, kind: "glass" },
+      { id: "l3a-g3", x: 2000, kind: "glass" },
+      { id: "l3a-g4", x: 2650, kind: "glass" },
     ],
   },
   {
@@ -246,6 +272,13 @@ export const levels: Level[] = [
       { id: "l4-z6", x: 2600, kind: "switches", name: "Zombie Manager" },
       { id: "l4-z7", x: 2950, kind: "trash", name: "Zombie Methodologist" },
     ],
+    obstacles: [
+      { id: "l4-g1", x: 700, kind: "glass" },
+      { id: "l4-g2", x: 1400, kind: "glass" },
+      { id: "l4-g3", x: 2000, kind: "glass" },
+      { id: "l4-g4", x: 2700, kind: "glass" },
+      { id: "l4-g5", x: 3100, kind: "glass" },
+    ],
   },
   {
     id: 5,
@@ -293,6 +326,11 @@ export const levels: Level[] = [
       { id: "l3-z6", x: 2500, kind: "switches", name: "Zombie Guard" },
       { id: "l3-z7", x: 2850, kind: "switches", name: "Sleeping Manager", sleeping: true },
       { id: "l3-z8", x: 3100, kind: "download", name: "Zombie Deputy" },
+    ],
+    obstacles: [
+      { id: "l5-g1", x: 800, kind: "glass" },
+      { id: "l5-g2", x: 1500, kind: "glass" },
+      { id: "l5-g3", x: 2200, kind: "glass" },
     ],
   },
 ];

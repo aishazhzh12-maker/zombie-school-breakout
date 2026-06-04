@@ -80,6 +80,22 @@ export function sfxGrowl() {
   tone({ freq: 85, freqEnd: 40, dur: 0.55, type: "square", gain: 0.14, delay: 0.05 });
   noise(0.5, 0.12, 350);
 }
+// 💥 Земля сотрясается от прыжка босса
+export function sfxBoom() {
+  tone({ freq: 80, freqEnd: 30, dur: 0.5, type: "sine", gain: 0.32 });
+  tone({ freq: 50, freqEnd: 20, dur: 0.7, type: "sawtooth", gain: 0.22, delay: 0.02 });
+  noise(0.6, 0.28, 200);
+}
+// 🏏 Свист биты в воздухе
+export function sfxSwing() {
+  tone({ freq: 700, freqEnd: 200, dur: 0.14, type: "triangle", gain: 0.18 });
+  noise(0.1, 0.12, 1800);
+}
+// ✨ Поднял предмет
+export function sfxPickup() {
+  tone({ freq: 660, freqEnd: 990, dur: 0.12, type: "triangle", gain: 0.18 });
+  tone({ freq: 880, freqEnd: 1320, dur: 0.12, type: "sine", gain: 0.15, delay: 0.08 });
+}
 
 // ===== Background music (two simple looping melodies) =====
 let musicTimer: number | null = null;
