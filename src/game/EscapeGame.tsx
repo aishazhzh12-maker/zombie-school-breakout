@@ -1523,7 +1523,7 @@ export default function EscapeGame() {
         setJumpY(ny);
       }
       // obstacle damage — glass
-      const obs = cur.obstacles ?? [];
+      const obs = levels[level]?.obstacles ?? [];
       const now = performance.now();
       if (jumpYRef.current < 18 && now - lastGlassRef.current > 900) {
         for (const o of obs) {
