@@ -1832,6 +1832,23 @@ export default function EscapeGame() {
     if (!started || modal.kind !== "none") { setMoving(false); return; }
     let raf = 0;
     const tick = () => {
+      // Lure pull — drift each zombie's home toward the lure x while active
+      const lureNow = lureRef.current;
+      if (lureNow && performance.now() < lureNow.until) {
+        for (const z of zombies) {
+          if (killedRef.current.has(z.id)) continue;
+          // wake sleeping zombies — noise reaches them
+          if (z.sleeping) wokenRef.current.add(z.id);
+          const home = zomHomeRef.current[z.id] ?? z.x;
+          const dist = Math.abs(home - lureNow.x);
+          if (dist > 5) {
+            const dir = lureNow.x > home ? 1 : -1;
+            zomHomeRef.current[z.id] = home + dir * Math.min(2.4, dist);
+          }
+        }
+      } else if (lureNow && performance.now() >= lureNow.until) {
+        setLure(null);
+      }
       // Update zombie patrol positions
       const pos: Record<string, number> = {};
       zombies.forEach((z, i) => { pos[z.id] = zx(z, i); });
