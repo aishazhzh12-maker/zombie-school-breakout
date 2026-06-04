@@ -1546,7 +1546,7 @@ export default function EscapeGame() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [started, modal.kind, cur]);
+  }, [started, modal.kind, level]);
 
   // Hunger 0..100. Tick down over time; at 0 starts damaging HP.
   const MAX_HUNGER = 100;
