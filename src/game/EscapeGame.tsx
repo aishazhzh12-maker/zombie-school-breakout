@@ -2624,6 +2624,52 @@ export default function EscapeGame() {
             </div>
           ))}
 
+          {/* Hide spots — lockers along the wall */}
+          {(cur.hideSpots ?? []).map(s => {
+            const near = Math.abs(s.x - x) < REACH;
+            const inUse = hiding === s.id;
+            return (
+              <div key={s.id} className="absolute" style={{ left: s.x - 22, top: FLOOR_Y - 130 }}>
+                <div className="relative" style={{ width: 44, height: 130 }}>
+                  {/* locker body */}
+                  <div className="absolute inset-0 border-2 border-zinc-900"
+                    style={{ background: "linear-gradient(180deg,#4a5a4a,#2a3a2a)", boxShadow: "inset -3px -3px 0 #1a2218, inset 3px 3px 0 #6a7a68" }} />
+                  {/* slats */}
+                  <div className="absolute left-1 right-1 top-3 h-1 bg-black/50" />
+                  <div className="absolute left-1 right-1 top-6 h-1 bg-black/50" />
+                  <div className="absolute left-1 right-1 top-9 h-1 bg-black/50" />
+                  {/* handle */}
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2 w-1 h-3 bg-amber-400" />
+                  {/* door split */}
+                  <div className="absolute left-1/2 top-0 bottom-0 w-px bg-black/70" />
+                  {inUse && (
+                    <div className="absolute inset-0 flex items-center justify-center text-[18px]">👁️</div>
+                  )}
+                  {near && !inUse && (
+                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black/80 text-emerald-200 text-[9px] px-1 rounded font-pixel whitespace-nowrap">
+                      [H] Hide
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Thrown toy lure marker */}
+          {lure && (
+            <div className="absolute" style={{ left: lure.x - 14, top: FLOOR_Y - 20, width: 28, height: 28 }}>
+              <div className="relative w-full h-full flex items-center justify-center text-[22px] animate-pulse"
+                style={{ filter: "drop-shadow(0 0 6px #ffd23a)" }}>
+                {lure.emoji}
+              </div>
+              {/* sound rings */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-amber-300/70 animate-ping" style={{ width: 60, height: 60 }} />
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-[8px] font-pixel text-amber-200">♪ ♫ ♪</div>
+            </div>
+          )}
+
+
+
           {/* Zombies */}
           {zombies.map((z, i) => {
             if (killed.has(z.id)) {
