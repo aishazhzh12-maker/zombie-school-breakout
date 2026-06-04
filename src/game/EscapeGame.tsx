@@ -32,7 +32,7 @@ type Modal =
   | { kind: "backpack" }
   | { kind: "boss" };
 
-type InvItem = { id: string; name: string; emoji: string; hp: number; food: number; strength: number; battery?: number; givesFlashlight?: boolean };
+type InvItem = { id: string; name: string; emoji: string; hp: number; food: number; strength: number; battery?: number; givesFlashlight?: boolean; noise?: number };
 
 
 // ---- helpers ----
