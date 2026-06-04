@@ -349,15 +349,15 @@ function LanaSpeech({ side = "right" }: { side?: "left" | "right" }) {
 
 
 // Palettes
+// Ruby-style (Mr Hopp's Playhouse): pale skin, red hair, pink dress, red bow
 const PAL_LANA: PixelPalette = {
-  skin: "#f0c8a4", skinShade: "#c08a68",
-  hair: "#5a3418", hairShade: "#2a180a",
-  shirt: "#6a3a9a", shirtShade: "#3a1a5a",
-  pants: "#2a1a3a", pantsShade: "#150a1f",
-  shoes: "#1a0a1a",
-  streak: "#c84afe",
-  accent: "#e8a8ff",
-  ponytail: "#5a3418",
+  skin: "#fde0cc", skinShade: "#e0a890",
+  hair: "#d62828", hairShade: "#7a1010",
+  shirt: "#f088b0", shirtShade: "#a04068",
+  pants: "#3a1428", pantsShade: "#1a0814",
+  shoes: "#1a0a14",
+  accent: "#e84545",
+  ponytail: "#d62828",
 };
 const PAL_MILA: PixelPalette = {
   skin: "#f0c098", skinShade: "#c89070",
