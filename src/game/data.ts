@@ -146,7 +146,7 @@ export const levels: Level[] = [
       ]},
       { id: "l2-gym", x: 2700, name: "Gym", loot: PROTEIN, spots: [
         { id: "s1", where: "shelf", x: 180, item: PROTEIN },
-        { id: "s2", where: "desk", x: 360, item: { name: "Bat", emoji: "🏏", strengthGain: 1 } },
+        { id: "s2", where: "desk", x: 360, item: { name: "Whistle", emoji: "📣", strengthGain: 1 } },
         { id: "s3", where: "underDesk", x: 540, item: BATTERY_M },
         { id: "s4", where: "trash", x: 700, item: APTECHKA },
       ]},
