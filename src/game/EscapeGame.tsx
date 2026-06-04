@@ -1913,7 +1913,7 @@ export default function EscapeGame() {
       // Contact damage — patrolling zombie within bite range.
       const biteCD = isRun ? 500 : 800;
       const biteRange = (isCrouch ? 22 : (isRun ? 48 : 32)) - (isNinja ? 6 : 0);
-      if (nowT - lastBiteRef.current > biteCD) {
+      if (nowT - lastBiteRef.current > biteCD && !hidingRef.current) {
         for (let i = 0; i < zombies.length; i++) {
           const z = zombies[i];
           if (killedRef.current.has(z.id)) continue;
