@@ -11,6 +11,7 @@ export type LootItem = {
   foodGain?: number;
   battery?: number;     // charges flashlight by N% when used
   givesFlashlight?: boolean; // gives flashlight if you didn't have one
+  noise?: number;       // throwable distraction toy — duration in ms zombies are lured
 };
 
 export type SearchSpot = {
