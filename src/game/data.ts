@@ -97,25 +97,25 @@ export const levels: Level[] = [
         { id: "s1", where: "desk", x: 200, item: SANDWICH },
         { id: "s2", where: "underDesk", x: 380, item: BATTERY_S },
         { id: "s3", where: "shelf", x: 560, item: BOOK },
-        { id: "s4", where: "drawer", x: 680 },
+        { id: "s4", where: "drawer", x: 680, item: PLUSH },
       ]},
       { id: "l1-18", x: 750, name: "Math Room #18", loot: APTECHKA, spots: [
         { id: "s1", where: "shelf", x: 180, item: APTECHKA },
         { id: "s2", where: "desk", x: 360, item: BOOK },
         { id: "s3", where: "underDesk", x: 540, item: BATTERY_S },
-        { id: "s4", where: "trash", x: 700 },
+        { id: "s4", where: "trash", x: 700, item: BELL },
       ]},
       { id: "l1-7", x: 1450, name: "Literature Room", loot: ENERGY, spots: [
         { id: "s1", where: "desk", x: 200, item: ENERGY },
         { id: "s2", where: "desk", x: 380, item: BOOK },
         { id: "s3", where: "underDesk", x: 560, item: FLASHLIGHT },
-        { id: "s4", where: "drawer", x: 700, item: BATTERY_M },
+        { id: "s4", where: "drawer", x: 700, item: MUSIC_BOX },
       ]},
       { id: "l1-bio", x: 2150, name: "Biology Room", loot: MOP, spots: [
         { id: "s1", where: "shelf", x: 180, item: MOP },
         { id: "s2", where: "underDesk", x: 380, item: BANDAGE },
         { id: "s3", where: "desk", x: 560, item: BATTERY_S },
-        { id: "s4", where: "trash", x: 700, item: CHOCO },
+        { id: "s4", where: "trash", x: 700, item: PLUSH },
       ]},
     ],
     zombies: [
@@ -131,6 +131,12 @@ export const levels: Level[] = [
       { id: "l1-g2", x: 1350, kind: "glass" },
       { id: "l1-g3", x: 1950, kind: "glass" },
       { id: "l1-g4", x: 2650, kind: "glass" },
+    ],
+    hideSpots: [
+      { id: "l1-h1", x: 600, kind: "locker" },
+      { id: "l1-h2", x: 1250, kind: "locker" },
+      { id: "l1-h3", x: 1900, kind: "locker" },
+      { id: "l1-h4", x: 2350, kind: "locker" },
     ],
   },
   {
