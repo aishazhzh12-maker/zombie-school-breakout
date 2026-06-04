@@ -39,6 +39,12 @@ export type Zombie = {
   sleeping?: boolean;
 };
 
+export type Obstacle = {
+  id: string;
+  x: number;
+  kind: "glass";
+};
+
 export type Level = {
   id: number;
   name: string;
@@ -46,6 +52,7 @@ export type Level = {
   exitX: number;
   classrooms: Classroom[];
   zombies: Zombie[];
+  obstacles?: Obstacle[];
 };
 
 export const FLOOR_Y = 410;
