@@ -2284,6 +2284,9 @@ export default function EscapeGame() {
                 <p>🎒 <b>B</b> — backpack / use items</p>
                 <p>⚡ <b>E</b> / <b>Enter</b> — interact</p>
                 <p>🏏 <b>G</b> — bat · 🔫 <b>F</b> — pistol</p>
+                <p>🐰 <b>T</b> — throw a toy (lures zombies to the sound)</p>
+                <p>🚪 <b>H</b> — hide in a locker (silent &amp; invisible)</p>
+                <p>🆙 <b>Space</b> — jump over glass shards</p>
                 <p>🍴 Don't forget to eat — hunger drains HP</p>
                 <p>😴 Sleeping zombies will bite if they hear you</p>
                 <p>🌑 Floors 2–3 are dark — you need a flashlight</p>
