@@ -2407,6 +2407,19 @@ export default function EscapeGame() {
             </div>
           </div>
 
+          {/* Glass shard obstacles */}
+          {(cur.obstacles ?? []).map(o => (
+            <div key={o.id} className="absolute pointer-events-none" style={{ left: o.x - 22, top: FLOOR_Y + 4, width: 44, height: 22 }}>
+              <svg viewBox="0 0 44 22" width={44} height={22}>
+                <polygon points="2,20 10,4 14,20" fill="#c8e8f0" stroke="#fff" strokeWidth="0.5" opacity="0.9" />
+                <polygon points="14,20 22,2 28,20" fill="#a8d8e8" stroke="#fff" strokeWidth="0.5" opacity="0.85" />
+                <polygon points="28,20 36,6 42,20" fill="#c8e8f0" stroke="#fff" strokeWidth="0.5" opacity="0.9" />
+                <polygon points="6,20 8,12 11,20" fill="#fff" opacity="0.5" />
+              </svg>
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-pixel text-cyan-200 animate-pulse">⚠ glass</div>
+            </div>
+          ))}
+
           {/* Zombies */}
           {zombies.map((z, i) => {
             if (killed.has(z.id)) {
