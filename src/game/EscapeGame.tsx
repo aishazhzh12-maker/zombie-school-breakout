@@ -1808,6 +1808,44 @@ export default function EscapeGame() {
         return;
       }
       if (k === "b") { setModal({ kind: "backpack" }); return; }
+      // T — throw nearest noise toy from backpack to lure zombies
+      if (k === "t" || k === "е") {
+        const list = invRef.current;
+        const toyIdx = list.findIndex(it => it.noise && it.noise > 0);
+        if (toyIdx === -1) {
+          setToast("🐰 No toys to throw. Find a plush, music box, or bell.");
+          setTimeout(() => setToast(""), 1500);
+          return;
+        }
+        const toy = list[toyIdx];
+        setInv(p => p.filter((_, i) => i !== toyIdx));
+        const throwX = clamp(px + (facing === 1 ? 220 : -220), 80, WORLD_W - 80);
+        sfxPickup();
+        setLure({ x: throwX, until: performance.now() + (toy.noise ?? 4000), emoji: toy.emoji });
+        setToast(`${toy.emoji} Thrown! Zombies follow the sound…`);
+        setTimeout(() => setToast(""), 1500);
+        return;
+      }
+      // H — hide / unhide in nearest locker
+      if (k === "h" || k === "р") {
+        if (hidingRef.current) {
+          setHiding(null);
+          setToast("🚪 Stepped out of the locker");
+          setTimeout(() => setToast(""), 1200);
+          return;
+        }
+        const spot = (cur.hideSpots ?? []).find(s => Math.abs(s.x - px) < REACH);
+        if (spot) {
+          setHiding(spot.id);
+          sfxPickup();
+          setToast("🚪 Hidden in the locker. Hold quiet… (H to leave)");
+          setTimeout(() => setToast(""), 1800);
+        } else {
+          setToast("No locker nearby");
+          setTimeout(() => setToast(""), 1000);
+        }
+        return;
+      }
       if (k !== "e" && e.key !== "Enter") return;
       // nearest zombie
       const z = zombies.find((zz, i) => !killed.has(zz.id) && Math.abs(zx(zz, i) - px) < REACH);
