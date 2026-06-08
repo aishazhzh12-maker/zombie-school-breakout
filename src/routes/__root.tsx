@@ -10,7 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reportClientError } from "../lib/error-reporting";
 
 function NotFoundComponent() {
   return (
@@ -38,7 +38,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    reportClientError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
   return (
@@ -79,12 +79,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "зомби школа" },
       { name: "description", content: "Главная героиня заперта в школе помоги ей выбраться." },
-      { name: "author", content: "Lovable" },
+      { name: "author", content: "aishazhzh12-maker" },
       { property: "og:title", content: "зомби школа" },
       { property: "og:description", content: "Главная героиня заперта в школе помоги ей выбраться." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "зомби школа" },
       { name: "twitter:description", content: "Главная героиня заперта в школе помоги ей выбраться." },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3188cd14-acfb-4d70-8fa3-dc37e995719e" },
