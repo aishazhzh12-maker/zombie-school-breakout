@@ -21,6 +21,7 @@ dist-ssr
 *.local
 VERCEL_ENV_IMPORT.local.env
 VERCEL_ENV_VALUES.local.md
+supabase/.temp/
 
 # Wrangler / Cloudflare
 .wrangler/
