@@ -1,7 +1,6 @@
 @import "tailwindcss" source(none);
-@source "../src";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&family=Press+Start+2P&family=VT323&display=swap');
+@source "../src";
 
 @custom-variant dark (&:is(.dark *));
 
