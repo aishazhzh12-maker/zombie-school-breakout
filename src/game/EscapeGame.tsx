@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +13,7 @@ import {
   HelpCircle, Target,
   X, Skull, Heart, DoorClosed, ArrowUp,
   Lightbulb, Coins, Shirt, ShoppingBag, Crosshair, Swords, Flashlight, Volume2, VolumeX,
-  Backpack, Utensils, ArrowDown, BatteryFull, BatteryLow, Trophy,
+  Backpack, Utensils, ArrowDown, BatteryFull, BatteryLow, Trophy, LogIn,
 } from "lucide-react";
 import { Leaderboard, submitScore } from "./Leaderboard";
 
@@ -2270,6 +2271,12 @@ export default function EscapeGame() {
                 <t.icon className="h-4 w-4" /> {t.label}
               </button>
             ))}
+            <Link
+              to="/login"
+              className="px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border bg-black/40 border-zinc-700 text-zinc-300 hover:bg-black/60 hover:text-zinc-100"
+            >
+              <LogIn className="h-4 w-4" /> Login
+            </Link>
           </div>
 
           {menuTab === "play" && (
