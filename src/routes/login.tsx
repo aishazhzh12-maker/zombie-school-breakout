@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowLeft, Loader2, LogIn, LogOut, UserPlus } from "lucide-react";
 
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/login")({
 type Mode = "login" | "signup";
 
 function LoginPage() {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -76,6 +77,7 @@ function LoginPage() {
     }
 
     setMessage(mode === "login" ? "Signed in successfully." : "Account created.");
+    await navigate({ to: "/" });
   }
 
   async function handleSignOut() {
