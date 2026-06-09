@@ -13,9 +13,10 @@ import {
   HelpCircle, Target,
   X, Skull, Heart, DoorClosed, ArrowUp,
   Lightbulb, Coins, Shirt, ShoppingBag, Crosshair, Swords, Flashlight, Volume2, VolumeX,
-  Backpack, Utensils, ArrowDown, BatteryFull, BatteryLow, Trophy, LogIn,
+  Backpack, Utensils, ArrowDown, BatteryFull, BatteryLow, Trophy, LogIn, LogOut,
 } from "lucide-react";
 import { Leaderboard, submitScore } from "./Leaderboard";
+import { supabase } from "@/integrations/supabase/client";
 
 
 
@@ -1598,6 +1599,32 @@ export default function EscapeGame() {
 
   const [started, setStarted] = useState(false);
   const [musicOff, setMusicOff] = useState(false);
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!alive) return;
+      setAuthEmail(data.session?.user.email ?? null);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthEmail(session?.user.email ?? null);
+    });
+
+    return () => {
+      alive = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function signOutPlayer() {
+    setSigningOut(true);
+    await supabase.auth.signOut();
+    setSigningOut(false);
+  }
 
   // Background music: menu vs game. Needs a user gesture to start AudioContext.
   useEffect(() => {
@@ -2256,6 +2283,11 @@ export default function EscapeGame() {
               {musicOff ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
               {musicOff ? "Music off" : "Music on"}
             </button>
+            {authEmail && (
+              <div className="max-w-[220px] truncate px-3 py-1 bg-emerald-950/50 border border-emerald-700 rounded font-pixel text-emerald-200">
+                {authEmail}
+              </div>
+            )}
           </div>
 
 
@@ -2271,12 +2303,23 @@ export default function EscapeGame() {
                 <t.icon className="h-4 w-4" /> {t.label}
               </button>
             ))}
-            <Link
-              to="/login"
-              className="px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border bg-black/40 border-zinc-700 text-zinc-300 hover:bg-black/60 hover:text-zinc-100"
-            >
-              <LogIn className="h-4 w-4" /> Login
-            </Link>
+            {authEmail ? (
+              <button
+                type="button"
+                onClick={signOutPlayer}
+                disabled={signingOut}
+                className="px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border bg-black/40 border-zinc-700 text-zinc-300 hover:bg-black/60 hover:text-zinc-100 disabled:opacity-60"
+              >
+                <LogOut className="h-4 w-4" /> {signingOut ? "Signing out" : "Sign out"}
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border bg-black/40 border-zinc-700 text-zinc-300 hover:bg-black/60 hover:text-zinc-100"
+              >
+                <LogIn className="h-4 w-4" /> Login
+              </Link>
+            )}
           </div>
 
           {menuTab === "play" && (
