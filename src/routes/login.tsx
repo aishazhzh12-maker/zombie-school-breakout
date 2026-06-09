@@ -29,16 +29,52 @@ function LoginPage() {
   const [currentEmail, setCurrentEmail] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
 
+  const authRedirectTo =
+    typeof window !== "undefined" ? `${window.location.origin}/login` : undefined;
+
   useEffect(() => {
     let alive = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!alive) return;
+    async function finishAuthRedirect() {
+      if (typeof window === "undefined") return false;
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (!accessToken || !refreshToken) return false;
+
+      const { data, error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+
+      if (sessionError) {
+        if (!alive) return true;
+        setError(sessionError.message);
+        setCheckingSession(false);
+        return true;
+      }
+
+      if (!alive) return true;
       setCurrentEmail(data.session?.user.email ?? null);
       setCheckingSession(false);
+      await navigate({ to: "/" });
+      return true;
+    }
+
+    finishAuthRedirect().then((handledRedirect) => {
+      if (handledRedirect) return;
+      return supabase.auth.getSession().then(({ data }) => {
+        if (!alive) return;
+        setCurrentEmail(data.session?.user.email ?? null);
+        setCheckingSession(false);
+      });
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!alive) return;
       setCurrentEmail(session?.user.email ?? null);
     });
 
@@ -46,7 +82,7 @@ function LoginPage() {
       alive = false;
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -62,7 +98,12 @@ function LoginPage() {
     const result =
       mode === "login"
         ? await supabase.auth.signInWithPassword(credentials)
-        : await supabase.auth.signUp(credentials);
+        : await supabase.auth.signUp({
+            ...credentials,
+            options: {
+              emailRedirectTo: authRedirectTo,
+            },
+          });
 
     setLoading(false);
 
@@ -85,13 +126,10 @@ function LoginPage() {
     setError("");
     setMessage("");
 
-    const redirectTo =
-      typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
-
     const { error: googleError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo,
+        redirectTo: authRedirectTo,
       },
     });
 
