@@ -2734,8 +2734,11 @@ export default function EscapeGame() {
         return next;
       };
 
-      if (monsterKind === "bear") return moveHome(playerX, 0.58 + level * 0.08);
+      // Running near any monster = instantly heard, full chase
+      const alertedByRun = runningRef.current && Math.abs(playerX - home) < 280 && !hidingRef.current;
+      if (monsterKind === "bear") return moveHome(playerX, (alertedByRun ? 1.6 : 0.58) + level * 0.08);
       if (monsterKind === "porcelain") {
+        if (alertedByRun) return moveHome(playerX, 2.4 + level * 0.18);
         const phase = (t + idx * 0.73) % 6.2;
         if (phase < 1.25) return clamp(playerX + (idx % 2 ? 170 : -170), 90, WORLD_W - 90);
         if (phase > 5.25) return clamp(playerX + (idx % 2 ? -90 : 90), 90, WORLD_W - 90);
@@ -2743,11 +2746,11 @@ export default function EscapeGame() {
       }
       if (monsterKind === "monkey") {
         const hearsNoise = !!lureNow && performance.now() < lureNow.until;
-        if (runningRef.current || hearsNoise) return moveHome(hearsNoise ? lureNow.x : playerX, 3.2 + level * 0.18);
+        if (alertedByRun || hearsNoise) return moveHome(hearsNoise ? lureNow.x : playerX, 3.2 + level * 0.18);
         return home + Math.sin(t * 1.7 + idx * 2.4) * 42;
       }
       if (monsterKind === "clown") {
-        if (Math.abs(playerX - home) < 440 && !hidingRef.current) return moveHome(playerX, 2.65 + level * 0.22);
+        if ((alertedByRun || Math.abs(playerX - home) < 440) && !hidingRef.current) return moveHome(playerX, (alertedByRun ? 3.4 : 2.65) + level * 0.22);
         return home + Math.sin(t * 1.35 + idx * 1.7) * 92;
       }
       return home + Math.sin(t * 0.9 + idx * 1.7) * 60;
