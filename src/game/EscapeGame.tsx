@@ -1511,11 +1511,11 @@ function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string
 }
 
 function monsterBehaviorLabel(kind: ToyMonsterKind) {
-  if (kind === "bear") return "slow stalker";
-  if (kind === "porcelain") return "vanishes";
-  if (kind === "monkey") return "hears noise";
-  if (kind === "clown") return "chases";
-  return "wanders";
+  if (kind === "bear") return "plush rabbit — slow stalker";
+  if (kind === "porcelain") return "crawling doll — vanishes";
+  if (kind === "monkey") return "music doll — hears noise";
+  if (kind === "clown") return "marionette — chases";
+  return "crawler — wanders";
 }
 
 function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }:
@@ -1530,7 +1530,7 @@ function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }
       : "drop-shadow(0 5px 4px rgba(0,0,0,0.55))";
 
   const colors = {
-    bear: { a: "#6b4932", b: "#3a2419", c: "#a06c48", e: "#050303" },
+    bear: { a: "#c47a90", b: "#5b1a2a", c: "#e0a5b6", e: "#ff1a1a" },
     porcelain: { a: "#e8dfd4", b: "#9b8790", c: "#5e2938", e: "#2b050b" },
     monkey: { a: "#7b4b24", b: "#3a2112", c: "#c49a52", e: "#ff2323" },
     clown: { a: "#f2eee3", b: "#9a1f32", c: "#25528f", e: "#111111" },
@@ -1549,28 +1549,41 @@ function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }
       <ellipse cx={W / 2} cy={H - 0.5} rx={W / 2.5} ry="0.8" fill="#000" opacity="0.48" />
       {kind === "bear" && (
         <>
-          <rect x="5" y="6" width="6" height="6" fill={colors.b} />
-          <rect x="17" y="6" width="6" height="6" fill={colors.b} />
-          <rect x="4" y="10" width="20" height="15" fill={colors.a} />
-          <rect x="7" y="12" width="5" height="5" fill={colors.e} />
-          <rect x="16" y="12" width="5" height="5" fill={colors.e} />
-          <rect x="11" y="17" width="6" height="4" fill={colors.c} />
-          <rect x="13" y="18" width="2" height="1" fill="#160807" />
-          <rect x="8" y="25" width="12" height="7" fill={colors.a} />
-          <rect x="11" y="26" width="6" height="5" fill={colors.c} />
-          <rect x="3" y="25" width="5" height="8" fill={colors.b} />
-          <rect x="20" y="25" width="5" height="8" fill={colors.b} />
-          <rect x="7" y="32" width="5" height="2" fill={colors.b} />
-          <rect x="16" y="32" width="5" height="2" fill={colors.b} />
-          <rect x="6" y="19" width="3" height="1" fill="#171010" />
-          <rect x="18" y="20" width="3" height="1" fill="#171010" />
-          <rect x="12" y="21" width="3" height="3" fill={red} />
-          <rect x="10" y="22" width="8" height="2" fill="#351018" />
-          <rect x="5" y="14" width="2" height="1" fill="#d0a36c" opacity="0.8" />
-          <rect x="18" y="11" width="1" height="2" fill="#d0a36c" opacity="0.7" />
+          {/* Long plush rabbit ears */}
+          <rect x="6" y="0" width="3" height="11" fill={colors.a} />
+          <rect x="7" y="1" width="1" height="8" fill="#f0c2cf" />
+          <rect x="19" y="0" width="3" height="11" fill={colors.a} />
+          <rect x="20" y="1" width="1" height="8" fill="#f0c2cf" />
+          {/* Stitched seam on left ear (torn) */}
+          <rect x="6" y="4" width="1" height="1" fill={colors.b} />
+          <rect x="6" y="6" width="1" height="1" fill={colors.b} />
+          {/* Head */}
+          <rect x="4" y="9" width="20" height="14" fill={colors.a} />
+          {/* Big black button eyes with red pinpoint pupils */}
+          <rect x="7" y="12" width="5" height="5" fill="#050303" />
+          <rect x="16" y="12" width="5" height="5" fill="#050303" />
+          <rect x="9" y="14" width="1" height="1" fill={colors.e} />
+          <rect x="18" y="14" width="1" height="1" fill={colors.e} />
+          {/* Stitched cross mouth, bloodied */}
+          <rect x="11" y="19" width="8" height="1" fill="#1a0306" />
+          <rect x="12" y="20" width="1" height="1" fill={red} />
+          <rect x="15" y="20" width="1" height="1" fill={red} />
+          <rect x="17" y="20" width="1" height="1" fill={red} />
+          {/* Body */}
+          <rect x="6" y="23" width="16" height="9" fill={colors.a} />
+          <rect x="11" y="24" width="6" height="6" fill={colors.c} />
+          {/* Ragged arms */}
+          <rect x="2" y="24" width="5" height="7" fill={colors.b} />
+          <rect x="21" y="24" width="5" height="7" fill={colors.b} />
+          <rect x="1" y="29" width="2" height="2" fill={colors.a} />
+          <rect x="25" y="29" width="2" height="2" fill={colors.a} />
+          {/* Feet */}
+          <rect x="7" y="32" width="6" height="2" fill={colors.b} />
+          <rect x="15" y="32" width="6" height="2" fill={colors.b} />
+          {/* Grime / blood stains */}
           <rect x="12" y="28" width="1" height="3" fill={grime} opacity="0.7" />
           <rect x="17" y="27" width="3" height="1" fill={grime} opacity="0.75" />
-          <rect x="6" y="27" width="1" height="2" fill="#0a0504" />
+          <rect x="5" y="22" width="2" height="1" fill={red} opacity="0.6" />
         </>
       )}
       {kind === "porcelain" && (
