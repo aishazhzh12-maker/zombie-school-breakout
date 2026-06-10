@@ -3291,9 +3291,13 @@ export default function EscapeGame() {
 
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-red-950 p-4 overflow-auto">
-        <div className="max-w-6xl w-full space-y-4">
-          <ScaryMenuScene />
-          <CharacterDesignBoard />
+        <div className="max-w-2xl w-full space-y-3">
+          <div className="text-center py-4 border border-red-900/50 rounded bg-black/50">
+            <h1 className="font-display text-2xl md:text-3xl tracking-widest text-red-500" style={{ textShadow: "0 0 16px rgba(216,34,30,0.45), 0 2px 0 #1a0000" }}>
+              WELCOME BACK TO SCHOOL
+            </h1>
+            <p className="font-pixel text-xs text-zinc-400 mt-1 tracking-[0.3em]">they never stopped playing…</p>
+          </div>
           <div className="flex items-center justify-center gap-2">
             <div className="px-3 py-1 bg-amber-900/40 border border-amber-700 rounded font-pixel text-amber-200 flex items-center gap-2">
               <Coins className="h-4 w-4" /> {coins} coins
