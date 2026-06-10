@@ -3448,7 +3448,7 @@ export default function EscapeGame() {
                 const equipped = save.outfit === o.id;
                 return (
                   <div key={o.id} className={`p-3 rounded border ${equipped ? "border-primary bg-primary/10" : "border-zinc-700 bg-black/40"} flex flex-col items-center gap-2`}>
-                    <SmoothOutfitPreview palette={o.palette} size={110} />
+                    <PixelTeen kind="lana" size={120} facing={1} palette={o.palette} motion="idle" />
                     <div className="text-xs font-pixel text-center">{o.name}</div>
                     {equipped
                       ? <div className="text-[10px] text-primary font-pixel">EQUIPPED</div>
