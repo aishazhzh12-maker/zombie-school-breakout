@@ -5,6 +5,11 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { fileURLToPath, URL } from "node:url";
+
+const emptyStartPluginAdapters = fileURLToPath(
+  new URL("./node_modules/@tanstack/start-server-core/dist/esm/empty-plugin-adapters.js", import.meta.url),
+);
 
 export default defineConfig({
   tanstackStart: {
@@ -14,5 +19,12 @@ export default defineConfig({
   },
   nitro: {
     preset: "vercel",
+  },
+  vite: {
+    resolve: {
+      alias: {
+        "#tanstack-start-plugin-adapters": emptyStartPluginAdapters,
+      },
+    },
   },
 });
