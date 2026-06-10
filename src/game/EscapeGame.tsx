@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Leaderboard, submitScore } from "./Leaderboard";
 import { supabase } from "@/integrations/supabase/client";
+import { generateAiQuestion, type AiQuestion } from "@/lib/api/ai-questions.functions";
 
 
 
@@ -32,9 +33,46 @@ type Modal =
   | { kind: "win" }
   | { kind: "lose" }
   | { kind: "backpack" }
-  | { kind: "boss" };
+  | { kind: "boss" }
+  | { kind: "story"; title: string; body: string };
 
 type InvItem = { id: string; name: string; emoji: string; hp: number; food: number; strength: number; battery?: number; givesFlashlight?: boolean; noise?: number };
+
+type StoryNote = {
+  id: string;
+  title: string;
+  body: string;
+};
+
+type IntroStory = {
+  title: string;
+  paragraphs: string[];
+  goals: string[];
+};
+
+type IntroFrame = {
+  scene: "black" | "school" | "classroom" | "lana" | "flicker" | "empty" | "monsters";
+  line: string;
+};
+
+type ToyMonsterKind = "bear" | "porcelain" | "monkey" | "clown" | "puppet";
+
+type RescueEvent = {
+  id: "karl" | "dina" | "children";
+  name: string;
+  roomId: string;
+  message: string;
+};
+
+type Checkpoint = {
+  level: number;
+  x: number;
+  label: string;
+  killed: Set<string>;
+  searched: Set<string>;
+  storyNotes: Set<string>;
+  rescued: Set<string>;
+};
 
 
 // ---- helpers ----
@@ -299,6 +337,316 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
   );
 }
 
+type TeenKind = "lana" | "karl" | "dina";
+type TeenMotion = "idle" | "walk" | "run" | "scared";
+
+function PixelTeen({
+  kind = "lana",
+  facing = 1,
+  size = 92,
+  scared = false,
+  motion = scared ? "scared" : "idle",
+  palette,
+}: {
+  kind?: TeenKind;
+  facing?: 1 | -1;
+  size?: number;
+  scared?: boolean;
+  motion?: TeenMotion;
+  palette?: PixelPalette;
+}) {
+  const isLana = kind === "lana";
+  const isKarl = kind === "karl";
+  const isDina = kind === "dina";
+  const skin = palette?.skin ?? (isKarl ? "#e3b48c" : isDina ? "#d8a378" : "#efc09a");
+  const skinShade = palette?.skinShade ?? (isKarl ? "#b77a56" : isDina ? "#9a6548" : "#bf8260");
+  const hair = palette?.hair ?? (isKarl ? "#b9783e" : isDina ? "#171316" : "#2d1b16");
+  const hairHi = palette?.hairShade ?? (isKarl ? "#d79a58" : isDina ? "#2d252c" : "#513026");
+  const blazer = palette?.shirt ?? (isDina ? "#202b3a" : "#2a2634");
+  const blazerDark = palette?.shirtShade ?? "#11101a";
+  const shirt = kind === "lana" ? "#d9d5c8" : palette?.accent ?? "#d9d5c8";
+  const tie = palette?.accent ?? (isKarl ? "#8b1d2c" : isDina ? "#233f6b" : "#5b2030");
+  const skirt = palette?.pants ?? (isDina || kind === "lana" ? "#242338" : "#2b2d36");
+  const skirtShade = palette?.pantsShade ?? "#151420";
+  const shoes = palette?.shoes ?? "#0c0b10";
+  const glasses = isDina ? "#d8e8ff" : "transparent";
+  const outline = "#09080c";
+  const eye = scared ? "#f5efe6" : "#141018";
+  const mouth = scared ? "#4b0a12" : "#6d2b2b";
+  const vbW = 64;
+  const vbH = 96;
+  const renderW = Math.round((size * vbW) / vbH);
+  const frames = Array.from({ length: 10 }, (_, i) => i);
+  const isAnimated = motion !== "idle";
+
+  const frameClass = motion === "run" ? "teen-run-frame" : motion === "scared" ? "teen-scared-frame" : "teen-walk-frame";
+  const cycleMs = motion === "run" ? 540 : motion === "scared" ? 620 : 820;
+
+  const poseFor = (frame: number) => {
+    if (motion === "idle") return { bob: 0, lean: -1, hip: 0, hair: 0, coat: 0, leftLeg: 0, rightLeg: 0, leftArm: 0, rightArm: 0 };
+    if (motion === "scared") {
+      const jitter = [-1, 0, -2, 1, -1, 1, -2, 0, -1, 1][frame];
+      const arm = [0, -1, -2, -1, 0, 1, 0, -1, -2, -1][frame];
+      return { bob: frame % 2 ? -1 : 0, lean: -3 + jitter, hip: jitter, hair: 1 - jitter, coat: jitter, leftLeg: -1, rightLeg: 1, leftArm: -5 + arm, rightArm: -4 - arm };
+    }
+    const walk = motion === "walk";
+    const stride = walk ? [-5, -4, -2, 1, 4, 5, 3, 0, -3, -5] : [-8, -6, -3, 2, 7, 8, 4, 0, -5, -8];
+    const counter = [-stride[frame], -stride[frame] * 0.7];
+    return {
+      bob: [0, -1, -2, -1, 0, -1, -2, -1, 0, 0][frame],
+      lean: walk ? [-1, -1, 0, 1, 2, 1, 0, -1, -2, -1][frame] : [-3, -2, -1, 1, 3, 2, 0, -2, -3, -3][frame],
+      hip: Math.round(stride[frame] * 0.22),
+      hair: Math.round(counter[0] * 0.18),
+      coat: Math.round(counter[0] * 0.15),
+      leftLeg: stride[frame],
+      rightLeg: Math.round(counter[0]),
+      leftArm: Math.round(counter[0] * 0.75),
+      rightArm: Math.round(stride[frame] * 0.75),
+    };
+  };
+
+  const Rect = ({ x, y, w, h, fill, opacity = 1 }: { x: number; y: number; w: number; h: number; fill: string; opacity?: number }) => (
+    <rect x={x} y={y} width={w} height={h} fill={fill} opacity={opacity} shapeRendering="crispEdges" />
+  );
+
+  const renderFrame = (frame: number) => {
+    const p = poseFor(frame);
+    const sx = 4 + p.lean;
+    const sy = p.bob;
+    const scaredPose = motion === "scared";
+    const leftKnee = Math.round(p.leftLeg * 0.45);
+    const rightKnee = Math.round(p.rightLeg * 0.45);
+    const leftFoot = Math.round(p.leftLeg * 0.7);
+    const rightFoot = Math.round(p.rightLeg * 0.7);
+    const headX = sx + (scaredPose ? -1 : 0);
+    const hairSwing = p.hair;
+
+    return (
+      <g key={frame} className={isAnimated ? frameClass : undefined} style={isAnimated ? { animationDelay: `${-(cycleMs / 10) * frame}ms` } : undefined}>
+        <ellipse cx="32" cy="93" rx="18" ry="2" fill="#000" opacity="0.42" />
+
+        {/* back hair and loose strands */}
+        {(isLana || isDina) && (
+          <>
+            <Rect x={headX + 15 + hairSwing} y={18 + sy} w={8} h={isLana ? 15 : 24} fill={outline} />
+            <Rect x={headX + 41 + hairSwing} y={18 + sy} w={8} h={isLana ? 15 : 24} fill={outline} />
+            <Rect x={headX + 16 + hairSwing} y={19 + sy} w={7} h={(isLana ? 18 : 29) + (scaredPose ? 2 : 0)} fill={hair} />
+            <Rect x={headX + 41 + hairSwing} y={19 + sy} w={7} h={(isLana ? 18 : 29) + (scaredPose ? 2 : 0)} fill={hair} />
+            <Rect x={headX + 18 + hairSwing} y={(isLana ? 31 : 43) + sy} w={4} h={isLana ? 5 : 9} fill={hairHi} opacity={0.86} />
+            <Rect x={headX + 42 + hairSwing} y={(isLana ? 31 : 42) + sy} w={4} h={isLana ? 5 : 10} fill={hairHi} opacity={0.72} />
+          </>
+        )}
+
+        {/* legs: long, separated, with frame-by-frame stride */}
+        <Rect x={sx + 20 + p.hip} y={53 + sy} w={9} h={25} fill={outline} />
+        <Rect x={sx + 34 + p.hip} y={53 + sy} w={9} h={25} fill={outline} />
+        <Rect x={sx + 21 + p.hip + leftKnee} y={54 + sy} w={7} h={28} fill={skirt} />
+        <Rect x={sx + 35 + p.hip + rightKnee} y={54 + sy} w={7} h={28} fill={skirt} />
+        <Rect x={sx + 22 + p.hip + leftKnee} y={68 + sy} w={5} h={11} fill={skirtShade} opacity={0.58} />
+        <Rect x={sx + 36 + p.hip + rightKnee} y={68 + sy} w={5} h={11} fill={skirtShade} opacity={0.58} />
+        <Rect x={sx + 17 + p.hip + leftFoot} y={81 + sy} w={13} h={5} fill={outline} />
+        <Rect x={sx + 34 + p.hip + rightFoot} y={81 + sy} w={13} h={5} fill={outline} />
+        <Rect x={sx + 18 + p.hip + leftFoot} y={81 + sy} w={11} h={4} fill={shoes} />
+        <Rect x={sx + 35 + p.hip + rightFoot} y={81 + sy} w={11} h={4} fill={shoes} />
+
+        {/* torso and blazer, narrow realistic teen silhouette */}
+        <Rect x={sx + 20} y={31 + sy} w={24} h={27} fill={outline} />
+        <Rect x={sx + 21} y={32 + sy} w={22} h={25} fill={blazer} />
+        <Rect x={sx + 27} y={32 + sy} w={10} h={23} fill={shirt} />
+        <Rect x={sx + 31} y={34 + sy} w={3} h={14} fill={tie} />
+        <Rect x={sx + 23 + p.coat} y={43 + sy} w={6} h={14} fill={blazerDark} />
+        <Rect x={sx + 36 - p.coat} y={43 + sy} w={6} h={14} fill={blazerDark} />
+        <Rect x={sx + 23} y={57 + sy} w={18} h={4} fill={outline} />
+        {kind === "lana" && <Rect x={sx + 22 + p.coat} y={55 + sy} w={7} h={2} fill="#725041" opacity={0.85} />}
+        {kind === "lana" && (
+          <>
+            <Rect x={sx + 30} y={37 + sy} w={5} h={11} fill="#7d1d2d" />
+            <Rect x={sx + 23} y={58 + sy} w={18} h={4} fill="#17131d" />
+            <Rect x={sx + 22} y={74 + sy} w={5} h={5} fill="#d8d5c8" opacity={0.95} />
+            <Rect x={sx + 36} y={74 + sy} w={5} h={5} fill="#d8d5c8" opacity={0.95} />
+          </>
+        )}
+
+        {/* arms: natural length to upper thigh, opposite the legs */}
+        <Rect x={sx + 14 + p.leftArm} y={33 + sy} w={7} h={24} fill={outline} />
+        <Rect x={sx + 43 + p.rightArm} y={33 + sy} w={7} h={24} fill={outline} />
+        <Rect x={sx + 15 + p.leftArm} y={34 + sy} w={5} h={20} fill={blazer} />
+        <Rect x={sx + 44 + p.rightArm} y={34 + sy} w={5} h={20} fill={blazer} />
+        <Rect x={sx + 15 + p.leftArm} y={53 + sy + (scaredPose ? -4 : 0)} w={5} h={7} fill={skin} />
+        <Rect x={sx + 44 + p.rightArm} y={53 + sy + (scaredPose ? -5 : 0)} w={5} h={7} fill={skin} />
+
+        {/* neck and head */}
+        <Rect x={headX + 29} y={27 + sy} w={7} h={7} fill={outline} />
+        <Rect x={headX + 30} y={27 + sy} w={5} h={7} fill={skin} />
+        <Rect x={headX + 22} y={8 + sy} w={21} h={21} fill={outline} />
+        <Rect x={headX + 23} y={9 + sy} w={19} h={20} fill={skin} />
+        <Rect x={headX + 38} y={13 + sy} w={4} h={14} fill={skinShade} opacity={0.88} />
+
+        {/* hair mass, bangs and highlights */}
+        <Rect x={headX + 21 + hairSwing} y={5 + sy} w={23} h={9} fill={outline} />
+        <Rect x={headX + 22 + hairSwing} y={6 + sy} w={21} h={8} fill={hair} />
+        <Rect x={headX + 20 + hairSwing} y={12 + sy} w={8} h={13} fill={hair} />
+        <Rect x={headX + 37 + hairSwing} y={12 + sy} w={8} h={13} fill={hair} />
+        {isLana && (
+          <>
+            <Rect x={headX + 25 + hairSwing} y={13 + sy} w={4} h={7} fill={hair} />
+            <Rect x={headX + 31 + hairSwing} y={12 + sy} w={4} h={6} fill={hair} />
+            <Rect x={headX + 36 + hairSwing} y={13 + sy} w={3} h={7} fill={hair} />
+          </>
+        )}
+        <Rect x={headX + 25 + hairSwing} y={7 + sy} w={12} h={3} fill={hairHi} opacity={0.88} />
+        <Rect x={headX + 23 + hairSwing} y={14 + sy} w={5} h={2} fill={hairHi} opacity={0.7} />
+        {palette?.cap && (
+          <>
+            <Rect x={headX + 23 + hairSwing} y={5 + sy} w={19} h={5} fill={palette.cap} />
+            <Rect x={headX + 38 + hairSwing} y={9 + sy} w={7} h={3} fill={palette.cap} />
+          </>
+        )}
+
+        {/* face */}
+        <Rect x={headX + 27} y={17 + sy} w={4} h={2} fill={scaredPose ? "#fff7eb" : eye} />
+        <Rect x={headX + 36} y={17 + sy} w={4} h={2} fill={scaredPose ? "#fff7eb" : eye} />
+        {scaredPose && (
+          <>
+            <Rect x={headX + 29} y={17 + sy} w={1} h={2} fill={eye} />
+            <Rect x={headX + 38} y={17 + sy} w={1} h={2} fill={eye} />
+          </>
+        )}
+        {isDina && (
+          <>
+            <rect x={headX + 26} y={16 + sy} width="7" height="5" fill="none" stroke={glasses} strokeWidth="1" shapeRendering="crispEdges" />
+            <rect x={headX + 35} y={16 + sy} width="7" height="5" fill="none" stroke={glasses} strokeWidth="1" shapeRendering="crispEdges" />
+            <Rect x={headX + 33} y={18 + sy} w={2} h={1} fill={glasses} opacity={0.75} />
+          </>
+        )}
+        <Rect x={headX + 33} y={21 + sy} w={2} h={2} fill={skinShade} />
+        <Rect x={headX + 31} y={25 + sy} w={scaredPose ? 6 : 4} h={2} fill={mouth} />
+        {scaredPose && <Rect x={headX + 33} y={27 + sy} w={2} h={2} fill={mouth} />}
+
+        {/* tiny hand-painted pixel highlights */}
+        <Rect x={sx + 22} y={33 + sy} w={3} h={14} fill="#ffffff" opacity={0.08} />
+        <Rect x={headX + 27} y={10 + sy} w={4} h={1} fill="#fff8dc" opacity={0.16} />
+      </g>
+    );
+  };
+
+  return (
+    <svg
+      width={renderW}
+      height={size}
+      viewBox={`0 0 ${vbW} ${vbH}`}
+      className="pixel-teen"
+      style={{
+        transform: `scaleX(${facing})`,
+        imageRendering: "pixelated",
+        shapeRendering: "crispEdges",
+        ["--teen-cycle" as string]: `${cycleMs}ms`,
+      }}
+    >
+      {motion === "idle" ? renderFrame(0) : frames.map(renderFrame)}
+    </svg>
+  );
+}
+
+function StoryPortrait({ title }: { title: string }) {
+  const lower = title.toLowerCase();
+  const kind: TeenKind = lower.includes("karl") ? "karl" : lower.includes("dina") ? "dina" : "lana";
+  return <PixelTeen kind={kind} size={104} scared />;
+}
+
+function IntroCinematic({
+  frames,
+  onStart,
+  onClose,
+  onShuffle,
+}: {
+  frames: IntroFrame[];
+  onStart: () => void;
+  onClose: () => void;
+  onShuffle: () => void;
+}) {
+  const [frame, setFrame] = useState(0);
+  const current = frames[frame] ?? frames[0];
+  const isLast = frame >= frames.length - 1;
+
+  useEffect(() => {
+    setFrame(0);
+  }, [frames]);
+
+  useEffect(() => {
+    if (isLast) return;
+    const id = setTimeout(() => setFrame(f => Math.min(frames.length - 1, f + 1)), current.scene === "black" ? 1800 : 2600);
+    return () => clearTimeout(id);
+  }, [current.scene, frames.length, isLast]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-3">
+      <div className="relative h-full max-h-[760px] w-full max-w-5xl overflow-hidden border border-red-950 bg-black shadow-[0_0_60px_rgba(127,29,29,0.45)]">
+        <div className={`intro-film-frame intro-scene-${current.scene}`}>
+          {current.scene !== "black" && (
+            <>
+              <div className="intro-film-title">
+                <span>DOLLS OF THE SCHOOL</span>
+                <small>old school event archive</small>
+              </div>
+              <div className="intro-film-school">
+                <div className="intro-film-moon" />
+                <div className="intro-film-building">
+                  {Array.from({ length: 18 }, (_, i) => <span key={i} />)}
+                </div>
+              </div>
+              <div className="intro-film-classroom">
+                <div className="intro-board">НЕ ОСТАВЛЯЙТЕ НАС ОДНИХ</div>
+                <div className="intro-window" />
+                <div className="intro-desks">
+                  {Array.from({ length: 6 }, (_, i) => (
+                    <div key={i} className="intro-desk">
+                      {(current.scene === "classroom" || current.scene === "lana" || current.scene === "flicker") && i !== 2 && (
+                        <PixelTeen kind={i % 2 ? "karl" : "dina"} size={54} facing={i % 2 ? -1 : 1} />
+                      )}
+                      {i === 2 && <PixelTeen kind="lana" size={68} scared={current.scene === "flicker"} motion={current.scene === "flicker" ? "scared" : "idle"} />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {(current.scene === "flicker" || current.scene === "empty") && <div className="intro-flicker" />}
+              {current.scene === "monsters" && (
+                <div className="intro-monster-lineup">
+                  <ToyMonster kind="bear" size={108} />
+                  <ToyMonster kind="porcelain" size={108} />
+                  <ToyMonster kind="monkey" size={98} />
+                  <ToyMonster kind="clown" size={110} />
+                  <ToyMonster kind="porcelain" size={138} boss />
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/92 to-transparent px-4 pb-4 pt-20">
+          <div className="mx-auto max-w-3xl border border-red-900/70 bg-black/80 p-3 text-center">
+            <p className="text-sm leading-relaxed text-zinc-100 md:text-base">{current.line}</p>
+            <div className="mt-3 flex items-center justify-center gap-1">
+              {frames.map((_, i) => (
+                <span key={i} className={`h-1.5 w-6 ${i <= frame ? "bg-red-400" : "bg-zinc-700"}`} />
+              ))}
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap justify-center gap-2">
+            <Button variant="secondary" onClick={() => setFrame(f => Math.min(frames.length - 1, f + 1))} disabled={isLast}>
+              Дальше
+            </Button>
+            <Button variant="secondary" onClick={onShuffle}>Другая версия</Button>
+            <Button onClick={onStart} className="font-display">НАЧАТЬ ПОБЕГ</Button>
+            <button type="button" onClick={onClose} className="rounded border border-zinc-700 bg-black/60 px-3 py-2 text-xs font-pixel text-zinc-300 hover:text-white">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---- Lana speech bubble (rotating phrases) ----
 const LANA_LINES = [
   "Where is the key?..",
@@ -312,6 +660,165 @@ const LANA_LINES = [
   "I think there's something here",
   "Stay calm, Lana",
 ];
+
+const STORY_NOTES: Record<string, StoryNote> = {
+  "l1-7": {
+    id: "note-backpack",
+    title: "Lana's Backpack",
+    body: "Lana came back after rehearsal for her forgotten backpack. The lights began to blink, the clocks froze, and the school became too quiet.",
+  },
+  "l1-basement-stairs": {
+    id: "note-basement",
+    title: "Basement Notice",
+    body: "A faded notice says the basement was sealed after an old school celebration. Someone crossed out the word accident.",
+  },
+  "l2-east-hall": {
+    id: "note-dina",
+    title: "Dina's Page",
+    body: "Dina's neat handwriting: The toys say they are protecting us. I think they are scared of being left alone.",
+  },
+  "l3a-studio": {
+    id: "note-karl",
+    title: "Karl's Joke Book",
+    body: "Karl wrote a joke, then scratched it out. Under it: If I start smiling too much, Lana, don't trust my voice.",
+  },
+  "l4-dusty-attic": {
+    id: "note-attic",
+    title: "Attic Ledger",
+    body: "Old school-play props were locked here for years. The plush bear, the porcelain doll, and the clockwork monkey are listed as missing.",
+  },
+  "l5-roof-passage": {
+    id: "note-truth",
+    title: "The Hidden Truth",
+    body: "The tragedy was hidden to protect the school. The toys absorbed lonely children and decided no child should ever leave them again.",
+  },
+};
+
+const RESCUE_EVENTS: RescueEvent[] = [
+  {
+    id: "children",
+    name: "Lost Children",
+    roomId: "l2-east-hall",
+    message: "A group of younger students crawl out from under the desks. Lana points them toward the lit stairwell.",
+  },
+  {
+    id: "karl",
+    name: "Karl",
+    roomId: "l3a-studio",
+    message: "Karl is shaking, but still jokes that the paintings blink first. He joins Lana's escape route.",
+  },
+  {
+    id: "dina",
+    name: "Dina",
+    roomId: "l5-roof-passage",
+    message: "Dina lowers her notebook. She knows enough of the truth to help Lana face the final doll.",
+  },
+];
+
+const INTRO_STORIES: IntroStory[] = [
+  {
+    title: "СЮЖЕТ",
+    paragraphs: [
+      "Много лет назад в школе произошёл несчастный случай во время старого праздника с игрушками.",
+      "Взрослые скрыли правду, а забытые игрушки впитали страх и одиночество детей.",
+      "Теперь они ожили и удерживают учеников внутри школы, потому что боятся снова остаться одни.",
+    ],
+    goals: ["найти друзей", "узнать правду", "освободить детей", "выбраться наружу"],
+  },
+  {
+    title: "НОЧЬ В ШКОЛЕ",
+    paragraphs: [
+      "Лана возвращается за забытым рюкзаком, но коридоры уже не похожи на обычную школу.",
+      "Часы остановились, двери заперлись, а старые игрушки начали шептать имена пропавших учеников.",
+      "Чтобы выйти, Лане придётся понять, почему школа не отпускает детей после звонка.",
+    ],
+    goals: ["найти ключи", "спасти друзей", "собрать записки", "дойти до выхода"],
+  },
+  {
+    title: "ТАЙНА ИГРУШЕК",
+    paragraphs: [
+      "Когда-то школьные игрушки были частью спектакля, который закончился трагедией.",
+      "После этого их спрятали на чердаке, но одиночество сделало их живыми и злыми.",
+      "Они не хотят причинять боль, но считают, что внутри школы детям безопаснее, чем снаружи.",
+    ],
+    goals: ["не шуметь", "искать улики", "освободить запертых детей", "сломать старое проклятие"],
+  },
+  {
+    title: "ЗАБЫТЫЙ ПРАЗДНИК",
+    paragraphs: [
+      "В актовом зале когда-то прошёл праздник, о котором больше никто не говорит.",
+      "После него несколько детей исчезли, а игрушки остались ждать, что с ними снова будут играть.",
+      "Теперь школа закрывается сама, и только Лана может открыть двери тем, кто застрял внутри.",
+    ],
+    goals: ["найти друзей", "не попасться игрушкам", "узнать, что случилось на празднике", "вывести детей из школы"],
+  },
+  {
+    title: "ПОСЛЕДНИЙ ЗВОНОК",
+    paragraphs: [
+      "После последнего звонка в школе должна была наступить тишина, но вместо неё проснулись старые игрушки.",
+      "Они помнят страх детей лучше, чем их голоса, и поэтому не дают никому уйти.",
+      "Лана должна пройти этаж за этажом и доказать, что одиночество можно отпустить.",
+    ],
+    goals: ["выжить в коридорах", "отыскать потерянных учеников", "раскрыть скрытую правду", "сбежать до рассвета"],
+  },
+];
+
+const INTRO_CINEMATIC_VARIANTS: IntroFrame[][] = [
+  [
+    { scene: "black", line: "Лана: Я вернулась только за рюкзаком. Почему в школе так тихо?" },
+    { scene: "school", line: "Лана: Окна тёмные... но внутри будто кто-то ходит." },
+    { scene: "classroom", line: "Лана: Ребята? Вы ещё здесь? Ответьте..." },
+    { scene: "lana", line: "Лана: Свет моргает. Это не похоже на обычную аварию." },
+    { scene: "flicker", line: "Лана: Нет... только что все сидели рядом со мной." },
+    { scene: "empty", line: "Лана: Парты пустые. Друзья исчезли. Остались только их вещи." },
+    { scene: "monsters", line: "Лана: Игрушки двигаются. Они смотрят так, будто знают моё имя." },
+  ],
+  [
+    { scene: "black", line: "Лана: После звонка школа должна была опустеть. Но она будто проснулась." },
+    { scene: "school", line: "Лана: Главный вход закрыт. Кто-то запер нас изнутри." },
+    { scene: "classroom", line: "Лана: Ученики шепчутся... они тоже слышат эти шаги?" },
+    { scene: "lana", line: "Лана: Если это розыгрыш, он совсем не смешной." },
+    { scene: "flicker", line: "Лана: Свет! Не гасни... пожалуйста." },
+    { scene: "empty", line: "Лана: Все пропали. Даже звук дыхания исчез." },
+    { scene: "monsters", line: "Лана: Старые игрушки вышли из шкафов. Они не хотят отпускать детей." },
+  ],
+  [
+    { scene: "black", line: "Лана: Я слышала историю о школьном празднике. Нам запрещали о нём говорить." },
+    { scene: "school", line: "Лана: Теперь школа выглядит так, будто всё ещё ждёт тот праздник." },
+    { scene: "classroom", line: "Лана: На доске написано: 'Не оставляйте нас одних'." },
+    { scene: "lana", line: "Лана: Нужно найти Карла и Дину. Они не могли просто исчезнуть." },
+    { scene: "flicker", line: "Лана: Кто-то стоит у двери... нет, это игрушка." },
+    { scene: "empty", line: "Лана: Чем тише становится класс, тем громче слышно заводной ключик." },
+    { scene: "monsters", line: "Лана: Они не злые? Нет... они напуганы. Но всё равно опасны." },
+  ],
+];
+
+function pickToyMonsterKind(name: string): ToyMonsterKind {
+  const lower = name.toLowerCase();
+  if (lower.includes("bear") || lower.includes("plush")) return "bear";
+  if (lower.includes("monkey") || lower.includes("music box")) return "monkey";
+  if (lower.includes("clown")) return "clown";
+  if (lower.includes("doll") || lower.includes("porcelain") || lower.includes("matron")) return "porcelain";
+  return "puppet";
+}
+
+const AMBIENT_HORROR_LINES = [
+  "A child's laugh echoes from an empty classroom.",
+  "The floorboards creak behind Lana, then go silent.",
+  "A toy bell rings once somewhere in the dark.",
+  "The lights flicker. For a second, every door looks open.",
+  "Something small runs across the ceiling tiles.",
+  "A whisper says Lana's name from the lockers.",
+];
+
+function storyNoteForRoom(roomId: string) {
+  return STORY_NOTES[roomId] ?? null;
+}
+
+function rescueForRoom(roomId: string) {
+  return RESCUE_EVENTS.find((event) => event.roomId === roomId) ?? null;
+}
+
 function LanaSpeech({ side = "right" }: { side?: "left" | "right" }) {
   const [line, setLine] = useState<string | null>(null);
   useEffect(() => {
@@ -400,11 +907,11 @@ const PAL_TIMUR: PixelPalette = {
   shoes: "#1a1a1a",
 };
 const PAL_BOSS: PixelPalette = {
-  skin: "#c8a890", skinShade: "#8a5a3a",
-  hair: "#8a8a8a", hairShade: "#3a3a3a",
-  shirt: "#1f1f2a", shirtShade: "#0a0a14",
-  pants: "#0a0a0a", pantsShade: "#000000",
-  shoes: "#000000",
+  skin: "#f0e8dc", skinShade: "#b8a898",
+  hair: "#d8d0c8", hairShade: "#8a7a72",
+  shirt: "#261824", shirtShade: "#0a0610",
+  pants: "#181018", pantsShade: "#000000",
+  shoes: "#0a0608",
   eyes: "#ff3030",
 };
 
@@ -518,15 +1025,16 @@ function HintBox({ kind, advanced }: { kind: TaskKind; advanced: boolean }) {
 }
 
 // Backwards-compatible API used elsewhere in this file
-function Crewmate({ color, facing = 1, size = 80, dead = false, palette }:
-  { color: string; facing?: 1 | -1; size?: number; dead?: boolean; palette?: PixelPalette }) {
+function Crewmate({ color, facing = 1, size = 80, dead = false, palette, motion = "idle" }:
+  { color: string; facing?: 1 | -1; size?: number; dead?: boolean; palette?: PixelPalette; motion?: TeenMotion }) {
   const isLana = color === "#ff66aa";
   const pal = palette ?? (isLana ? PAL_LANA : (PALETTES[color] ?? { ...PAL_MILA, shirt: color, shirtShade: color }));
+  if (isLana) return <PixelTeen kind="lana" facing={facing} size={Math.round(size * 1.18)} scared={dead || motion === "scared"} motion={motion} palette={pal} />;
   return <PixelHuman palette={pal} facing={facing} size={size} variant={isLana ? "girl" : "student"} dead={dead} />;
 }
 
 function Impostor({ size = 80 }: { size?: number }) {
-  return <PixelZombie size={size} boss facing={-1} />;
+  return <ToyMonster kind="porcelain" size={size} boss facing={-1} />;
 }
 
 
@@ -746,11 +1254,59 @@ const QUIZ_POOL = [
   { q: "Longest river in the world?", o: ["Amazon", "Nile", "Yangtze", "Volga"], a: 1 },
   { q: "Who discovered the law of gravity?", o: ["Einstein", "Newton", "Galileo", "Kepler"], a: 1 },
 ];
-function QuizGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const item = useMemo(() => QUIZ_POOL[Math.floor(Math.random() * QUIZ_POOL.length)], []);
+const toQuestion = (item: { q: string; o: string[]; a: number }): AiQuestion => ({
+  question: item.q,
+  options: item.o as [string, string, string, string],
+  answer: item.a,
+});
+const pickLocalQuiz = () => toQuestion(QUIZ_POOL[Math.floor(Math.random() * QUIZ_POOL.length)]);
+const pickLocalRiddle = () => {
+  const item = bossRiddles[Math.floor(Math.random() * bossRiddles.length)];
+  return {
+    question: item.question,
+    options: item.options as [string, string, string, string],
+    answer: item.answer,
+  };
+};
+
+function useGeneratedQuestion(args: {
+  kind: "quiz" | "riddle";
+  levelName: string;
+  zombieName?: string;
+  fallback: AiQuestion;
+}) {
+  const [item, setItem] = useState<AiQuestion>(args.fallback);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setItem(args.fallback);
+    generateAiQuestion({
+      data: {
+        kind: args.kind,
+        levelName: args.levelName,
+        zombieName: args.zombieName,
+      },
+    }).then(({ question }) => {
+      if (alive && question) setItem(question);
+    }).catch(() => {
+      // Local questions keep the game playable without Gemini.
+    }).finally(() => {
+      if (alive) setLoading(false);
+    });
+    return () => { alive = false; };
+  }, [args.kind, args.levelName, args.zombieName, args.fallback]);
+
+  return { item, loading };
+}
+
+function QuizGame({ onDone, levelName, zombieName }: { onDone: (ok: boolean) => void; levelName: string; zombieName: string }) {
+  const fallback = useMemo(() => pickLocalQuiz(), []);
+  const { item, loading } = useGeneratedQuestion({ kind: "quiz", levelName, zombieName, fallback });
   const [tries, setTries] = useState(2);
   const pick = (i: number) => {
-    if (i === item.a) onDone(true);
+    if (i === item.answer) onDone(true);
     else {
       const t = tries - 1;
       setTries(t);
@@ -759,15 +1315,50 @@ function QuizGame({ onDone }: { onDone: (ok: boolean) => void }) {
   };
   return (
     <div className="flex flex-col items-center gap-4 max-w-md">
-      <p className="text-sm text-muted-foreground">School question. Tries: {tries}</p>
-      <h3 className="text-lg font-display text-center">{item.q}</h3>
+      <p className="text-sm text-muted-foreground">{loading ? "Fresh question..." : "School question."} Tries: {tries}</p>
+      <h3 className="text-lg font-display text-center">{item.question}</h3>
       <div className="grid grid-cols-2 gap-2 w-full">
-        {item.o.map((o, i) => (
+        {item.options.map((o, i) => (
           <Button key={i} variant="secondary" onClick={() => pick(i)}>{o}</Button>
         ))}
       </div>
     </div>
   );
+}
+
+function BossRiddleGate({ onDone, levelName }: { onDone: (ok: boolean) => void; levelName: string }) {
+  const fallback = useMemo(() => pickLocalRiddle(), []);
+  const { item, loading } = useGeneratedQuestion({ kind: "riddle", levelName, zombieName: "The Porcelain Matron", fallback });
+  const [tries, setTries] = useState(2);
+  const pick = (i: number) => {
+    if (i === item.answer) onDone(true);
+    else {
+      const t = tries - 1;
+      setTries(t);
+      if (t <= 0) onDone(false);
+    }
+  };
+  return (
+    <div className="flex flex-col items-center gap-4 max-w-md mx-auto text-center">
+      <Impostor size={90} />
+      <div>
+        <h3 className="font-display text-lg text-red-400">The Matron's Riddle</h3>
+        <p className="text-xs text-muted-foreground">{loading ? "The doll is listening..." : `Answer to enter the final fight. Tries: ${tries}`}</p>
+      </div>
+      <h4 className="text-base font-display text-amber-100">{item.question}</h4>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+        {item.options.map((o, i) => (
+          <Button key={i} variant="secondary" onClick={() => pick(i)}>{o}</Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BossEncounter({ onWin, onLose, levelName }: { onWin: () => void; onLose: () => void; levelName: string }) {
+  const [riddleSolved, setRiddleSolved] = useState(false);
+  if (riddleSolved) return <BossFight onWin={onWin} onLose={onLose} />;
+  return <BossRiddleGate levelName={levelName} onDone={(ok) => ok ? setRiddleSolved(true) : onLose()} />;
 }
 
 // 9) LOCK — find code from hints
@@ -847,6 +1438,208 @@ function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string
   };
   const I = map[kind];
   return <I className={className} />;
+}
+
+function monsterBehaviorLabel(kind: ToyMonsterKind) {
+  if (kind === "bear") return "slow stalker";
+  if (kind === "porcelain") return "vanishes";
+  if (kind === "monkey") return "hears noise";
+  if (kind === "clown") return "chases";
+  return "wanders";
+}
+
+function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }:
+  { kind: ToyMonsterKind; size?: number; facing?: 1 | -1; hurt?: boolean; boss?: boolean }) {
+  const W = boss ? 34 : 28;
+  const H = boss ? 44 : 34;
+  const renderW = Math.round((size * W) / H);
+  const filter = hurt
+    ? "brightness(2) saturate(2) hue-rotate(-20deg)"
+    : boss
+      ? "drop-shadow(0 0 12px rgba(255,60,80,0.7))"
+      : "drop-shadow(0 5px 4px rgba(0,0,0,0.55))";
+
+  const colors = {
+    bear: { a: "#6b4932", b: "#3a2419", c: "#a06c48", e: "#050303" },
+    porcelain: { a: "#e8dfd4", b: "#9b8790", c: "#5e2938", e: "#2b050b" },
+    monkey: { a: "#7b4b24", b: "#3a2112", c: "#c49a52", e: "#ff2323" },
+    clown: { a: "#f2eee3", b: "#9a1f32", c: "#25528f", e: "#111111" },
+    puppet: { a: "#4a7a38", b: "#243b1b", c: "#6aa050", e: "#ff1818" },
+  }[kind];
+  const grime = kind === "porcelain" ? "#1b1214" : "#120b08";
+  const red = "#8f121c";
+
+  return (
+    <svg
+      width={renderW}
+      height={size}
+      viewBox={`0 0 ${W} ${H}`}
+      style={{ transform: `scaleX(${facing})`, imageRendering: "pixelated", shapeRendering: "crispEdges", filter }}
+    >
+      <ellipse cx={W / 2} cy={H - 0.5} rx={W / 2.5} ry="0.8" fill="#000" opacity="0.48" />
+      {kind === "bear" && (
+        <>
+          <rect x="5" y="6" width="6" height="6" fill={colors.b} />
+          <rect x="17" y="6" width="6" height="6" fill={colors.b} />
+          <rect x="4" y="10" width="20" height="15" fill={colors.a} />
+          <rect x="7" y="12" width="5" height="5" fill={colors.e} />
+          <rect x="16" y="12" width="5" height="5" fill={colors.e} />
+          <rect x="11" y="17" width="6" height="4" fill={colors.c} />
+          <rect x="13" y="18" width="2" height="1" fill="#160807" />
+          <rect x="8" y="25" width="12" height="7" fill={colors.a} />
+          <rect x="11" y="26" width="6" height="5" fill={colors.c} />
+          <rect x="3" y="25" width="5" height="8" fill={colors.b} />
+          <rect x="20" y="25" width="5" height="8" fill={colors.b} />
+          <rect x="7" y="32" width="5" height="2" fill={colors.b} />
+          <rect x="16" y="32" width="5" height="2" fill={colors.b} />
+          <rect x="6" y="19" width="3" height="1" fill="#171010" />
+          <rect x="18" y="20" width="3" height="1" fill="#171010" />
+          <rect x="12" y="21" width="3" height="3" fill={red} />
+          <rect x="10" y="22" width="8" height="2" fill="#351018" />
+          <rect x="5" y="14" width="2" height="1" fill="#d0a36c" opacity="0.8" />
+          <rect x="18" y="11" width="1" height="2" fill="#d0a36c" opacity="0.7" />
+          <rect x="12" y="28" width="1" height="3" fill={grime} opacity="0.7" />
+          <rect x="17" y="27" width="3" height="1" fill={grime} opacity="0.75" />
+          <rect x="6" y="27" width="1" height="2" fill="#0a0504" />
+        </>
+      )}
+      {kind === "porcelain" && (
+        <>
+          <rect x={boss ? 8 : 7} y={boss ? 4 : 5} width={boss ? 18 : 15} height={boss ? 18 : 14} fill={colors.a} />
+          <rect x={boss ? 8 : 7} y={boss ? 4 : 5} width={boss ? 18 : 15} height="3" fill="#fffaf0" />
+          <rect x={boss ? 10 : 9} y={boss ? 11 : 10} width="4" height="4" fill={colors.e} />
+          <rect x={boss ? 20 : 17} y={boss ? 11 : 10} width="4" height="4" fill={colors.e} />
+          <rect x={boss ? 16 : 13} y={boss ? 17 : 15} width="4" height="2" fill={colors.c} />
+          <rect x={boss ? 7 : 6} y={boss ? 22 : 19} width={boss ? 20 : 16} height={boss ? 15 : 12} fill={colors.c} />
+          <rect x={boss ? 10 : 9} y={boss ? 23 : 20} width={boss ? 14 : 10} height={boss ? 13 : 10} fill="#382032" />
+          <rect x={boss ? 4 : 4} y={boss ? 25 : 21} width="4" height={boss ? 12 : 9} fill={colors.a} />
+          <rect x={boss ? 27 : 22} y={boss ? 25 : 21} width="4" height={boss ? 12 : 9} fill={colors.a} />
+          <rect x={boss ? 11 : 10} y={boss ? 37 : 31} width="5" height={boss ? 7 : 3} fill={colors.b} />
+          <rect x={boss ? 20 : 16} y={boss ? 37 : 31} width="5" height={boss ? 7 : 3} fill={colors.b} />
+          {boss && <rect x="15" y="2" width="5" height="5" fill="#b30f2a" />}
+          <rect x={boss ? 13 : 11} y={boss ? 8 : 8} width="1" height="5" fill={grime} />
+          <rect x={boss ? 14 : 12} y={boss ? 13 : 12} width="2" height="1" fill={grime} />
+          <rect x={boss ? 22 : 18} y={boss ? 7 : 7} width="1" height="8" fill={grime} opacity="0.75" />
+          <rect x={boss ? 9 : 8} y={boss ? 18 : 16} width="3" height="1" fill="#c9bab2" />
+          <rect x={boss ? 6 : 5} y={boss ? 24 : 20} width="1" height={boss ? 10 : 8} fill="#090609" opacity="0.85" />
+          <rect x={boss ? 28 : 23} y={boss ? 24 : 20} width="1" height={boss ? 10 : 8} fill="#090609" opacity="0.85" />
+        </>
+      )}
+      {kind === "monkey" && (
+        <>
+          <rect x="6" y="8" width="16" height="13" fill={colors.a} />
+          <rect x="3" y="10" width="5" height="7" fill={colors.b} />
+          <rect x="20" y="10" width="5" height="7" fill={colors.b} />
+          <rect x="9" y="12" width="3" height="3" fill={colors.e} />
+          <rect x="16" y="12" width="3" height="3" fill={colors.e} />
+          <rect x="11" y="16" width="6" height="3" fill={colors.c} />
+          <rect x="9" y="21" width="10" height="9" fill={colors.b} />
+          <rect x="4" y="22" width="5" height="4" fill={colors.c} />
+          <rect x="19" y="22" width="5" height="4" fill={colors.c} />
+          <rect x="6" y="3" width="16" height="3" fill="#b5a15a" />
+          <rect x="22" y="4" width="4" height="2" fill="#b5a15a" />
+          <rect x="23" y="6" width="2" height="6" fill="#9f8846" />
+          <rect x="25" y="6" width="4" height="2" fill="#9f8846" />
+          <rect x="26" y="8" width="2" height="4" fill="#9f8846" />
+          <rect x="12" y="30" width="3" height="4" fill={colors.a} />
+          <rect x="17" y="30" width="3" height="4" fill={colors.a} />
+          <rect x="10" y="18" width="8" height="1" fill="#f2d6a0" />
+          <rect x="11" y="19" width="1" height="1" fill="#0a0504" />
+          <rect x="13" y="19" width="1" height="1" fill="#0a0504" />
+          <rect x="15" y="19" width="1" height="1" fill="#0a0504" />
+          <rect x="17" y="19" width="1" height="1" fill="#0a0504" />
+          <rect x="6" y="27" width="3" height="1" fill={red} opacity="0.75" />
+        </>
+      )}
+      {kind === "clown" && (
+        <>
+          <rect x="6" y="0" width="1" height="34" fill="#5b3928" opacity="0.75" />
+          <rect x="13" y="0" width="1" height="34" fill="#5b3928" opacity="0.65" />
+          <rect x="22" y="0" width="1" height="34" fill="#5b3928" opacity="0.75" />
+          <rect x="7" y="5" width="14" height="14" fill={colors.a} />
+          <rect x="4" y="6" width="5" height="6" fill="#d64545" />
+          <rect x="19" y="6" width="5" height="6" fill="#25528f" />
+          <rect x="9" y="11" width="3" height="3" fill={colors.e} />
+          <rect x="16" y="11" width="3" height="3" fill={colors.e} />
+          <rect x="13" y="14" width="3" height="3" fill="#d4001f" />
+          <rect x="9" y="18" width="11" height="2" fill="#5b0408" />
+          <rect x="6" y="21" width="16" height="10" fill={colors.b} />
+          <rect x="12" y="21" width="5" height="10" fill={colors.c} />
+          <rect x="2" y="22" width="5" height="8" fill={colors.c} />
+          <rect x="21" y="22" width="5" height="8" fill={colors.b} />
+          <rect x="8" y="31" width="5" height="3" fill="#111" />
+          <rect x="16" y="31" width="5" height="3" fill="#111" />
+          <rect x="10" y="8" width="2" height="1" fill={grime} />
+          <rect x="17" y="9" width="2" height="1" fill={grime} />
+          <rect x="8" y="19" width="2" height="1" fill="#f2eee3" />
+          <rect x="13" y="19" width="2" height="1" fill="#f2eee3" />
+          <rect x="18" y="19" width="2" height="1" fill="#f2eee3" />
+          <rect x="24" y="25" width="1" height="7" fill="#d8d0c8" />
+        </>
+      )}
+      {kind === "puppet" && (
+        <>
+          <rect x="8" y="5" width="12" height="14" fill={colors.a} />
+          <rect x="10" y="10" width="3" height="3" fill="#0a0a0a" />
+          <rect x="16" y="10" width="3" height="3" fill={colors.e} />
+          <rect x="11" y="16" width="7" height="1" fill="#220509" />
+          <rect x="7" y="20" width="14" height="10" fill={colors.b} />
+          <rect x="3" y="21" width="4" height="8" fill={colors.a} />
+          <rect x="21" y="21" width="4" height="8" fill={colors.a} />
+          <rect x="9" y="30" width="4" height="4" fill={colors.b} />
+          <rect x="16" y="30" width="4" height="4" fill={colors.b} />
+          <rect x="7" y="3" width="14" height="1" fill="#111" opacity="0.8" />
+          <rect x="5" y="8" width="1" height="20" fill="#111" opacity="0.65" />
+          <rect x="23" y="8" width="1" height="20" fill="#111" opacity="0.65" />
+          <rect x="11" y="20" width="2" height="1" fill={red} />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function CharacterDesignBoard() {
+  const monsters: { kind: ToyMonsterKind; title: string; note: string; size: number; boss?: boolean }[] = [
+    { kind: "bear", title: "1. PLUSH BEAR", note: "slow stalker", size: 118 },
+    { kind: "porcelain", title: "2. PORCELAIN DOLL", note: "appears behind you", size: 118 },
+    { kind: "monkey", title: "3. CLOCKWORK MONKEY", note: "runs to noise", size: 108 },
+    { kind: "clown", title: "4. MARIONETTE CLOWN", note: "fast chase", size: 120 },
+    { kind: "porcelain", title: "5. THE MATRON", note: "protects her family", size: 142, boss: true },
+  ];
+  const teens: { kind: TeenKind; title: string; note: string; size: number; facing?: 1 | -1 }[] = [
+    { kind: "lana", title: "LANA", note: "scared, but stubborn", size: 112 },
+    { kind: "karl", title: "KARL", note: "jokes when afraid", size: 112, facing: -1 },
+    { kind: "dina", title: "DINA", note: "quiet and observant", size: 112 },
+  ];
+
+  return (
+    <div className="character-design-board">
+      <div className="design-board-title">DOLLS OF THE SCHOOL</div>
+      <div className="design-board-subtitle">character and monster sprites</div>
+      <div className="design-monster-grid">
+        {monsters.map((m) => (
+          <div key={m.title} className="design-panel">
+            <div className="design-panel-title">{m.title}</div>
+            <div className="design-sprite-stage">
+              <ToyMonster kind={m.kind} size={m.size} boss={m.boss} />
+            </div>
+            <div className="design-panel-note">{m.note}</div>
+          </div>
+        ))}
+      </div>
+      <div className="design-teen-grid">
+        {teens.map((t) => (
+          <div key={t.title} className="design-panel design-panel-teen">
+            <div className="design-panel-title">{t.title}</div>
+            <div className="design-sprite-stage">
+              <PixelTeen kind={t.kind} size={t.size} facing={t.facing ?? 1} scared={t.kind === "lana"} />
+            </div>
+            <div className="design-panel-note">{t.note}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ---- Mr. Hopp-style plush horror sprite ----
@@ -1060,7 +1853,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
   return (
     <div className="flex flex-col items-center gap-2 max-w-full">
       <div className="flex items-center justify-between w-full px-2">
-        <div className="font-display text-red-400">PRINCIPAL HOPP — BOSS</div>
+        <div className="font-display text-red-400">THE PORCELAIN MATRON — BOSS</div>
         <div className="flex gap-0.5">{Array.from({ length: 10 }).map((_, i) => (
           <Heart key={i} className={`h-4 w-4 ${i < bossHp ? "fill-red-500 text-red-500" : "text-zinc-700"}`} />
         ))}</div>
@@ -1073,7 +1866,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
         {/* Boss */}
         <div className="absolute" style={{ left: bossX - 100, bottom: FLOOR_PX + bossY - 6 }}>
           <div style={{ filter: bossHurt ? "brightness(2.5) hue-rotate(-40deg)" : "drop-shadow(0 0 10px rgba(255,0,0,0.6))" }}>
-            <PixelZombie size={240} boss facing={lanaXRef.current > bossX ? 1 : -1} />
+            <ToyMonster kind="porcelain" size={220} boss facing={lanaXRef.current > bossX ? 1 : -1} />
           </div>
         </div>
         {/* Debris */}
@@ -1103,7 +1896,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
           <span className="font-mono text-[10px]">{lanaHp}</span>
         </div>
         <div className="absolute bottom-1 left-2 text-[9px] font-pixel text-amber-300/80 bg-black/70 px-2 py-0.5 rounded">
-          A/D move · SPACE jump · grab 🏏 then ram boss · dodge debris!
+          A/D move · SPACE jump · grab bat then ram the doll · dodge debris!
         </div>
       </div>
     </div>
@@ -1503,7 +2296,7 @@ function ClassroomScene({
       <div className="absolute transition-none" style={{ left: lanaX, bottom: 28 }}>
         <LanaSpeech />
         <div className="lana-idle">
-          <PixelHuman palette={lanaPalette} facing={facing} size={64} variant="girl" />
+          <PixelTeen kind="lana" facing={facing} size={76} scared={batteryPct < 20} />
         </div>
       </div>
 
@@ -1598,6 +2391,7 @@ export default function EscapeGame() {
   const [submittingScore, setSubmittingScore] = useState(false);
 
   const [started, setStarted] = useState(false);
+  const [introStoryIndex, setIntroStoryIndex] = useState<number | null>(null);
   const [musicOff, setMusicOff] = useState(false);
   const [authEmail, setAuthEmail] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
@@ -1659,6 +2453,10 @@ export default function EscapeGame() {
   const [inv, setInv] = useState<InvItem[]>([]);
   const invRef = useRef(inv); invRef.current = inv;
   const lastBiteRef = useRef(0);
+  const [storyNotes, setStoryNotes] = useState<Set<string>>(new Set());
+  const [rescued, setRescued] = useState<Set<string>>(new Set());
+  const [checkpoint, setCheckpoint] = useState<Checkpoint | null>(null);
+  const [ambientLine, setAmbientLine] = useState("");
 
   // ===== Noise lure (thrown toy) — zombies walk to this x =====
   const [lure, setLure] = useState<{ x: number; until: number; emoji: string } | null>(null);
@@ -1746,6 +2544,7 @@ export default function EscapeGame() {
   const [coins, setCoins] = useState(save.coins);
   // Running mode (Shift). Noisy — wakes "sleeping" zombies sooner.
   const [running, setRunning] = useState(false);
+  const runningRef = useRef(false); runningRef.current = running;
 
   // Selected outfit
   const outfit = useMemo(() => OUTFITS.find(o => o.id === save.outfit) ?? OUTFITS[0], [save.outfit]);
@@ -1774,12 +2573,45 @@ export default function EscapeGame() {
   const tStartRef = useRef(performance.now());
   const zomHomeRef = useRef<Record<string, number>>({});
   const zx = useCallback((z: Zombie, idx: number) => {
+    {
+      const monsterKind = pickToyMonsterKind(z.name);
+      if (z.sleeping && !wokenRef.current.has(z.id) && monsterKind !== "bear") return z.x;
+      const home = zomHomeRef.current[z.id] ?? z.x;
+      const t = (performance.now() - tStartRef.current) / 1000;
+      const playerX = xRef.current;
+      const lureNow = lureRef.current;
+      const moveHome = (target: number, speed: number) => {
+        const dist = target - home;
+        if (Math.abs(dist) < 1) return home;
+        const next = home + Math.sign(dist) * Math.min(speed, Math.abs(dist));
+        zomHomeRef.current[z.id] = clamp(next, 80, WORLD_W - 80);
+        return next;
+      };
+
+      if (monsterKind === "bear") return moveHome(playerX, 0.58 + level * 0.08);
+      if (monsterKind === "porcelain") {
+        const phase = (t + idx * 0.73) % 6.2;
+        if (phase < 1.25) return clamp(playerX + (idx % 2 ? 170 : -170), 90, WORLD_W - 90);
+        if (phase > 5.25) return clamp(playerX + (idx % 2 ? -90 : 90), 90, WORLD_W - 90);
+        return home + Math.sin(t * 0.55 + idx) * 24;
+      }
+      if (monsterKind === "monkey") {
+        const hearsNoise = !!lureNow && performance.now() < lureNow.until;
+        if (runningRef.current || hearsNoise) return moveHome(hearsNoise ? lureNow.x : playerX, 3.2 + level * 0.18);
+        return home + Math.sin(t * 1.7 + idx * 2.4) * 42;
+      }
+      if (monsterKind === "clown") {
+        if (Math.abs(playerX - home) < 440 && !hidingRef.current) return moveHome(playerX, 2.65 + level * 0.22);
+        return home + Math.sin(t * 1.35 + idx * 1.7) * 92;
+      }
+      return home + Math.sin(t * 0.9 + idx * 1.7) * 60;
+    }
     // Sleeping (and not yet woken) — стоят на месте.
     if (z.sleeping && !wokenRef.current.has(z.id)) return z.x;
     const home = zomHomeRef.current[z.id] ?? z.x;
     const t = (performance.now() - tStartRef.current) / 1000;
     return home + Math.sin(t * 0.9 + idx * 1.7) * 60;
-  }, []);
+  }, [WORLD_W, level]);
   const killedRef = useRef(killed); killedRef.current = killed;
 
   // input
@@ -1792,6 +2624,74 @@ export default function EscapeGame() {
   }, []);
 
   const allKilled = killed.size === zombies.length;
+
+  const saveCheckpoint = useCallback((label: string, px = xRef.current) => {
+    setCheckpoint(prev => {
+      if (prev && prev.level === level && prev.x >= px - 30) return prev;
+      const next: Checkpoint = {
+        level,
+        x: px,
+        label,
+        killed: new Set(killed),
+        searched: new Set(searched),
+        storyNotes: new Set(storyNotes),
+        rescued: new Set(rescued),
+      };
+      setToast(`Checkpoint: ${label}`);
+      setTimeout(() => setToast(""), 1600);
+      return next;
+    });
+  }, [level, killed, searched, storyNotes, rescued]);
+
+  const respawnAtCheckpoint = useCallback(() => {
+    if (!checkpoint) return;
+    setLevel(checkpoint.level);
+    setX(checkpoint.x);
+    setKilled(new Set(checkpoint.killed));
+    setSearched(new Set(checkpoint.searched));
+    setStoryNotes(new Set(checkpoint.storyNotes));
+    setRescued(new Set(checkpoint.rescued));
+    setHp(Math.max(45, Math.floor(maxHp * 0.55)));
+    setHunger(MAX_HUNGER);
+    setBattery(b => Math.max(35, b));
+    setHiding(null);
+    setLure(null);
+    wokenRef.current = new Set();
+    zomHomeRef.current = {};
+    setModal({ kind: "none" });
+    setToast(`Lana wakes near ${checkpoint.label}`);
+    setTimeout(() => setToast(""), 2000);
+  }, [checkpoint, maxHp]);
+
+  useEffect(() => {
+    if (!started || modal.kind !== "none") return;
+    const marker = x > EXIT_X - 360
+      ? { x: EXIT_X - 260, label: "the stairwell" }
+      : x > WORLD_W * 0.55
+        ? { x: Math.floor(WORLD_W * 0.55), label: "the long corridor" }
+        : null;
+    if (!marker) return;
+    if (!checkpoint || checkpoint.level < level || (checkpoint.level === level && checkpoint.x < marker.x - 80)) {
+      saveCheckpoint(marker.label, marker.x);
+    }
+  }, [x, level, started, modal.kind, EXIT_X, WORLD_W, checkpoint, saveCheckpoint]);
+
+  useEffect(() => {
+    if (!started || modal.kind !== "none") return;
+    const id = setInterval(() => {
+      const line = AMBIENT_HORROR_LINES[Math.floor(Math.random() * AMBIENT_HORROR_LINES.length)];
+      setAmbientLine(line);
+      sfxGrowl();
+      setTimeout(() => setAmbientLine(""), 3000);
+    }, 18000);
+    return () => clearInterval(id);
+  }, [started, modal.kind]);
+
+  useEffect(() => {
+    if (modal.kind !== "lose" || !checkpoint) return;
+    const id = setTimeout(respawnAtCheckpoint, 1600);
+    return () => clearTimeout(id);
+  }, [modal.kind, checkpoint, respawnAtCheckpoint]);
 
   // interact + weapon
   useEffect(() => {
@@ -1903,13 +2803,16 @@ export default function EscapeGame() {
       if (lureNow && performance.now() < lureNow.until) {
         for (const z of zombies) {
           if (killedRef.current.has(z.id)) continue;
+          const monsterKind = pickToyMonsterKind(z.name);
+          if (monsterKind === "bear" || monsterKind === "porcelain") continue;
           // wake sleeping zombies — noise reaches them
           if (z.sleeping) wokenRef.current.add(z.id);
           const home = zomHomeRef.current[z.id] ?? z.x;
           const dist = Math.abs(home - lureNow.x);
           if (dist > 5) {
             const dir = lureNow.x > home ? 1 : -1;
-            zomHomeRef.current[z.id] = home + dir * Math.min(2.4, dist);
+            const pull = monsterKind === "monkey" ? 4.2 : monsterKind === "clown" ? 2.8 : 1.3;
+            zomHomeRef.current[z.id] = home + dir * Math.min(pull, dist);
           }
         }
       } else if (lureNow && performance.now() >= lureNow.until) {
@@ -1956,7 +2859,7 @@ export default function EscapeGame() {
         const hearRange = isRun ? 130 : (dx !== 0 ? 75 : 40) - (isNinja ? 10 : 0);
         for (let i = 0; i < zombies.length; i++) {
           const z = zombies[i];
-          if (!z.sleeping) continue;
+          if (!z.sleeping || pickToyMonsterKind(z.name) === "bear") continue;
           if (killedRef.current.has(z.id) || wokenRef.current.has(z.id)) continue;
           if (Math.abs(z.x - xRef.current) < hearRange) {
             wokenRef.current.add(z.id);
@@ -1985,7 +2888,7 @@ export default function EscapeGame() {
           const z = zombies[i];
           if (killedRef.current.has(z.id)) continue;
           // Спящие, ещё не разбуженные, не кусают пассивно.
-          if (z.sleeping && !wokenRef.current.has(z.id)) continue;
+          if (z.sleeping && !wokenRef.current.has(z.id) && pickToyMonsterKind(z.name) !== "bear") continue;
           if (Math.abs(pos[z.id] - xRef.current) < biteRange) {
             lastBiteRef.current = nowT;
             const base = 4 + Math.floor(Math.random() * 5);
@@ -2019,7 +2922,7 @@ export default function EscapeGame() {
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
       if (c) { setHint(`[E] Inspect · ${c.name}`); return; }
       if (Math.abs(EXIT_X - px) < REACH) {
-        setHint(allKilled ? (isFinalLevel ? "[E] To the Principal!" : "[E] Go up a floor") : "Path blocked");
+        setHint(allKilled ? (isFinalLevel ? "[E] Face the Matron" : "[E] Go up a floor") : "Path blocked");
         return;
       }
       setHint("");
@@ -2111,8 +3014,36 @@ export default function EscapeGame() {
     if (modal.kind !== "search") { setModal({ kind: "none" }); return; }
     const c = modal.classroom;
     setSearched(prev => new Set(prev).add(c.id));
+    const note = storyNoteForRoom(c.id);
+    const rescue = rescueForRoom(c.id);
+    const foundNote = note && !storyNotes.has(note.id);
+    const foundRescue = rescue && !rescued.has(rescue.id);
+    if (foundNote || foundRescue) {
+      const nextStoryNotes = new Set(storyNotes);
+      const nextRescued = new Set(rescued);
+      if (note) nextStoryNotes.add(note.id);
+      if (rescue) nextRescued.add(rescue.id);
+      setStoryNotes(nextStoryNotes);
+      setRescued(nextRescued);
+      const title = foundRescue && rescue ? `${rescue.name} Found` : note?.title ?? "A New Clue";
+      const body = [
+        foundNote ? note?.body : null,
+        foundRescue ? rescue?.message : null,
+      ].filter(Boolean).join("\n\n");
+      setCheckpoint({
+        level,
+        x: xRef.current,
+        label: title,
+        killed: new Set(killed),
+        searched: new Set([...searched, c.id]),
+        storyNotes: nextStoryNotes,
+        rescued: nextRescued,
+      });
+      setModal({ kind: "story", title, body });
+      return;
+    }
     setModal({ kind: "none" });
-  }, [modal]);
+  }, [modal, rescued, storyNotes, level, killed, searched]);
 
   // Use a specific item from the backpack.
   const useItem = useCallback((idx: number) => {
@@ -2203,11 +3134,25 @@ export default function EscapeGame() {
     setHunger(MAX_HUNGER);
     setBattery(MAX_BATTERY);
     setFoundFlashlight(false);
+    setStoryNotes(new Set());
+    setRescued(new Set());
+    setCheckpoint(null);
+    setAmbientLine("");
     wokenRef.current = new Set();
+    zomHomeRef.current = {};
     setModal({ kind: "none" });
     startTimeRef.current = Date.now();
     setScoreSubmitted(false);
     setStarted(true);
+  };
+
+  const openIntroStory = () => {
+    setIntroStoryIndex(prev => {
+      if (INTRO_STORIES.length <= 1) return 0;
+      let next = Math.floor(Math.random() * INTRO_STORIES.length);
+      if (next === prev) next = (next + 1) % INTRO_STORIES.length;
+      return next;
+    });
   };
 
   const submitMyScore = async (won: boolean) => {
@@ -2219,7 +3164,7 @@ export default function EscapeGame() {
       const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
       await submitScore({
         name,
-        coins: coins + (won ? 200 : 0),
+        coins: coins + (won ? ending.bonus : 0),
         levels_completed: won ? levels.length : level,
         time_seconds: elapsed,
         won,
@@ -2262,17 +3207,31 @@ export default function EscapeGame() {
     setCoins(ns.coins); setSave(ns); writeSave(ns);
   };
 
+  const ending = storyNotes.size >= Object.keys(STORY_NOTES).length && rescued.size >= RESCUE_EVENTS.length
+    ? {
+        title: "SECRET ENDING",
+        body: "Lana saves Karl, Dina, and the trapped children. With every note collected, she exposes the hidden tragedy and the toys finally remember how to let go.",
+        bonus: 350,
+      }
+    : rescued.size >= 2
+      ? {
+          title: "GOOD ENDING",
+          body: "Lana escapes with her friends and the children she could reach. The school doors open, but some whispers remain behind the walls.",
+          bonus: 250,
+        }
+      : {
+          title: "LONELY ENDING",
+          body: "Lana gets out alive, but the school keeps too many secrets. Behind her, the toys begin calling for the children again.",
+          bonus: 150,
+        };
+
   if (!started) {
+    const introFrames = introStoryIndex === null ? null : INTRO_CINEMATIC_VARIANTS[introStoryIndex % INTRO_CINEMATIC_VARIANTS.length];
+
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-red-950 p-4 overflow-auto">
-        <div className="max-w-3xl w-full space-y-4">
-          <div className="flex justify-center items-end gap-4">
-            <Crewmate color="#ff66aa" palette={lanaPalette} size={96} />
-            <PixelZombie />
-            <PixelZombie facing={1} />
-            <Impostor size={80} />
-          </div>
-          <h1 className="font-display text-3xl md:text-4xl text-primary text-center">ESCAPE THE SCHOOL</h1>
+        <div className="max-w-6xl w-full space-y-4">
+          <CharacterDesignBoard />
           <div className="flex items-center justify-center gap-2">
             <div className="px-3 py-1 bg-amber-900/40 border border-amber-700 rounded font-pixel text-amber-200 flex items-center gap-2">
               <Coins className="h-4 w-4" /> {coins} coins
@@ -2325,7 +3284,7 @@ export default function EscapeGame() {
           {menuTab === "play" && (
             <div className="bg-black/40 rounded p-4 space-y-3">
               <p className="text-sm text-muted-foreground text-center">
-                The school is overrun by zombies. Lana clears 3 floors, completes tasks to open the exit.
+                Lana returns after class for her forgotten backpack. The clocks stop, her friends disappear, and old school toys begin guarding a buried truth.
               </p>
               <div className="text-left text-[12px] grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
                 <p>🎮 <b>A/D</b> · <b>←/→</b> — walk</p>
@@ -2342,7 +3301,7 @@ export default function EscapeGame() {
                 <p>🌑 Floors 2–3 are dark — you need a flashlight</p>
               </div>
               <div className="flex justify-center">
-                <Button size="lg" onClick={beginGame} className="font-display">START GAME</Button>
+                <Button size="lg" onClick={openIntroStory} className="font-display">START GAME</Button>
               </div>
             </div>
           )}
@@ -2415,12 +3374,20 @@ export default function EscapeGame() {
             </div>
           )}
         </div>
+        {introFrames && (
+          <IntroCinematic
+            frames={introFrames}
+            onShuffle={openIntroStory}
+            onClose={() => setIntroStoryIndex(null)}
+            onStart={() => { setIntroStoryIndex(null); beginGame(); }}
+          />
+        )}
       </div>
     );
   }
 
   return (
-    <div className={`h-screen w-screen overflow-hidden bg-black text-foreground relative select-none ${shake ? "shake" : ""}`}>
+    <div className={`school-horror-shell h-screen w-screen overflow-hidden bg-black text-foreground relative select-none ${shake ? "shake" : ""}`}>
       {/* HUD */}
       <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/90 to-transparent p-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -2462,6 +3429,8 @@ export default function EscapeGame() {
             )}
             <span>💀 {killed.size}/{zombies.length}</span>
             <span>🔍 {searched.size}/{classrooms.length}</span>
+            <span title="Story notes found">Notes {storyNotes.size}/{Object.keys(STORY_NOTES).length}</span>
+            <span title="Friends and children rescued">Saved {rescued.size}/{RESCUE_EVENTS.length}</span>
             <span className={crouching ? "text-emerald-400" : (running ? "text-red-400" : "text-zinc-500")} title={crouching ? "Crouching — quiet" : (running ? "Running — noisy" : "Walking")}>
               {crouching ? <ArrowDown className="h-3 w-3 inline" /> : (running ? <Volume2 className="h-3 w-3 inline" /> : <VolumeX className="h-3 w-3 inline" />)}
             </span>
@@ -2483,6 +3452,11 @@ export default function EscapeGame() {
               className="ml-2 flex items-center gap-1 text-[10px] text-amber-200 hover:text-amber-100 bg-black/60 border border-amber-700/60 rounded px-2 py-0.5 font-pixel">
               ↻ Restart
             </button>
+            {checkpoint && (
+              <span className="text-[10px] text-emerald-300 bg-black/60 border border-emerald-700/60 rounded px-2 py-0.5 font-pixel">
+                Checkpoint: {checkpoint.label}
+              </span>
+            )}
             <button onClick={() => { setStarted(false); setMenuTab("play"); setModal({ kind: "none" }); }}
               title="Exit to menu"
               className="flex items-center gap-1 text-[10px] text-red-200 hover:text-red-100 bg-black/60 border border-red-700/60 rounded px-2 py-0.5 font-pixel">
@@ -2490,25 +3464,25 @@ export default function EscapeGame() {
             </button>
           </div>
           {allKilled && <div className="text-emerald-400 font-bold animate-pulse">
-            → {isFinalLevel ? "Run to the Principal!" : "Stairs up!"}
+            → {isFinalLevel ? "Face the Matron!" : "Stairs up!"}
           </div>}
         </div>
       </div>
 
 
       {/* Corridor */}
-      <div ref={viewportRef} className="absolute inset-0 pt-16">
+      <div ref={viewportRef} className="absolute inset-0 pt-16 school-horror-viewport">
         <div className="relative h-full" style={{ width: WORLD_W, transform: `translateX(${-cam}px)` }}>
           {/* Sky / outdoors visible at exit */}
-          <div className="absolute inset-0" style={{
+          <div className="absolute inset-0 school-wall-bg" style={{
             background: "linear-gradient(180deg, #1a1825 0%, #221820 50%, #181018 100%)",
           }} />
           {/* Floor */}
-          <div className="absolute left-0 right-0" style={{ top: FLOOR_Y + 30, height: VIEW_H - FLOOR_Y - 30,
+          <div className="absolute left-0 right-0 school-floor-bg" style={{ top: FLOOR_Y + 30, height: VIEW_H - FLOOR_Y - 30,
             background: "repeating-linear-gradient(90deg, #2a1f1a 0 60px, #1f1612 60px 120px)",
             boxShadow: "inset 0 4px 0 #0a0606" }} />
           {/* Ceiling */}
-          <div className="absolute left-0 right-0" style={{ top: 0, height: CEIL_Y - 16,
+          <div className="absolute left-0 right-0 school-ceiling-bg" style={{ top: 0, height: CEIL_Y - 16,
             background: "linear-gradient(180deg,#0a0a14, #1a1a26)", boxShadow: "inset 0 -3px 0 #000" }} />
           {/* Wall stripe */}
           <div className="absolute left-0 right-0" style={{ top: CEIL_Y - 16, height: 8, background: "#3a2a2a" }} />
@@ -2725,20 +3699,21 @@ export default function EscapeGame() {
 
           {/* Zombies */}
           {zombies.map((z, i) => {
+            const monsterKind = pickToyMonsterKind(z.name);
             if (killed.has(z.id)) {
               return (
-                <div key={z.id} className="absolute opacity-60" style={{ left: z.x - 28, top: FLOOR_Y - 20, transform: "rotate(90deg)" }}>
-                  <PixelZombie size={80} />
+                <div key={z.id} className="absolute opacity-60" style={{ left: z.x - 34, top: FLOOR_Y - 24, transform: "rotate(90deg)" }}>
+                  <ToyMonster kind={monsterKind} size={96} />
                 </div>
               );
             }
             const isSleeping = !!z.sleeping && !wokenRef.current.has(z.id);
             if (isSleeping) {
               return (
-                <div key={z.id} className="absolute" style={{ left: z.x - 28, top: FLOOR_Y - 70 }}>
+                <div key={z.id} className="absolute" style={{ left: z.x - 34, top: FLOOR_Y - 86 }}>
                   {/* tilted up, looking at ceiling */}
                   <div style={{ transform: "rotate(-18deg)", transformOrigin: "50% 90%" }}>
-                    <PixelZombie size={80} facing={1} />
+                    <ToyMonster kind={monsterKind} size={96} facing={1} />
                   </div>
                   {/* Zzz */}
                   <div className="absolute -top-6 left-10 text-blue-200 font-pixel text-sm animate-pulse drop-shadow">
@@ -2751,12 +3726,14 @@ export default function EscapeGame() {
               );
             }
             const zCur = zomPosRef.current[z.id] ?? z.x;
+            const porcelainPhase = monsterKind === "porcelain" ? ((performance.now() - tStartRef.current) / 1000 + i * 0.73) % 6.2 : 0;
+            const monsterOpacity = monsterKind === "porcelain" && porcelainPhase > 1.25 && porcelainPhase < 5.25 ? 0.42 : 1;
             return (
-              <div key={z.id} className="absolute zombie-walk" style={{ left: zCur - 28, top: FLOOR_Y - 70, transition: "left 0.08s linear" }}>
-                <PixelZombie size={80} facing={zCur > x ? -1 : 1} />
+              <div key={z.id} className="absolute zombie-walk" style={{ left: zCur - 34, top: FLOOR_Y - 86, transition: "left 0.08s linear", opacity: monsterOpacity }}>
+                <ToyMonster kind={monsterKind} size={96} facing={zCur > x ? -1 : 1} />
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
                   <TaskIcon kind={z.kind} className="h-3 w-3" />
-                  {z.name}
+                  {z.name} · {monsterBehaviorLabel(monsterKind)}
                 </div>
               </div>
             );
@@ -2770,9 +3747,9 @@ export default function EscapeGame() {
               </div>
             )}
             <LanaSpeech side={facing === 1 ? "left" : "right"} />
-            <div className={moving ? "lana-walk" : "lana-idle"}
+            <div className={hp < maxHp * 0.28 ? "lana-scared" : (moving ? "lana-walk" : "lana-idle")}
               style={crouching ? { transform: "scaleY(0.7) translateY(18px)", transformOrigin: "50% 100%" } : undefined}>
-              <Crewmate color="#ff66aa" palette={lanaPalette} facing={facing} size={80} />
+              <Crewmate color="#ff66aa" palette={lanaPalette} facing={facing} size={80} motion={hp < maxHp * 0.28 ? "scared" : running ? "run" : moving ? "walk" : "idle"} />
               {batLeft > 0 && (
                 <div
                   className="absolute pointer-events-none"
@@ -2831,6 +3808,11 @@ export default function EscapeGame() {
           {toast}
         </div>
       )}
+      {ambientLine && modal.kind === "none" && (
+        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-20 bg-black/90 border border-red-700/50 text-red-100 px-4 py-2 rounded font-pixel text-xs tracking-wide shadow-[0_0_24px_rgba(127,29,29,0.45)]">
+          {ambientLine}
+        </div>
+      )}
 
       {/* Modals */}
       {modal.kind !== "none" && (
@@ -2842,15 +3824,39 @@ export default function EscapeGame() {
               </button>
             )}
 
+            {modal.kind === "story" && (
+              <div className="space-y-4 text-center max-w-lg mx-auto">
+                <div className="mx-auto w-28 h-28 border-2 border-red-800 bg-black/70 rounded flex items-center justify-center shadow-[0_0_24px_rgba(127,29,29,0.45)] overflow-hidden">
+                  <StoryPortrait title={modal.title} />
+                </div>
+                <div>
+                  <h2 className="font-display text-xl text-red-300">{modal.title}</h2>
+                  <p className="mt-3 text-sm text-zinc-200 whitespace-pre-line leading-relaxed">{modal.body}</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-[11px] font-pixel">
+                  <div className="bg-black/40 border border-zinc-700 rounded p-2">
+                    Notes<br /><span className="text-amber-300">{storyNotes.size}/{Object.keys(STORY_NOTES).length}</span>
+                  </div>
+                  <div className="bg-black/40 border border-zinc-700 rounded p-2">
+                    Saved<br /><span className="text-emerald-300">{rescued.size}/{RESCUE_EVENTS.length}</span>
+                  </div>
+                  <div className="bg-black/40 border border-zinc-700 rounded p-2">
+                    Checkpoint<br /><span className="text-primary">{checkpoint?.label ?? "none"}</span>
+                  </div>
+                </div>
+                <Button onClick={() => setModal({ kind: "none" })}>Keep moving</Button>
+              </div>
+            )}
+
             {modal.kind === "task" && (
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <PixelZombie size={64} />
+                  <ToyMonster kind={pickToyMonsterKind(modal.zombie.name)} size={64} />
                   <div>
                     <h2 className="font-display text-lg text-red-400">{modal.zombie.name}</h2>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <TaskIcon kind={modal.zombie.kind} className="h-3 w-3" />
-                      Solve the puzzle to defeat the zombie
+                      {monsterBehaviorLabel(pickToyMonsterKind(modal.zombie.name))} · solve the puzzle to survive
                     </p>
                   </div>
                 </div>
@@ -2867,7 +3873,7 @@ export default function EscapeGame() {
                 {modal.zombie.kind === "reactor" && <ReactorGame onDone={finishTask} />}
                 {modal.zombie.kind === "trash" && <TrashGame onDone={finishTask} />}
                 {modal.zombie.kind === "switches" && <SwitchesGame onDone={finishTask} />}
-                {modal.zombie.kind === "quiz" && <QuizGame onDone={finishTask} />}
+                {modal.zombie.kind === "quiz" && <QuizGame onDone={finishTask} levelName={cur.name} zombieName={modal.zombie.name} />}
                 {modal.zombie.kind === "aim" && <AimGame onDone={finishTask} />}
               </div>
             )}
@@ -2931,8 +3937,8 @@ export default function EscapeGame() {
               isFinalLevel ? (
                 <div className="flex flex-col items-center gap-4 text-center max-w-md">
                   <Impostor size={80} />
-                  <h3 className="font-display text-lg text-red-400">The Principal waits at the exit</h3>
-                  <p>«Lana… the last stand. Answer the riddles — and you are free.»</p>
+                  <h3 className="font-display text-lg text-red-400">The Porcelain Matron waits at the exit</h3>
+                  <p>"I kept them safe, Lana. Why would you take them into the dark outside?"</p>
                   <Button onClick={() => setModal({ kind: "boss" })}>Accept challenge</Button>
                 </div>
               ) : (
@@ -2964,7 +3970,7 @@ export default function EscapeGame() {
                   <DoorClosed className="h-10 w-10 text-amber-400" />
                   <div>
                     <h2 className="font-display text-lg text-amber-300">Door lock</h2>
-                    <p className="text-xs text-muted-foreground">Connect the wires to open the path to the Principal.</p>
+                    <p className="text-xs text-muted-foreground">Connect the wires to open the path to the porcelain doll.</p>
                   </div>
                 </div>
                 <HintBox kind="wires" advanced={save.owned.hint} />
@@ -2983,7 +3989,7 @@ export default function EscapeGame() {
             )}
 
             {modal.kind === "boss" && (
-              <BossFight onWin={() => setModal({ kind: "win" })} onLose={() => setModal({ kind: "lose" })} />
+              <BossEncounter levelName={cur.name} onWin={() => setModal({ kind: "win" })} onLose={() => setModal({ kind: "lose" })} />
             )}
 
             {modal.kind === "backpack" && (
@@ -3043,10 +4049,15 @@ export default function EscapeGame() {
 
             {modal.kind === "win" && (
               <div className="text-center space-y-4">
-                <h2 className="font-display text-2xl text-emerald-400">VICTORY!</h2>
-                <p>Lana ran out of the school. Sun. Freedom.</p>
+                <h2 className="font-display text-2xl text-emerald-400">{ending.title}</h2>
+                <p>{ending.body}</p>
                 <div className="flex justify-center"><Crewmate color="#ff66aa" palette={lanaPalette} size={80} /></div>
-                <p className="text-amber-300 font-pixel">Victory bonus: +200 🪙</p>
+                <div className="grid grid-cols-3 gap-2 text-[11px] font-pixel">
+                  <div className="bg-black/40 border border-zinc-700 rounded p-2">Notes<br /><span className="text-amber-300">{storyNotes.size}/{Object.keys(STORY_NOTES).length}</span></div>
+                  <div className="bg-black/40 border border-zinc-700 rounded p-2">Saved<br /><span className="text-emerald-300">{rescued.size}/{RESCUE_EVENTS.length}</span></div>
+                  <div className="bg-black/40 border border-zinc-700 rounded p-2">Bonus<br /><span className="text-primary">+{ending.bonus}</span></div>
+                </div>
+                <p className="text-amber-300 font-pixel">Ending bonus: +{ending.bonus} coins</p>
                 <div className="flex items-center gap-2 justify-center">
                   <Input
                     value={playerName}
@@ -3063,7 +4074,7 @@ export default function EscapeGame() {
                   </Button>
                 </div>
                 <Button onClick={() => {
-                  setCoins(c => c + 200);
+                  setCoins(c => c + ending.bonus);
                   setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" });
                 }}>Menu</Button>
               </div>
@@ -3073,7 +4084,7 @@ export default function EscapeGame() {
               <div className="text-center space-y-4">
                 <Skull className="h-16 w-16 text-red-500 mx-auto" />
                 <h2 className="font-display text-2xl text-red-400">DEFEAT</h2>
-                <p>The zombies were stronger. Buy upgrades and try again.</p>
+                <p>{checkpoint ? `Lana hears the school breathing. Respawning near ${checkpoint.label}...` : "The toys were stronger. Buy upgrades and try again."}</p>
                 <p className="text-xs text-zinc-400">Floors cleared: {level} · Coins: {coins}</p>
                 <div className="flex items-center gap-2 justify-center">
                   <Input
@@ -3090,7 +4101,10 @@ export default function EscapeGame() {
                     {scoreSubmitted ? "Submitted" : "To records"}
                   </Button>
                 </div>
-                <Button onClick={() => { setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" }); }}>Menu</Button>
+                <div className="flex justify-center gap-2">
+                  {checkpoint && <Button onClick={respawnAtCheckpoint}>Respawn now</Button>}
+                  <Button variant="secondary" onClick={() => { setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" }); }}>Menu</Button>
+                </div>
               </div>
             )}
           </div>
