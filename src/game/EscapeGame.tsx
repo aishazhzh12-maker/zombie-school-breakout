@@ -360,8 +360,8 @@ function PixelTeen({
   const isDina = kind === "dina";
   const skin = palette?.skin ?? (isKarl ? "#e3b48c" : isDina ? "#d8a378" : "#efc09a");
   const skinShade = palette?.skinShade ?? (isKarl ? "#b77a56" : isDina ? "#9a6548" : "#bf8260");
-  const hair = palette?.hair ?? (isKarl ? "#b9783e" : isDina ? "#171316" : "#2d1b16");
-  const hairHi = palette?.hairShade ?? (isKarl ? "#d79a58" : isDina ? "#2d252c" : "#513026");
+  const hair = palette?.hair ?? (isKarl ? "#6b3a22" : isDina ? "#5a3320" : "#231512");
+  const hairHi = palette?.hairShade ?? (isKarl ? "#9a5a30" : isDina ? "#86553a" : "#3a201a");
   const blazer = palette?.shirt ?? (isDina ? "#202b3a" : "#2a2634");
   const blazerDark = palette?.shirtShade ?? "#11101a";
   const shirt = kind === "lana" ? "#d9d5c8" : palette?.accent ?? "#d9d5c8";
@@ -1595,6 +1595,67 @@ function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }
         </>
       )}
     </svg>
+  );
+}
+
+function ScaryMenuScene() {
+  // Atmospheric hero for the main menu: Lana scared in the middle,
+  // Karl & Dina slightly distorted to the sides, with toy-monsters looming in
+  // the background behind translucent puppet strings — "manipulating" the kids.
+  return (
+    <div className="scary-menu-scene">
+      <div className="scary-menu-vignette" />
+      <div className="scary-menu-fog" />
+      <div className="scary-menu-title">
+        <div className="scary-menu-title-main">WELCOME BACK TO SCHOOL</div>
+        <div className="scary-menu-title-sub">they never stopped playing…</div>
+      </div>
+
+      {/* Background monsters — large, dim, looming, with puppet strings */}
+      <div className="scary-bg-monsters">
+        <div className="scary-bg-monster scary-bg-bear">
+          <ToyMonster kind="bear" size={210} />
+        </div>
+        <div className="scary-bg-monster scary-bg-doll">
+          <ToyMonster kind="porcelain" size={230} />
+        </div>
+        <div className="scary-bg-monster scary-bg-clown">
+          <ToyMonster kind="clown" size={220} />
+        </div>
+        <div className="scary-bg-monster scary-bg-monkey">
+          <ToyMonster kind="monkey" size={170} />
+        </div>
+        {/* Puppet strings reaching down toward the children */}
+        <svg className="scary-puppet-strings" viewBox="0 0 1000 360" preserveAspectRatio="none" aria-hidden>
+          <g stroke="#d8c8a8" strokeWidth="0.6" opacity="0.55">
+            <line x1="180" y1="0" x2="260" y2="320" />
+            <line x1="220" y1="0" x2="280" y2="320" />
+            <line x1="500" y1="0" x2="500" y2="300" />
+            <line x1="520" y1="0" x2="520" y2="300" />
+            <line x1="780" y1="0" x2="720" y2="320" />
+            <line x1="820" y1="0" x2="740" y2="320" />
+          </g>
+        </svg>
+      </div>
+
+      {/* Foreground children */}
+      <div className="scary-menu-kids">
+        <div className="scary-menu-kid scary-menu-karl">
+          <PixelTeen kind="karl" size={150} facing={1} motion="scared" />
+          <div className="scary-menu-label">КАРЛ</div>
+        </div>
+        <div className="scary-menu-kid scary-menu-lana">
+          <PixelTeen kind="lana" size={180} facing={1} scared motion="scared" />
+          <div className="scary-menu-label scary-menu-label-main">ЛАНА</div>
+        </div>
+        <div className="scary-menu-kid scary-menu-dina">
+          <PixelTeen kind="dina" size={150} facing={-1} motion="scared" />
+          <div className="scary-menu-label">ДИНА</div>
+        </div>
+      </div>
+
+      <div className="scary-menu-floor" />
+    </div>
   );
 }
 
@@ -3231,6 +3292,7 @@ export default function EscapeGame() {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-red-950 p-4 overflow-auto">
         <div className="max-w-6xl w-full space-y-4">
+          <ScaryMenuScene />
           <CharacterDesignBoard />
           <div className="flex items-center justify-center gap-2">
             <div className="px-3 py-1 bg-amber-900/40 border border-amber-700 rounded font-pixel text-amber-200 flex items-center gap-2">

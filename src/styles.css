@@ -684,3 +684,189 @@
 .danger-pulse { animation: danger-vignette 0.8s ease-in-out 3; }
 
 .scroll-smooth-x { transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* ===== Scary main-menu hero scene ===== */
+.scary-menu-scene {
+  position: relative;
+  width: 100%;
+  height: 420px;
+  border: 2px solid #1a0e0e;
+  border-radius: 6px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 90%, rgba(120,10,10,0.35), transparent 55%),
+    radial-gradient(ellipse at 50% 10%, rgba(180,40,40,0.18), transparent 60%),
+    linear-gradient(180deg, #0a0608 0%, #120a0a 40%, #1a0e0c 70%, #060304 100%);
+  box-shadow:
+    inset 0 0 120px 30px rgba(0,0,0,0.85),
+    inset 0 0 0 1px rgba(180,40,40,0.12),
+    0 30px 70px rgba(0,0,0,0.8);
+  isolation: isolate;
+}
+.scary-menu-vignette {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.85) 100%);
+  z-index: 4;
+}
+.scary-menu-fog {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,0.018) 0 2px, transparent 2px 4px),
+    radial-gradient(ellipse at 30% 80%, rgba(120,140,150,0.10), transparent 50%),
+    radial-gradient(ellipse at 70% 70%, rgba(120,40,40,0.10), transparent 55%);
+  mix-blend-mode: screen;
+  animation: scary-fog 14s ease-in-out infinite alternate;
+  z-index: 3;
+}
+@keyframes scary-fog {
+  from { transform: translateX(-3%); opacity: 0.85; }
+  to   { transform: translateX(3%); opacity: 1; }
+}
+.scary-menu-title {
+  position: absolute;
+  top: 10px; left: 0; right: 0;
+  text-align: center;
+  z-index: 5;
+  pointer-events: none;
+}
+.scary-menu-title-main {
+  font-family: var(--font-display, 'Creepster', system-ui, serif);
+  font-size: clamp(20px, 3vw, 34px);
+  letter-spacing: 0.18em;
+  color: #d8221e;
+  text-shadow:
+    0 0 12px rgba(216,34,30,0.5),
+    0 2px 0 #1a0000,
+    2px 2px 0 #000;
+  filter: drop-shadow(0 0 18px rgba(216,34,30,0.35));
+  animation: scary-flicker 5s infinite;
+}
+.scary-menu-title-sub {
+  margin-top: 2px;
+  font-family: var(--font-pixel, monospace);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: #b8a098;
+  opacity: 0.7;
+}
+@keyframes scary-flicker {
+  0%, 92%, 100% { opacity: 1; }
+  93% { opacity: 0.3; }
+  94% { opacity: 1; }
+  95% { opacity: 0.55; }
+  96% { opacity: 1; }
+}
+.scary-bg-monsters {
+  position: absolute; inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.scary-bg-monster {
+  position: absolute;
+  bottom: 30px;
+  filter:
+    grayscale(0.4)
+    brightness(0.35)
+    contrast(1.2)
+    drop-shadow(0 0 18px rgba(180,30,30,0.35));
+  opacity: 0.78;
+}
+.scary-bg-bear   { left: 6%;  bottom: 40px;  transform: translateY(0) scale(1); animation: scary-sway 6.5s ease-in-out infinite alternate; }
+.scary-bg-doll   { left: 38%; bottom: 90px;  animation: scary-sway 7.5s ease-in-out infinite alternate-reverse; }
+.scary-bg-clown  { right: 5%; bottom: 30px;  animation: scary-sway 5.8s ease-in-out infinite alternate; }
+.scary-bg-monkey { left: 70%; bottom: 60px;  opacity: 0.55; animation: scary-sway 9s ease-in-out infinite alternate; }
+@keyframes scary-sway {
+  from { transform: translateY(-2px) rotate(-1deg); }
+  to   { transform: translateY(3px)  rotate(1.2deg); }
+}
+.scary-puppet-strings {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  opacity: 0.55;
+  mix-blend-mode: screen;
+}
+.scary-menu-kids {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 36px;
+  padding: 0 28px 38px;
+  z-index: 5;
+}
+.scary-menu-kid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  filter: drop-shadow(0 8px 12px rgba(0,0,0,0.7));
+}
+.scary-menu-karl {
+  transform: skewY(-2deg) translateY(8px);
+  filter:
+    drop-shadow(0 8px 12px rgba(0,0,0,0.7))
+    hue-rotate(-10deg)
+    contrast(1.05);
+  animation: scary-twitch 3.7s ease-in-out infinite;
+}
+.scary-menu-dina {
+  transform: skewY(2deg) translateY(8px);
+  filter:
+    drop-shadow(0 8px 12px rgba(0,0,0,0.7))
+    hue-rotate(8deg)
+    contrast(1.05);
+  animation: scary-twitch 4.3s ease-in-out infinite reverse;
+}
+.scary-menu-lana {
+  transform: translateY(-4px);
+  filter:
+    drop-shadow(0 0 16px rgba(216,34,30,0.45))
+    drop-shadow(0 10px 14px rgba(0,0,0,0.8));
+  animation: scary-tremble 1.6s ease-in-out infinite;
+}
+@keyframes scary-twitch {
+  0%, 88%, 100% { transform: skewY(-2deg) translateY(8px); }
+  90% { transform: skewY(-4deg) translate(-1px, 9px); }
+  92% { transform: skewY(-1deg) translate(2px, 7px); }
+  94% { transform: skewY(-3deg) translateY(8px); }
+}
+@keyframes scary-tremble {
+  0%, 100% { transform: translate(0, -4px); }
+  25% { transform: translate(-1px, -5px); }
+  50% { transform: translate(1px, -3px); }
+  75% { transform: translate(-1px, -4px); }
+}
+.scary-menu-label {
+  font-family: var(--font-pixel, monospace);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: #c8b8b0;
+  text-shadow: 0 1px 0 #000, 0 0 8px rgba(0,0,0,0.9);
+}
+.scary-menu-label-main {
+  color: #ff4848;
+  font-size: 12px;
+  text-shadow: 0 1px 0 #000, 0 0 10px rgba(216,34,30,0.55);
+}
+.scary-menu-floor {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 90px;
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%),
+    repeating-linear-gradient(90deg, #1a1010 0 22px, #120a0a 22px 44px);
+  z-index: 0;
+  opacity: 0.85;
+}
+
+@media (max-width: 720px) {
+  .scary-menu-scene { height: 340px; }
+  .scary-menu-kids { gap: 14px; padding: 0 10px 26px; }
+  .scary-bg-monkey { display: none; }
+}
