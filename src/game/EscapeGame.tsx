@@ -3862,10 +3862,11 @@ export default function EscapeGame() {
               );
             }
             const zCur = zomPosRef.current[z.id] ?? z.x;
-            const porcelainPhase = monsterKind === "porcelain" ? ((performance.now() - tStartRef.current) / 1000 + i * 0.73) % 6.2 : 0;
-            const monsterOpacity = monsterKind === "porcelain" && porcelainPhase > 1.25 && porcelainPhase < 5.25 ? 0.42 : 1;
             return (
-              <div key={z.id} className="absolute zombie-walk" style={{ left: zCur - 34, top: FLOOR_Y - 86, transition: "left 0.08s linear", opacity: monsterOpacity }}>
+              <div key={z.id} className="absolute zombie-walk" style={{
+                left: zCur - 34, top: FLOOR_Y - 86, transition: "left 0.08s linear",
+                filter: "drop-shadow(0 0 10px rgba(180,10,10,0.65)) drop-shadow(0 6px 6px rgba(0,0,0,0.9)) contrast(1.15) saturate(1.2)",
+              }}>
                 <ToyMonster kind={monsterKind} size={96} facing={zCur > x ? -1 : 1} />
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
                   <TaskIcon kind={z.kind} className="h-3 w-3" />
