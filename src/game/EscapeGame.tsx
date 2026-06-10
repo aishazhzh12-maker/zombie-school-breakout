@@ -3532,6 +3532,26 @@ export default function EscapeGame() {
 
   return (
     <div className={`school-horror-shell h-screen w-screen overflow-hidden bg-black text-foreground relative select-none ${shake ? "shake" : ""}`}>
+      {/* Jumpscare overlay */}
+      {jumpscare && (
+        <div className="absolute inset-0 z-[60] pointer-events-none flex items-center justify-center"
+          style={{
+            background: "radial-gradient(circle at center, rgba(120,0,0,0.55), rgba(0,0,0,0.95) 70%)",
+            animation: "shake 0.5s",
+          }}>
+          <div style={{
+            transform: "scale(2.4)",
+            filter: "drop-shadow(0 0 40px rgba(220,20,20,0.9)) contrast(1.4) saturate(1.4)",
+            animation: "scale-in 0.18s ease-out",
+          }}>
+            <ToyMonster kind={jumpscare} size={260} boss facing={1} />
+          </div>
+          <div className="absolute inset-0" style={{
+            background: "repeating-linear-gradient(0deg, rgba(0,0,0,0.35) 0 2px, transparent 2px 4px)",
+            mixBlendMode: "multiply",
+          }} />
+        </div>
+      )}
       {/* HUD */}
       <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/90 to-transparent p-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
