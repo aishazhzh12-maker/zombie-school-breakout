@@ -360,8 +360,8 @@ function PixelTeen({
   const isDina = kind === "dina";
   const skin = palette?.skin ?? (isKarl ? "#e3b48c" : isDina ? "#d8a378" : "#efc09a");
   const skinShade = palette?.skinShade ?? (isKarl ? "#b77a56" : isDina ? "#9a6548" : "#bf8260");
-  const hair = palette?.hair ?? (isKarl ? "#b9783e" : isDina ? "#171316" : "#2d1b16");
-  const hairHi = palette?.hairShade ?? (isKarl ? "#d79a58" : isDina ? "#2d252c" : "#513026");
+  const hair = palette?.hair ?? (isKarl ? "#6b3a22" : isDina ? "#5a3320" : "#231512");
+  const hairHi = palette?.hairShade ?? (isKarl ? "#9a5a30" : isDina ? "#86553a" : "#3a201a");
   const blazer = palette?.shirt ?? (isDina ? "#202b3a" : "#2a2634");
   const blazerDark = palette?.shirtShade ?? "#11101a";
   const shirt = kind === "lana" ? "#d9d5c8" : palette?.accent ?? "#d9d5c8";
