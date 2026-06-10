@@ -3861,7 +3861,7 @@ export default function EscapeGame() {
 
 
           {/* Zombies */}
-          {zombies.map((z, i) => {
+          {zombies.map((z) => {
             const monsterKind = pickToyMonsterKind(z.name);
             if (killed.has(z.id)) {
               return (
