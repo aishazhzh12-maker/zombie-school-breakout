@@ -3652,11 +3652,10 @@ export default function EscapeGame() {
           <div className="absolute left-0 right-0" style={{ top: CEIL_Y - 16, height: 8, background: "#3a2a2a" }} />
 
           {/* Flickering lights */}
-          {Array.from({ length: 10 }).map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="absolute flicker" style={{
-              left: 180 + i * 320, top: CEIL_Y - 8, width: 60, height: 14,
+              left: 220 + i * 640, top: CEIL_Y - 8, width: 60, height: 14,
               background: "radial-gradient(ellipse, #ffeb3b 0%, #ffb84d 40%, transparent 70%)",
-              filter: "blur(2px)",
             }} />
           ))}
 
