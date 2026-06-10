@@ -2580,6 +2580,8 @@ export default function EscapeGame() {
   const [modal, setModal] = useState<Modal>({ kind: "none" });
   const [hint, setHint] = useState("");
   const [shake, setShake] = useState(false);
+  const [jumpscare, setJumpscare] = useState<ToyMonsterKind | null>(null);
+  const lastJumpscareRef = useRef(0);
   const [toast, setToast] = useState<string>("");
   const [inv, setInv] = useState<InvItem[]>([]);
   const invRef = useRef(inv); invRef.current = inv;
