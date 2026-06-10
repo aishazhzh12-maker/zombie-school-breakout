@@ -798,7 +798,8 @@ function pickToyMonsterKind(name: string): ToyMonsterKind {
   if (lower.includes("bear") || lower.includes("plush")) return "bear";
   if (lower.includes("monkey") || lower.includes("music box")) return "monkey";
   if (lower.includes("clown")) return "clown";
-  if (lower.includes("doll") || lower.includes("porcelain") || lower.includes("matron")) return "porcelain";
+  // Porcelain / white doll removed — replaced by puppet for a darker look
+  if (lower.includes("doll") || lower.includes("porcelain") || lower.includes("matron")) return "puppet";
   return "puppet";
 }
 
@@ -2579,6 +2580,8 @@ export default function EscapeGame() {
   const [modal, setModal] = useState<Modal>({ kind: "none" });
   const [hint, setHint] = useState("");
   const [shake, setShake] = useState(false);
+  const [jumpscare, setJumpscare] = useState<ToyMonsterKind | null>(null);
+  const lastJumpscareRef = useRef(0);
   const [toast, setToast] = useState<string>("");
   const [inv, setInv] = useState<InvItem[]>([]);
   const invRef = useRef(inv); invRef.current = inv;
@@ -3031,6 +3034,12 @@ export default function EscapeGame() {
             });
             setShake(true);
             setTimeout(() => setShake(false), 350);
+            // Jumpscare — at most every 4s
+            if (nowT - lastJumpscareRef.current > 4000) {
+              lastJumpscareRef.current = nowT;
+              setJumpscare(pickToyMonsterKind(z.name));
+              setTimeout(() => setJumpscare(null), 650);
+            }
             setToast(`🩸 ${z.name} bites! -${dmg} HP${isRun ? " (noisy!)" : ""}`);
             setTimeout(() => setToast(""), 1200);
             break;
@@ -3523,6 +3532,26 @@ export default function EscapeGame() {
 
   return (
     <div className={`school-horror-shell h-screen w-screen overflow-hidden bg-black text-foreground relative select-none ${shake ? "shake" : ""}`}>
+      {/* Jumpscare overlay */}
+      {jumpscare && (
+        <div className="absolute inset-0 z-[60] pointer-events-none flex items-center justify-center"
+          style={{
+            background: "radial-gradient(circle at center, rgba(120,0,0,0.55), rgba(0,0,0,0.95) 70%)",
+            animation: "shake 0.5s",
+          }}>
+          <div style={{
+            transform: "scale(2.4)",
+            filter: "drop-shadow(0 0 40px rgba(220,20,20,0.9)) contrast(1.4) saturate(1.4)",
+            animation: "scale-in 0.18s ease-out",
+          }}>
+            <ToyMonster kind={jumpscare} size={260} boss facing={1} />
+          </div>
+          <div className="absolute inset-0" style={{
+            background: "repeating-linear-gradient(0deg, rgba(0,0,0,0.35) 0 2px, transparent 2px 4px)",
+            mixBlendMode: "multiply",
+          }} />
+        </div>
+      )}
       {/* HUD */}
       <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/90 to-transparent p-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -3623,11 +3652,10 @@ export default function EscapeGame() {
           <div className="absolute left-0 right-0" style={{ top: CEIL_Y - 16, height: 8, background: "#3a2a2a" }} />
 
           {/* Flickering lights */}
-          {Array.from({ length: 10 }).map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="absolute flicker" style={{
-              left: 180 + i * 320, top: CEIL_Y - 8, width: 60, height: 14,
+              left: 220 + i * 640, top: CEIL_Y - 8, width: 60, height: 14,
               background: "radial-gradient(ellipse, #ffeb3b 0%, #ffb84d 40%, transparent 70%)",
-              filter: "blur(2px)",
             }} />
           ))}
 
@@ -3833,7 +3861,7 @@ export default function EscapeGame() {
 
 
           {/* Zombies */}
-          {zombies.map((z, i) => {
+          {zombies.map((z) => {
             const monsterKind = pickToyMonsterKind(z.name);
             if (killed.has(z.id)) {
               return (
@@ -3861,10 +3889,11 @@ export default function EscapeGame() {
               );
             }
             const zCur = zomPosRef.current[z.id] ?? z.x;
-            const porcelainPhase = monsterKind === "porcelain" ? ((performance.now() - tStartRef.current) / 1000 + i * 0.73) % 6.2 : 0;
-            const monsterOpacity = monsterKind === "porcelain" && porcelainPhase > 1.25 && porcelainPhase < 5.25 ? 0.42 : 1;
             return (
-              <div key={z.id} className="absolute zombie-walk" style={{ left: zCur - 34, top: FLOOR_Y - 86, transition: "left 0.08s linear", opacity: monsterOpacity }}>
+              <div key={z.id} className="absolute zombie-walk" style={{
+                left: zCur - 34, top: FLOOR_Y - 86, transition: "left 0.08s linear",
+                filter: "drop-shadow(0 0 10px rgba(180,10,10,0.65)) drop-shadow(0 6px 6px rgba(0,0,0,0.9)) contrast(1.15) saturate(1.2)",
+              }}>
                 <ToyMonster kind={monsterKind} size={96} facing={zCur > x ? -1 : 1} />
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
                   <TaskIcon kind={z.kind} className="h-3 w-3" />
