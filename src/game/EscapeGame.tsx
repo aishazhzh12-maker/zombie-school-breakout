@@ -798,7 +798,8 @@ function pickToyMonsterKind(name: string): ToyMonsterKind {
   if (lower.includes("bear") || lower.includes("plush")) return "bear";
   if (lower.includes("monkey") || lower.includes("music box")) return "monkey";
   if (lower.includes("clown")) return "clown";
-  if (lower.includes("doll") || lower.includes("porcelain") || lower.includes("matron")) return "porcelain";
+  // Porcelain / white doll removed — replaced by puppet for a darker look
+  if (lower.includes("doll") || lower.includes("porcelain") || lower.includes("matron")) return "puppet";
   return "puppet";
 }
 
