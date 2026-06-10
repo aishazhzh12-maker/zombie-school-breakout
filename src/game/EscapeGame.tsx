@@ -925,6 +925,13 @@ export type Outfit = {
 };
 const OUTFITS: Outfit[] = [
   { id: "classic", name: "School Uniform", price: 0, palette: PAL_LANA },
+  { id: "hoodie", name: "Grey Hoodie + Jeans", price: 60, palette: {
+    skin: "#f4c8a8", skinShade: "#d49a78",
+    hair: "#3a2418", hairShade: "#1a0e08",
+    shirt: "#6e7480", shirtShade: "#3a3e48",
+    pants: "#2a3a5a", pantsShade: "#101830", shoes: "#f4f4f4",
+    cap: "#6e7480",
+  } },
   { id: "track", name: "Tracksuit", price: 80, palette: {
     skin: "#f4c8a8", skinShade: "#d49a78",
     hair: "#2a1a14", hairShade: "#0a0506",
@@ -932,12 +939,33 @@ const OUTFITS: Outfit[] = [
     pants: "#0a0a14", pantsShade: "#000000", shoes: "#ffffff",
     cap: "#1aa8a8",
   } },
+  { id: "denim", name: "Denim Jacket", price: 120, palette: {
+    skin: "#f4c8a8", skinShade: "#d49a78",
+    hair: "#5a3a1a", hairShade: "#2a1a08",
+    shirt: "#3a6aa8", shirtShade: "#1a3a68",
+    pants: "#1a2a4a", pantsShade: "#0a1228", shoes: "#3a2418",
+    cap: "#3a6aa8",
+  } },
   { id: "punk", name: "Punk Jacket", price: 160, palette: {
     skin: "#f4c8a8", skinShade: "#c8946a",
     hair: "#ff2a6a", hairShade: "#8a0a3a",
     shirt: "#1a1a1a", shirtShade: "#000000",
     pants: "#2a1a2a", pantsShade: "#0a0a0a", shoes: "#3a0a0a",
     cap: "#1a1a1a",
+  } },
+  { id: "raincoat", name: "Yellow Raincoat", price: 200, palette: {
+    skin: "#f4c8a8", skinShade: "#d49a78",
+    hair: "#2a1a14", hairShade: "#0a0506",
+    shirt: "#f4c834", shirtShade: "#a07a10",
+    pants: "#1a1a24", pantsShade: "#000000", shoes: "#1a1a1a",
+    cap: "#f4c834",
+  } },
+  { id: "winter", name: "Winter Coat", price: 240, palette: {
+    skin: "#f4c8a8", skinShade: "#c8946a",
+    hair: "#3a2418", hairShade: "#1a0e08",
+    shirt: "#8a2424", shirtShade: "#4a0e0e",
+    pants: "#1a1a24", pantsShade: "#000000", shoes: "#3a2418",
+    cap: "#f4f4f4",
   } },
   { id: "armor", name: "Armor Vest (+10 HP)", price: 300, palette: {
     skin: "#f4c8a8", skinShade: "#c8946a",
@@ -955,6 +983,47 @@ const OUTFITS: Outfit[] = [
     eyes: "#ff3030",
   } },
 ];
+
+// Smooth (non-pixel) silhouette preview used in the wardrobe shop.
+function SmoothOutfitPreview({ palette, size = 110 }: { palette: PixelPalette; size?: number }) {
+  return (
+    <svg width={size * 0.55} height={size} viewBox="0 0 55 100" style={{ filter: "drop-shadow(0 6px 8px rgba(0,0,0,0.55))" }}>
+      {/* hair back */}
+      <ellipse cx="27.5" cy="16" rx="11" ry="11" fill={palette.hairShade} />
+      {/* head */}
+      <ellipse cx="27.5" cy="18" rx="8.5" ry="9.5" fill={palette.skin} />
+      <path d="M19 17 Q19 9 27.5 8 Q36 9 36 17 L36 13 Q32 10 27.5 10 Q23 10 19 13 Z" fill={palette.hair} />
+      {/* eyes */}
+      <circle cx="24.5" cy="19" r="0.9" fill={palette.eyes ?? "#1a1a1a"} />
+      <circle cx="30.5" cy="19" r="0.9" fill={palette.eyes ?? "#1a1a1a"} />
+      {/* neck */}
+      <rect x="25.5" y="26" width="4" height="4" fill={palette.skinShade} />
+      {/* torso (jacket/shirt) */}
+      <path d="M14 32 Q14 30 17 29 L25 28 L30 28 L38 29 Q41 30 41 32 L42 58 L13 58 Z" fill={palette.shirt} />
+      <path d="M14 32 Q14 30 17 29 L25 28 L25 58 L13 58 Z" fill={palette.shirtShade} opacity="0.55" />
+      {/* armor vest detail */}
+      {palette.armored && (
+        <>
+          <rect x="22" y="34" width="11" height="20" fill="#1a1a14" opacity="0.55" />
+          <rect x="22" y="38" width="11" height="1.2" fill="#3a3a28" />
+          <rect x="22" y="46" width="11" height="1.2" fill="#3a3a28" />
+        </>
+      )}
+      {/* belt */}
+      <rect x="13" y="56" width="29" height="3" fill="#1a1014" />
+      {/* legs (pants) */}
+      <path d="M14 59 L26 59 L25 92 L17 92 Z" fill={palette.pants} />
+      <path d="M29 59 L41 59 L38 92 L30 92 Z" fill={palette.pants} />
+      <path d="M14 59 L20 59 L18 92 L17 92 Z" fill={palette.pantsShade} opacity="0.6" />
+      <path d="M29 59 L34 59 L31 92 L30 92 Z" fill={palette.pantsShade} opacity="0.6" />
+      {/* shoes */}
+      <ellipse cx="20.5" cy="93" rx="4.5" ry="2.2" fill={palette.shoes} />
+      <ellipse cx="34" cy="93" rx="4.5" ry="2.2" fill={palette.shoes} />
+      {/* subtle face shading */}
+      <ellipse cx="27.5" cy="22" rx="6" ry="3" fill={palette.skinShade} opacity="0.25" />
+    </svg>
+  );
+}
 
 // ---- Upgrades (persisted in localStorage) ----
 export type UpgradeId = "bat" | "gun" | "flashlight" | "hp" | "hint";
@@ -3291,9 +3360,13 @@ export default function EscapeGame() {
 
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-red-950 p-4 overflow-auto">
-        <div className="max-w-6xl w-full space-y-4">
-          <ScaryMenuScene />
-          <CharacterDesignBoard />
+        <div className="max-w-2xl w-full space-y-3">
+          <div className="text-center py-4 border border-red-900/50 rounded bg-black/50">
+            <h1 className="font-display text-2xl md:text-3xl tracking-widest text-red-500" style={{ textShadow: "0 0 16px rgba(216,34,30,0.45), 0 2px 0 #1a0000" }}>
+              WELCOME BACK TO SCHOOL
+            </h1>
+            <p className="font-pixel text-xs text-zinc-400 mt-1 tracking-[0.3em]">they never stopped playing…</p>
+          </div>
           <div className="flex items-center justify-center gap-2">
             <div className="px-3 py-1 bg-amber-900/40 border border-amber-700 rounded font-pixel text-amber-200 flex items-center gap-2">
               <Coins className="h-4 w-4" /> {coins} coins
@@ -3375,7 +3448,7 @@ export default function EscapeGame() {
                 const equipped = save.outfit === o.id;
                 return (
                   <div key={o.id} className={`p-3 rounded border ${equipped ? "border-primary bg-primary/10" : "border-zinc-700 bg-black/40"} flex flex-col items-center gap-2`}>
-                    <PixelHuman palette={o.palette} variant="girl" size={43} />
+                    <SmoothOutfitPreview palette={o.palette} size={110} />
                     <div className="text-xs font-pixel text-center">{o.name}</div>
                     {equipped
                       ? <div className="text-[10px] text-primary font-pixel">EQUIPPED</div>
