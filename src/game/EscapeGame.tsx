@@ -3034,6 +3034,12 @@ export default function EscapeGame() {
             });
             setShake(true);
             setTimeout(() => setShake(false), 350);
+            // Jumpscare — at most every 4s
+            if (nowT - lastJumpscareRef.current > 4000) {
+              lastJumpscareRef.current = nowT;
+              setJumpscare(pickToyMonsterKind(z.name));
+              setTimeout(() => setJumpscare(null), 650);
+            }
             setToast(`🩸 ${z.name} bites! -${dmg} HP${isRun ? " (noisy!)" : ""}`);
             setTimeout(() => setToast(""), 1200);
             break;
