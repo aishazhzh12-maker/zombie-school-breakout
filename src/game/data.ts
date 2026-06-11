@@ -37,7 +37,6 @@ export type Doll = {
   x: number;
   kind: TaskKind;
   name: string;
-  sleeping?: boolean;
 };
 
 export type Obstacle = {
@@ -70,8 +69,8 @@ export const CEIL_Y = 90;
 const FLASHLIGHT: LootItem = { name: "Flashlight", emoji: "🔦", givesFlashlight: true, battery: 100 };
 const BATTERY_S: LootItem = { name: "AA Battery", emoji: "🔋", battery: 35 };
 const BATTERY_M: LootItem = { name: "9V Battery", emoji: "🪫", battery: 60 };
-const APTECHKA:  LootItem = { name: "Medkit", emoji: "🩹", hpGain: 40 };
-const BANDAGE:   LootItem = { name: "Bandage", emoji: "🩹", hpGain: 25 };
+const APTECHKA:  LootItem = { name: "Аптечка", emoji: "🩹", hpGain: 40 };
+const BANDAGE:   LootItem = { name: "Бинт", emoji: "🩹", hpGain: 25 };
 const SANDWICH:  LootItem = { name: "Sandwich", emoji: "🥪", hpGain: 8, foodGain: 35 };
 const CHOCO:     LootItem = { name: "Chocolate", emoji: "🍫", hpGain: 5, foodGain: 30 };
 const ENERGY:    LootItem = { name: "Energy Drink", emoji: "⚡", hpGain: 10, strengthGain: 1, foodGain: 20 };
@@ -150,13 +149,13 @@ export const levels: Level[] = [
     ],
     dolls: [
       { id: "l1-z1", x: 500, kind: "switches", name: "Button-Eye Bear" },
-      { id: "l1-z2", x: 950, kind: "download", name: "Sleeping Plush Bear", sleeping: true },
+      { id: "l1-z2", x: 950, kind: "download", name: "Plush Bear" },
       { id: "l1-z3", x: 1050, kind: "quiz", name: "Old Plush Bear" },
       { id: "l1-z4", x: 1750, kind: "wires", name: "Torn School Bear" },
-      { id: "l1-z5", x: 2050, kind: "aim", name: "Sleeping Button Bear", sleeping: true },
+      { id: "l1-z5", x: 2050, kind: "aim", name: "Button Bear" },
       { id: "l1-z6", x: 2450, kind: "switches", name: "Locker Plush Bear" },
       { id: "l1-z7", x: 3050, kind: "trash", name: "Basement Plush Bear" },
-      { id: "l1-z8", x: 3500, kind: "reactor", name: "Sleeping Boiler Bear", sleeping: true },
+      { id: "l1-z8", x: 3500, kind: "reactor", name: "Boiler Bear" },
       { id: "l1-z9", x: 3850, kind: "download", name: "Laundry Plush Bear" },
     ],
     obstacles: [
@@ -227,15 +226,10 @@ export const levels: Level[] = [
       ]},
     ],
     dolls: [
-      { id: "l2-z1", x: 600, kind: "switches", name: "Porcelain Ballerina Doll" },
-      { id: "l2-z2", x: 1000, kind: "quiz", name: "Sleeping Legless Ballerina Doll", sleeping: true },
-      { id: "l2-z3", x: 1200, kind: "download", name: "Music Box Ballerina Doll" },
-      { id: "l2-z4", x: 1800, kind: "wires", name: "Kitchen Ballerina Doll" },
-      { id: "l2-z5", x: 2200, kind: "reactor", name: "Sleeping Toy Ballerina Doll", sleeping: true },
-      { id: "l2-z6", x: 2400, kind: "aim", name: "Crawling Porcelain Ballerina" },
-      { id: "l2-z7", x: 2950, kind: "switches", name: "Mop-Hair Ballerina Doll" },
-      { id: "l2-z8", x: 3450, kind: "trash", name: "Maproom Ballerina Doll" },
-      { id: "l2-z9", x: 4000, kind: "quiz", name: "Sleeping Hall Ballerina Doll", sleeping: true },
+      { id: "l2-z1", x: 650, kind: "switches", name: "Porcelain Ballerina Doll" },
+      { id: "l2-z2", x: 1650, kind: "download", name: "Music Box Ballerina Doll" },
+      { id: "l2-z3", x: 2750, kind: "wires", name: "Crawling Porcelain Ballerina" },
+      { id: "l2-z4", x: 3800, kind: "quiz", name: "Hall Ballerina Doll" },
     ],
     obstacles: [
       { id: "l2-g1", x: 600, kind: "glass" },
@@ -306,14 +300,10 @@ export const levels: Level[] = [
       ]},
     ],
     dolls: [
-      { id: "l3a-z1", x: 550, kind: "aim", name: "Paint-Stained Clockwork Monkey" },
-      { id: "l3a-z2", x: 1100, kind: "quiz", name: "Sleeping Workshop Monkey", sleeping: true },
-      { id: "l3a-z3", x: 1300, kind: "wires", name: "Workshop Toy Monkey" },
-      { id: "l3a-z4", x: 1750, kind: "reactor", name: "Globe-Head Monkey" },
-      { id: "l3a-z5", x: 2300, kind: "download", name: "Sleeping History Monkey", sleeping: true },
-      { id: "l3a-z6", x: 2550, kind: "trash", name: "Star-Gazer Toy Monkey" },
-      { id: "l3a-z7", x: 3350, kind: "switches", name: "Long-Armed Clockwork Monkey" },
-      { id: "l3a-z8", x: 3900, kind: "aim", name: "Sleeping Garden Monkey", sleeping: true },
+      { id: "l3a-z1", x: 650, kind: "aim", name: "Paint-Stained Clockwork Monkey" },
+      { id: "l3a-z2", x: 1700, kind: "reactor", name: "Globe-Head Monkey" },
+      { id: "l3a-z3", x: 2850, kind: "trash", name: "Star-Gazer Toy Monkey" },
+      { id: "l3a-z4", x: 3800, kind: "switches", name: "Long-Armed Clockwork Monkey" },
     ],
     obstacles: [
       { id: "l3a-g1", x: 750, kind: "glass" },
@@ -388,16 +378,10 @@ export const levels: Level[] = [
       ]},
     ],
     dolls: [
-      { id: "l4-z1", x: 550, kind: "trash", name: "Storage Marionette Clown" },
-      { id: "l4-z2", x: 1050, kind: "quiz", name: "Sleeping Wire Clown", sleeping: true },
-      { id: "l4-z3", x: 1250, kind: "wires", name: "Wire Marionette Clown" },
-      { id: "l4-z4", x: 1750, kind: "switches", name: "Серверная Toy Clown" },
-      { id: "l4-z5", x: 2300, kind: "download", name: "Sleeping Gym Clown", sleeping: true },
-      { id: "l4-z6", x: 2600, kind: "aim", name: "Locker Clown" },
-      { id: "l4-z7", x: 2950, kind: "reactor", name: "Method Clown" },
-      { id: "l4-z8", x: 3500, kind: "trash", name: "Чердак Archivist Clown" },
-      { id: "l4-z9", x: 4050, kind: "quiz", name: "Sleeping Roof Clown", sleeping: true },
-      { id: "l4-z10", x: 4450, kind: "wires", name: "Tank Clown Keeper" },
+      { id: "l4-z1", x: 700, kind: "trash", name: "Storage Marionette Clown" },
+      { id: "l4-z2", x: 1850, kind: "wires", name: "Wire Marionette Clown" },
+      { id: "l4-z3", x: 3050, kind: "aim", name: "Locker Clown" },
+      { id: "l4-z4", x: 4250, kind: "reactor", name: "Tank Clown Keeper" },
     ],
     obstacles: [
       { id: "l4-g1", x: 700, kind: "glass" },
@@ -470,15 +454,15 @@ export const levels: Level[] = [
     ],
     dolls: [
       { id: "l3-z1", x: 600, kind: "switches", name: "Matron Doll" },
-      { id: "l3-z2", x: 1000, kind: "quiz", name: "Sleeping Matron Ballerina Doll", sleeping: true },
+      { id: "l3-z2", x: 1000, kind: "quiz", name: "Matron Ballerina Doll" },
       { id: "l3-z3", x: 1200, kind: "trash", name: "Nurse Matron Doll" },
       { id: "l3-z4", x: 1800, kind: "wires", name: "Лаборатория Matron Doll" },
-      { id: "l3-z5", x: 2150, kind: "download", name: "Sleeping Библиотека Matron Doll", sleeping: true },
+      { id: "l3-z5", x: 2150, kind: "download", name: "Библиотека Matron Doll" },
       { id: "l3-z6", x: 2500, kind: "switches", name: "Библиотека Guard Matron Doll" },
-      { id: "l3-z7", x: 2850, kind: "reactor", name: "Sleeping Canteen Matron Doll", sleeping: true },
+      { id: "l3-z7", x: 2850, kind: "reactor", name: "Canteen Matron Doll" },
       { id: "l3-z8", x: 3100, kind: "aim", name: "Canteen Matron Doll" },
       { id: "l5-z9", x: 3600, kind: "trash", name: "Trophy Guard Matron Doll" },
-      { id: "l5-z10", x: 4100, kind: "quiz", name: "Sleeping Roof Matron Doll", sleeping: true },
+      { id: "l5-z10", x: 4100, kind: "quiz", name: "Roof Matron Doll" },
     ],
     obstacles: [
       { id: "l5-g1", x: 800, kind: "glass" },

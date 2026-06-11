@@ -1268,7 +1268,7 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
   useEffect(() => {
     const tick = () => {
       setProgress(p => {
-        const np = holding.current ? Math.min(100, p + 3) : Math.max(0, p - 0.2);
+        const np = holding.current ? Math.min(100, p + 2.2) : Math.max(0, p - 0.45);
         if (np >= 100) { onDone(true); return 100; }
         return np;
       });
@@ -1298,7 +1298,7 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
 
 // 4) REACTOR — Simon
 function ReactorGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const [seq] = useState(() => Array.from({ length: 3 }, () => Math.floor(Math.random() * 4)));
+  const [seq] = useState(() => Array.from({ length: 4 }, () => Math.floor(Math.random() * 4)));
   const [step, setStep] = useState(0);
   const [showing, setShowing] = useState(-1);
   const [phase, setPhase] = useState<"watch" | "input">("watch");
@@ -1349,7 +1349,7 @@ function TrashGame({ onDone }: { onDone: (ok: boolean) => void }) {
   useEffect(() => {
     const id = setInterval(() => {
       setLevel(l => {
-        const nl = holding.current ? Math.max(0, l - 6) : Math.min(100, l + 0.12);
+        const nl = holding.current ? Math.max(0, l - 4.5) : Math.min(100, l + 0.25);
         if (nl <= 0) onDone(true);
         return nl;
       });
@@ -1375,7 +1375,7 @@ function TrashGame({ onDone }: { onDone: (ok: boolean) => void }) {
 
 // 6) SWITCHES
 function SwitchesGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const [s, setS] = useState<boolean[]>(() => Array.from({ length: 3 }, () => false));
+  const [s, setS] = useState<boolean[]>(() => Array.from({ length: 4 }, () => false));
   useEffect(() => { if (s.every(Boolean)) setTimeout(() => onDone(true), 300); }, [s, onDone]);
   return (
     <div className="flex flex-col items-center gap-4">
@@ -1560,7 +1560,7 @@ function LockGame({ onDone }: { onDone: (ok: boolean) => void }) {
 function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const [hits, setHits] = useState(0);
   const [pos, setPos] = useState({ x: 50, y: 50 });
-  const [time, setTime] = useState(16);
+  const [time, setTime] = useState(14);
   useEffect(() => {
     const id = setInterval(() => setTime(t => {
       if (t <= 0.1) { clearInterval(id); onDone(false); return 0; }
@@ -1572,11 +1572,11 @@ function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const hit = () => {
     const n = hits + 1;
     setHits(n);
-    if (n >= 3) onDone(true); else respawn();
+    if (n >= 4) onDone(true); else respawn();
   };
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">Нажми 3 цели. Осталось: <b className="text-red-400">{time}s</b></p>
+      <p className="text-sm text-muted-foreground">Нажми 4 цели. Осталось: <b className="text-red-400">{time}s</b></p>
       <div className="relative w-80 h-64 bg-black/70 rounded border-2 border-red-500/50 overflow-hidden">
         <button onClick={hit}
           className="absolute w-10 h-10 rounded-full bg-red-500 hover:bg-red-400 border-2 border-red-200 transition-all"
@@ -1584,7 +1584,7 @@ function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
           <Target className="h-5 w-5 mx-auto text-white" />
         </button>
       </div>
-      <p className="font-mono text-primary">Попадания: {hits}/3</p>
+      <p className="font-mono text-primary">Попадания: {hits}/4</p>
     </div>
   );
 }
@@ -2127,7 +2127,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
           <span className="font-mono text-[10px]">{lanaHp}</span>
         </div>
         <div className="absolute bottom-1 left-2 text-[9px] font-pixel text-amber-300/80 bg-black/70 px-2 py-0.5 rounded">
-          A/D move · SPACE jump · grab bat then ram the doll · dodge debris!
+          A/D — движение · Space — прыжок · возьми биту и ударь куклу
         </div>
       </div>
     </div>
@@ -2135,14 +2135,14 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
 }
 
 // ============== SCHOOL CORRIDOR (side-scroller) ==============
-const SPEED = 3.5;
+const SPEED = 5.0;
 const VIEW_H = 520;
 const REACH = 70;
 
 // Время задания limits (seconds). aim has its own timer.
 const TIME_LIMITS: Record<TaskKind, number | null> = {
-  wires: 50, download: 36, reactor: 44,
-  trash: 36, switches: 36, quiz: 34, aim: null,
+  wires: 42, download: 30, reactor: 36,
+  trash: 30, switches: 30, quiz: 28, aim: null,
 };
 
 // Countdown above each task — calls onTimeout when 0.
@@ -2303,7 +2303,7 @@ function SpotEl({ spot, taken, lit, active, hasKey, hasBat }:
         {!taken && (
           <div className={`absolute font-pixel text-[10px] rounded px-1 animate-pulse border ${lit ? "text-amber-200 bg-black/80 border-amber-400/50" : "text-zinc-400 bg-black/80 border-zinc-700"}`}
             style={{ left: x - 24, bottom: 160 + labelTop }}>
-            {lit ? "🔍 взять" : "???"}
+            {lit ? "E взять" : "???"}
           </div>
         )}
         {!taken && active && (
@@ -2321,7 +2321,7 @@ function SpotEl({ spot, taken, lit, active, hasKey, hasBat }:
         {taken && !spot.item && !hasKey && !hasBat && (
           <div className="absolute font-pixel text-zinc-500 text-[10px]"
             style={{ left: x - 14, bottom: 135 + labelTop }}>
-            ✗ empty
+            ✗ пусто
           </div>
         )}
       </div>
@@ -2652,7 +2652,7 @@ function ClassroomScene({
       const k = keysRef.current;
       setRoomMoving(k.l || k.r);
       if (k.l || k.r) {
-        setLanaX(x => Math.max(4, Math.min(720, x + (k.r ? 3 : 0) - (k.l ? 3 : 0))));
+        setLanaX(x => Math.max(4, Math.min(720, x + (k.r ? 5 : 0) - (k.l ? 5 : 0))));
       }
       raf = requestAnimationFrame(tick);
     };
@@ -2665,9 +2665,9 @@ function ClassroomScene({
   }, [classroom.spots, collectSpot, onToast, taken]);
 
   const openDoor = () => {
-    if (!keyFound) { onToast("🔒 Find the key first"); return; }
+    if (!keyFound) { onToast("Сначала найди ключ"); return; }
     setDoorOpen(true);
-    onToast("🚪 Door open! +15 coins");
+    onToast("Дверь открыта! +15 монет");
     onCollect({ name: "Open door", emoji: "🚪", hpGain: 0 }, classroom.spots[0]);
   };
 
@@ -2847,7 +2847,7 @@ function ClassroomScene({
             </Button>
           )}
           {doorOpen && (
-            <span className="text-emerald-300 font-pixel text-xs px-2">🚪 Door open</span>
+            <span className="text-emerald-300 font-pixel text-xs px-2">🚪 Дверь открыта</span>
           )}
         </div>
         <Button size="sm" variant={doorOpen ? "default" : "secondary"} onClick={tryLeave} disabled={!doorOpen}>
@@ -3018,9 +3018,6 @@ export default function EscapeGame() {
   const [crouching, setCrouching] = useState(false);
   const crouchRef = useRef(false); crouchRef.current = crouching;
 
-  // Спящие куклы, которых уже разбудили (после этого ведут себя как обычные).
-  const wokenRef = useRef<Set<string>>(new Set());
-
   // ===== Фонарик и батарея =====
   const MAX_BATTERY = 100;
   const [foundFlashlight, setFoundFlashlight] = useState(false);
@@ -3032,7 +3029,7 @@ export default function EscapeGame() {
   const [batLeft, setBatLeft] = useState(save.owned.bat);
   const [gunLeft, setGunLeft] = useState(save.owned.gun);
   const [coins, setCoins] = useState(save.coins);
-  // Бежит mode (Shift). Noisy — wakes "sleeping" dolls sooner.
+  // Бег ускоряет Лану, но монстры быстрее замечают шум.
   const [running, setRunning] = useState(false);
   const runningRef = useRef(false); runningRef.current = running;
 
@@ -3065,7 +3062,6 @@ export default function EscapeGame() {
   const zx = useCallback((z: Doll, idx: number) => {
     {
       const monsterKind = pickToyMonsterKind(z.name);
-      if (z.sleeping && !wokenRef.current.has(z.id) && monsterKind !== "bear") return z.x;
       const home = zomHomeRef.current[z.id] ?? z.x;
       const t = (performance.now() - tStartRef.current) / 1000;
       const playerX = xRef.current;
@@ -3099,11 +3095,6 @@ export default function EscapeGame() {
       }
       return home + Math.sin(t * 0.9 + idx * 1.7) * 60;
     }
-    // Sleeping (and not yet woken) — стоят на месте.
-    if (z.sleeping && !wokenRef.current.has(z.id)) return z.x;
-    const home = zomHomeRef.current[z.id] ?? z.x;
-    const t = (performance.now() - tStartRef.current) / 1000;
-    return home + Math.sin(t * 0.9 + idx * 1.7) * 60;
   }, [WORLD_W, level]);
   const killedRef = useRef(killed); killedRef.current = killed;
 
@@ -3149,10 +3140,9 @@ export default function EscapeGame() {
     setBattery(b => Math.max(35, b));
     setHiding(null);
     setLure(null);
-    wokenRef.current = new Set();
     zomHomeRef.current = {};
     setModal({ kind: "none" });
-    setToast(`Lana wakes near ${checkpoint.label}`);
+    setToast(`Лана очнулась рядом: ${checkpoint.label}`);
     setTimeout(() => setToast(""), 2000);
   }, [checkpoint, maxHp]);
 
@@ -3311,8 +3301,6 @@ export default function EscapeGame() {
           if (killedRef.current.has(z.id)) continue;
           const monsterKind = pickToyMonsterKind(z.name);
           if (monsterKind === "bear" || monsterKind === "porcelain") continue;
-          // wake sleeping dolls — noise reaches them
-          if (z.sleeping) wokenRef.current.add(z.id);
           const home = zomHomeRef.current[z.id] ?? z.x;
           const dist = Math.abs(home - lureNow.x);
           if (dist > 5) {
@@ -3358,34 +3346,6 @@ export default function EscapeGame() {
 
       const nowT = performance.now();
 
-      // ===== Sleeping dolls: hearing detection =====
-      // Сидя на корточках — полностью тихо. Стоя — слышат. Бегом — слышат издалека.
-      // Услышали = просыпаются и сразу кусают за огромный урон.
-      if (!isCrouch && !hidingRef.current) {
-        const hearRange = isRun ? 130 : (dx !== 0 ? 75 : 40) - (isNinja ? 10 : 0);
-        for (let i = 0; i < dolls.length; i++) {
-          const z = dolls[i];
-          if (!z.sleeping || pickToyMonsterKind(z.name) === "bear") continue;
-          if (killedRef.current.has(z.id) || wokenRef.current.has(z.id)) continue;
-          if (Math.abs(z.x - xRef.current) < hearRange) {
-            wokenRef.current.add(z.id);
-            sfxGrowl();
-            const dmg = 35 + level * 5 + (isRun ? 15 : 0);
-            setHp(h => {
-              const nh = Math.max(0, h - dmg);
-              if (nh === 0) { sfxDeath(); setTimeout(() => setModal({ kind: "lose" }), 200); }
-              return nh;
-            });
-            setShake(true);
-            setTimeout(() => setShake(false), 600);
-            setToast(`${z.name} проснулась и напала! -${dmg} HP`);
-            setTimeout(() => setToast(""), 2200);
-            lastBiteRef.current = nowT;
-            break;
-          }
-        }
-      }
-
       // Contact damage — patrolling doll within bite range.
       const biteCD = isRun ? 500 : 800;
       const biteRange = (isCrouch ? 22 : (isRun ? 48 : 32)) - (isNinja ? 6 : 0);
@@ -3393,8 +3353,6 @@ export default function EscapeGame() {
         for (let i = 0; i < dolls.length; i++) {
           const z = dolls[i];
           if (killedRef.current.has(z.id)) continue;
-          // Спящие, ещё не разбуженные, не кусают пассивно.
-          if (z.sleeping && !wokenRef.current.has(z.id) && pickToyMonsterKind(z.name) !== "bear") continue;
           if (Math.abs(pos[z.id] - xRef.current) < biteRange) {
             lastBiteRef.current = nowT;
             const base = 4 + Math.floor(Math.random() * 5);
@@ -3491,7 +3449,7 @@ export default function EscapeGame() {
     if (loot.givesFlashlight) {
       setFoundFlashlight(true);
       setBattery(b => Math.max(b, loot.battery ?? MAX_BATTERY));
-      setToast(`🔦 Found ${loot.name}! Now Lana can see in the dark.`);
+      setToast("Фонарик найден. Теперь Лана видит в темноте.");
       setTimeout(() => setToast(""), 1800);
       setCoins(c => c + 8);
       return;
@@ -3537,7 +3495,7 @@ export default function EscapeGame() {
       if (rescue) nextRescued.add(rescue.id);
       setStoryNotes(nextStoryNotes);
       setRescued(nextRescued);
-      const title = foundRescue && rescue ? `${rescue.name} Found` : note?.title ?? "A New Clue";
+      const title = foundRescue && rescue ? `${rescue.name} найден` : note?.title ?? "Новая улика";
       const body = [
         foundNote ? note?.body : null,
         foundRescue ? rescue?.message : null,
@@ -3567,13 +3525,13 @@ export default function EscapeGame() {
     if (it.strength) setStrength(s => s + it.strength);
     if (it.battery) {
       if (!hasFlashlight) {
-        setToast(`🪫 ${it.emoji} ${it.name}: нет фонарика — battery not needed now.`);
+        setToast(`${it.emoji} ${it.name}: фонарик ещё не найден.`);
       } else {
         setBattery(b => Math.min(MAX_BATTERY, b + it.battery!));
-        setToast(`🔋 ${it.emoji} +${it.battery}% flashlight charge`);
+        setToast(`${it.emoji} +${it.battery}% заряда фонарика`);
       }
     } else {
-      setToast(`💊 ${it.emoji} ${it.name} used`);
+      setToast(`${it.emoji} ${it.name} использовано`);
     }
     setTimeout(() => setToast(""), 1400);
   }, [maxHp, hasFlashlight]);
@@ -3607,7 +3565,7 @@ export default function EscapeGame() {
         if (nh === 0) {
           // голодаем — теряем 2 HP
           setHp(hh => Math.max(0, hh - 2));
-          setToast("🍴 Lana is hungry! -2 HP");
+          setToast("Лана голодна! -2 HP");
           setTimeout(() => setToast(""), 1200);
         }
         return nh;
@@ -3650,7 +3608,6 @@ export default function EscapeGame() {
     setRescued(new Set());
     setCheckpoint(null);
     setAmbientLine("");
-    wokenRef.current = new Set();
     zomHomeRef.current = {};
     setModal({ kind: "none" });
     startTimeRef.current = Date.now();
@@ -3839,7 +3796,7 @@ export default function EscapeGame() {
                 <p>🚪 <b>H</b> — спрятаться в шкафчике</p>
                 <p>↥ <b>Space</b> — перепрыгнуть стекло</p>
                 <p>🍴 Еда восстанавливает силы, голод отнимает HP</p>
-                <p>! Спящие куклы просыпаются от громких шагов</p>
+                <p>! Бег привлекает монстров быстрее</p>
                 <p>🌑 В тёмных коридорах нужен фонарик и батарейки</p>
               </div>
               <p className="text-[11px] text-muted-foreground text-center">
@@ -4279,24 +4236,6 @@ export default function EscapeGame() {
                 </div>
               );
             }
-            const isSleeping = !!z.sleeping && !wokenRef.current.has(z.id);
-            if (isSleeping) {
-              return (
-                <div key={z.id} className="absolute" style={{ left: z.x - 34, top: FLOOR_Y - 86 }}>
-                  {/* tilted up, looking at ceiling */}
-                  <div style={{ transform: "rotate(-18deg)", transformOrigin: "50% 90%" }}>
-                    <MenuArtMonster kind={monsterKind} size={96} facing={1} motion="idle" />
-                  </div>
-                  {/* Zzz */}
-                  <div className="absolute -top-6 left-10 text-blue-200 font-pixel text-sm animate-pulse drop-shadow">
-                    Zzz
-                  </div>
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-blue-900/80 text-blue-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
-                    Zzz {z.name}
-                  </div>
-                </div>
-              );
-            }
             const zCur = zomPosRef.current[z.id] ?? z.x;
             return (
               <div key={z.id} className="absolute doll-walk" style={{
@@ -4532,7 +4471,6 @@ export default function EscapeGame() {
                     setInv([]);
                     setHunger(MAX_HUNGER);
                     setBattery(b => Math.min(MAX_BATTERY, b + 40));
-                    wokenRef.current = new Set();
                     setHp(h => Math.min(maxHp, h + 20));
                     setModal({ kind: "none" });
                     setToast(`▲ Этаж ${cur.id + 1}`);
@@ -4721,4 +4659,3 @@ export default function EscapeGame() {
     </div>
   );
 }
-
