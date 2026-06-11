@@ -113,7 +113,7 @@ type PixelPalette = {
 
 /**
  * FRONT-FACING chunky pixel sprite (16x22 grid) with HEAD TURNED to the side.
- * Body stands frontal вЂ” both shoulders, both legs visible. Head + eyes look
+ * Body stands frontal — both shoulders, both legs visible. Head + eyes look
  * toward `facing` (1 = looks right, -1 = looks left).
  */
 function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead = false }:
@@ -165,7 +165,7 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
   // shading on the cheek opposite the turn (head looks right в†’ shade left cheek)
   px(5, 5, Sh); px(5, 6, Sh); px(6, 6, Sh);
 
-  // ============ HAIR (top crown only вЂ” does NOT cover eyes) ============
+  // ============ HAIR (top crown only — does NOT cover eyes) ============
   if (isBoss) {
     // bald with thin grey rim
     px(5, 1, Hh); px(10, 1, Hh);
@@ -182,7 +182,7 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
     px(7, 1, Hh); px(8, 1, Hh);
   }
 
-  // ============ PONYTAIL (girl) вЂ” behind head on the LEFT ============
+  // ============ PONYTAIL (girl) — behind head on the LEFT ============
   if (isGirl) {
     px(3, 3, PT); px(3, 4, PT);
     px(2, 4, PT); px(2, 5, PT);
@@ -212,7 +212,7 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
   }
 
   // ============ EYES (symmetric, large, clearly visible) ============
-  // Eye whites вЂ” two pixels each
+  // Eye whites — two pixels each
   px(6, 3, W); px(7, 3, W);
   px(9, 3, W); px(10, 3, W);
   // Pupils shifted toward facing side (right by default) so it looks like glancing sideways
@@ -239,7 +239,7 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
   // ============ NOSE & MOUTH (centered) ============
   // small nose between eyes
   px(8, 4, Sh);
-  // mouth вЂ” small smile centered
+  // mouth — small smile centered
   px(7, 5, MOUTH); px(8, 5, MOUTH);
   if (isGirl) {
     // smaller heart-shaped lips
@@ -594,8 +594,8 @@ function IntroCinematic({
   }, [current.scene, frames.length, isLast]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-3">
-      <div className="relative h-full max-h-[760px] w-full max-w-5xl overflow-hidden border border-red-950 bg-black shadow-[0_0_60px_rgba(127,29,29,0.45)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4">
+      <div className="relative h-[min(82vh,640px)] w-[min(94vw,960px)] overflow-hidden border border-red-950 bg-black shadow-[0_0_60px_rgba(127,29,29,0.45)]">
         <div className={`intro-film-frame intro-scene-${current.scene}`}>
           {current.scene !== "black" && (
             <>
@@ -610,7 +610,7 @@ function IntroCinematic({
                 </div>
               </div>
               <div className="intro-film-classroom">
-                <div className="intro-board">РќР• РћРЎРўРђР’Р›РЇР™РўР• РќРђРЎ РћР”РќРРҐ</div>
+                <div className="intro-board">НЕ ОСТАВЛЯЙТЕ НАС ОДНИХ</div>
                 <div className="intro-window" />
                 <div className="intro-desks">
                   {Array.from({ length: 6 }, (_, i) => (
@@ -649,12 +649,12 @@ function IntroCinematic({
           </div>
           <div className="intro-actions mt-3 flex flex-wrap justify-center gap-2">
             <Button variant="secondary" onClick={() => setFrame(f => Math.min(frames.length - 1, f + 1))} disabled={isLast}>
-              Р”Р°Р»СЊС€Рµ
+              Дальше
             </Button>
-            <Button variant="secondary" onClick={onShuffle}>Р”СЂСѓРіР°СЏ РІРµСЂСЃРёСЏ</Button>
-            <Button onClick={onStart} className="font-display">РќРђР§РђРўР¬ РџРћР‘Р•Р“</Button>
+            <Button variant="secondary" onClick={onShuffle}>Другая версия</Button>
+            <Button onClick={onStart} className="font-display">НАЧАТЬ ПОБЕГ</Button>
             <button type="button" onClick={onClose} className="rounded border border-zinc-700 bg-black/60 px-3 py-2 text-xs font-pixel text-zinc-300 hover:text-white">
-              Р—Р°РєСЂС‹С‚СЊ
+              Закрыть
             </button>
           </div>
         </div>
@@ -665,23 +665,23 @@ function IntroCinematic({
 
 // ---- Lana speech bubble (rotating phrases) ----
 const LANA_LINES = [
-  "Where is the key?..",
-  "Shhh, don't wake them",
-  "Gotta find the exit!",
-  "I can do this рџ’њ",
-  "Hmm, maybe in the desk?",
-  "Hear footsteps?",
-  "Hope the battery doesn't die",
-  "Almost thereвЂ¦",
-  "I think there's something here",
-  "Stay calm, Lana",
+  "Где же ключ?..",
+  "Тише, не разбуди их",
+  "Нужно найти выход!",
+  "Я справлюсь",
+  "Может, в парте что-то есть?",
+  "Это шаги?",
+  "Только бы фонарик не погас",
+  "Почти получилось...",
+  "Здесь точно что-то есть",
+  "Спокойно, Лана",
 ];
 
 const STORY_NOTES: Record<string, StoryNote> = {
   "l1-7": {
     id: "note-backpack",
-    title: "Р СЋРєР·Р°Рє Р›Р°РЅС‹",
-    body: "Lana came back after rehearsal for her forgotten backpack. The lights began to blink, the clocks froze, and the school became too quiet.",
+    title: "Рюкзак Ланы",
+    body: "Лана вернулась после репетиции за забытым рюкзаком. Свет начал мигать, часы замерли, а школа стала слишком тихой.",
   },
   "l1-basement-stairs": {
     id: "note-basement",
@@ -690,125 +690,123 @@ const STORY_NOTES: Record<string, StoryNote> = {
   },
   "l2-east-hall": {
     id: "note-dina",
-    title: "Dina's Page",
-    body: "Dina's neat handwriting: The toys say they are protecting us. I think they are scared of being left alone.",
+    title: "Страница Дины",
+    body: "Аккуратный почерк Дины: игрушки говорят, что защищают нас. Кажется, они просто боятся снова остаться одни.",
   },
   "l3a-studio": {
     id: "note-karl",
-    title: "Karl's Joke Book",
-    body: "Karl wrote a joke, then scratched it out. Under it: If I start smiling too much, Lana, don't trust my voice.",
+    title: "Блокнот Карла",
+    body: "Карл написал шутку, а потом зачеркнул её. Ниже: если я начну слишком много улыбаться, Лана, не верь моему голосу.",
   },
   "l4-dusty-attic": {
     id: "note-attic",
-    title: "Attic Ledger",
-    body: "Old school-play props were locked here for years. The plush bear, the porcelain doll, and the clockwork monkey are listed as missing.",
+    title: "Чердачная ведомость",
+    body: "Старый реквизит школьного спектакля годами держали здесь под замком. Плюшевый медведь, фарфоровая кукла и заводная обезьяна отмечены как пропавшие.",
   },
   "l5-roof-passage": {
     id: "note-truth",
-    title: "The Hidden Truth",
-    body: "The tragedy was hidden to protect the school. The toys absorbed lonely children and decided no child should ever leave them again.",
+    title: "Скрытая правда",
+    body: "Трагедию скрыли, чтобы защитить репутацию школы. Игрушки впитали одиночество детей и решили, что больше не отпустят никого.",
   },
 };
 
 const RESCUE_EVENTS: RescueEvent[] = [
   {
     id: "children",
-    name: "Lost Children",
+    name: "Потерянные дети",
     roomId: "l2-east-hall",
-    message: "A group of younger students crawl out from under the desks. Lana points them toward the lit stairwell.",
+    message: "Младшие ученики выбираются из-под парт. Лана показывает им путь к освещённой лестнице.",
   },
   {
     id: "karl",
-    name: "Karl",
+    name: "Карл",
     roomId: "l3a-studio",
-    message: "Karl is shaking, but still jokes that the paintings blink first. He joins Lana's escape route.",
+    message: "Карл дрожит, но всё равно шутит, что портреты моргают первыми. Он присоединяется к Лане.",
   },
   {
     id: "dina",
-    name: "Dina",
+    name: "Дина",
     roomId: "l5-roof-passage",
-    message: "Dina lowers her notebook. She knows enough of the truth to help Lana face the final doll.",
+    message: "Дина опускает блокнот. Она узнала достаточно правды, чтобы помочь Лане встретиться с последней куклой.",
   },
 ];
 
 const INTRO_STORIES: IntroStory[] = [
   {
-    title: "РЎР®Р–Р•Рў",
+    title: "СЮЖЕТ",
     paragraphs: [
-      "РњРЅРѕРіРѕ Р»РµС‚ РЅР°Р·Р°Рґ РІ С€РєРѕР»Рµ РїСЂРѕРёР·РѕС€С‘Р» РЅРµСЃС‡Р°СЃС‚РЅС‹Р№ СЃР»СѓС‡Р°Р№ РІРѕ РІСЂРµРјСЏ СЃС‚Р°СЂРѕРіРѕ РїСЂР°Р·РґРЅРёРєР° СЃ РёРіСЂСѓС€РєР°РјРё.",
-      "Р’Р·СЂРѕСЃР»С‹Рµ СЃРєСЂС‹Р»Рё РїСЂР°РІРґСѓ, Р° Р·Р°Р±С‹С‚С‹Рµ РёРіСЂСѓС€РєРё РІРїРёС‚Р°Р»Рё СЃС‚СЂР°С… Рё РѕРґРёРЅРѕС‡РµСЃС‚РІРѕ РґРµС‚РµР№.",
-      "РўРµРїРµСЂСЊ РѕРЅРё РѕР¶РёР»Рё Рё СѓРґРµСЂР¶РёРІР°СЋС‚ СѓС‡РµРЅРёРєРѕРІ РІРЅСѓС‚СЂРё С€РєРѕР»С‹, РїРѕС‚РѕРјСѓ С‡С‚Рѕ Р±РѕСЏС‚СЃСЏ СЃРЅРѕРІР° РѕСЃС‚Р°С‚СЊСЃСЏ РѕРґРЅРё.",
+      "Много лет назад в школе произошёл несчастный случай во время старого праздника с игрушками.",
+      "Правду скрыли. Заброшенные игрушки впитали страх и одиночество детей.",
+      "Теперь они ожили и удерживают учеников внутри школы, потому что боятся снова остаться одни.",
     ],
-    goals: ["РЅР°Р№С‚Рё РґСЂСѓР·РµР№", "СѓР·РЅР°С‚СЊ РїСЂР°РІРґСѓ", "РѕСЃРІРѕР±РѕРґРёС‚СЊ РґРµС‚РµР№", "РІС‹Р±СЂР°С‚СЊСЃСЏ РЅР°СЂСѓР¶Сѓ"],
+    goals: ["найти друзей", "узнать правду", "освободить детей", "выбраться наружу"],
   },
   {
-    title: "РќРћР§Р¬ Р’ РЁРљРћР›Р•",
+    title: "НОЧЬ В ШКОЛЕ",
     paragraphs: [
-      "Р›Р°РЅР° РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ Р·Р° Р·Р°Р±С‹С‚С‹Рј СЂСЋРєР·Р°РєРѕРј, РЅРѕ РєРѕСЂРёРґРѕСЂС‹ СѓР¶Рµ РЅРµ РїРѕС…РѕР¶Рё РЅР° РѕР±С‹С‡РЅСѓСЋ С€РєРѕР»Сѓ.",
-      "Р§Р°СЃС‹ РѕСЃС‚Р°РЅРѕРІРёР»РёСЃСЊ, РґРІРµСЂРё Р·Р°РїРµСЂР»РёСЃСЊ, Р° СЃС‚Р°СЂС‹Рµ РёРіСЂСѓС€РєРё РЅР°С‡Р°Р»Рё С€РµРїС‚Р°С‚СЊ РёРјРµРЅР° РїСЂРѕРїР°РІС€РёС… СѓС‡РµРЅРёРєРѕРІ.",
-      "Р§С‚РѕР±С‹ РІС‹Р№С‚Рё, Р›Р°РЅРµ РїСЂРёРґС‘С‚СЃСЏ РїРѕРЅСЏС‚СЊ, РїРѕС‡РµРјСѓ С€РєРѕР»Р° РЅРµ РѕС‚РїСѓСЃРєР°РµС‚ РґРµС‚РµР№ РїРѕСЃР»Рµ Р·РІРѕРЅРєР°.",
+      "Лана возвращается за забытым рюкзаком, но коридоры уже не похожи на обычную школу.",
+      "Часы остановились, двери заперлись, а старые игрушки начали шептать имена пропавших учеников.",
+      "Чтобы выйти, Лане придётся понять, почему школа не отпускает детей после звонка.",
     ],
-    goals: ["РЅР°Р№С‚Рё РєР»СЋС‡Рё", "СЃРїР°СЃС‚Рё РґСЂСѓР·РµР№", "СЃРѕР±СЂР°С‚СЊ Р·Р°РїРёСЃРєРё", "РґРѕР№С‚Рё РґРѕ РІС‹С…РѕРґР°"],
+    goals: ["найти ключи", "спасти друзей", "собрать записки", "дойти до выхода"],
   },
   {
-    title: "РўРђР™РќРђ РР“Р РЈРЁР•Рљ",
+    title: "ТАЙНА ИГРУШЕК",
     paragraphs: [
-      "РљРѕРіРґР°-С‚Рѕ С€РєРѕР»СЊРЅС‹Рµ РёРіСЂСѓС€РєРё Р±С‹Р»Рё С‡Р°СЃС‚СЊСЋ СЃРїРµРєС‚Р°РєР»СЏ, РєРѕС‚РѕСЂС‹Р№ Р·Р°РєРѕРЅС‡РёР»СЃСЏ С‚СЂР°РіРµРґРёРµР№.",
-      "РџРѕСЃР»Рµ СЌС‚РѕРіРѕ РёС… СЃРїСЂСЏС‚Р°Р»Рё РЅР° С‡РµСЂРґР°РєРµ, РЅРѕ РѕРґРёРЅРѕС‡РµСЃС‚РІРѕ СЃРґРµР»Р°Р»Рѕ РёС… Р¶РёРІС‹РјРё Рё Р·Р»С‹РјРё.",
-      "РћРЅРё РЅРµ С…РѕС‚СЏС‚ РїСЂРёС‡РёРЅСЏС‚СЊ Р±РѕР»СЊ, РЅРѕ СЃС‡РёС‚Р°СЋС‚, С‡С‚Рѕ РІРЅСѓС‚СЂРё С€РєРѕР»С‹ РґРµС‚СЏРј Р±РµР·РѕРїР°СЃРЅРµРµ, С‡РµРј СЃРЅР°СЂСѓР¶Рё.",
+      "Когда-то школьные игрушки были частью спектакля, который закончился трагедией.",
+      "После этого их спрятали на чердаке, но одиночество сделало их живыми и опасными.",
+      "Они не считают себя злыми. Они уверены, что внутри школы детям безопаснее, чем снаружи.",
     ],
-    goals: ["РЅРµ С€СѓРјРµС‚СЊ", "РёСЃРєР°С‚СЊ СѓР»РёРєРё", "РѕСЃРІРѕР±РѕРґРёС‚СЊ Р·Р°РїРµСЂС‚С‹С… РґРµС‚РµР№", "СЃР»РѕРјР°С‚СЊ СЃС‚Р°СЂРѕРµ РїСЂРѕРєР»СЏС‚РёРµ"],
+    goals: ["не шуметь", "искать улики", "освободить запертых детей", "сломать старое проклятие"],
   },
   {
-    title: "Р—РђР‘Р«РўР«Р™ РџР РђР—Р”РќРРљ",
+    title: "ЗАБЫТЫЙ ПРАЗДНИК",
     paragraphs: [
-      "Р’ Р°РєС‚РѕРІРѕРј Р·Р°Р»Рµ РєРѕРіРґР°-С‚Рѕ РїСЂРѕС€С‘Р» РїСЂР°Р·РґРЅРёРє, Рѕ РєРѕС‚РѕСЂРѕРј Р±РѕР»СЊС€Рµ РЅРёРєС‚Рѕ РЅРµ РіРѕРІРѕСЂРёС‚.",
-      "РџРѕСЃР»Рµ РЅРµРіРѕ РЅРµСЃРєРѕР»СЊРєРѕ РґРµС‚РµР№ РёСЃС‡РµР·Р»Рё, Р° РёРіСЂСѓС€РєРё РѕСЃС‚Р°Р»РёСЃСЊ Р¶РґР°С‚СЊ, С‡С‚Рѕ СЃ РЅРёРјРё СЃРЅРѕРІР° Р±СѓРґСѓС‚ РёРіСЂР°С‚СЊ.",
-      "РўРµРїРµСЂСЊ С€РєРѕР»Р° Р·Р°РєСЂС‹РІР°РµС‚СЃСЏ СЃР°РјР°, Рё С‚РѕР»СЊРєРѕ Р›Р°РЅР° РјРѕР¶РµС‚ РѕС‚РєСЂС‹С‚СЊ РґРІРµСЂРё С‚РµРј, РєС‚Рѕ Р·Р°СЃС‚СЂСЏР» РІРЅСѓС‚СЂРё.",
+      "В актовом зале когда-то прошёл праздник, о котором больше никто не говорит.",
+      "После него несколько детей исчезли, а игрушки остались ждать, что с ними снова будут играть.",
+      "Теперь школа закрывается сама, и только Лана может открыть двери тем, кто застрял внутри.",
     ],
-    goals: ["РЅР°Р№С‚Рё РґСЂСѓР·РµР№", "РЅРµ РїРѕРїР°СЃС‚СЊСЃСЏ РёРіСЂСѓС€РєР°Рј", "СѓР·РЅР°С‚СЊ, С‡С‚Рѕ СЃР»СѓС‡РёР»РѕСЃСЊ РЅР° РїСЂР°Р·РґРЅРёРєРµ", "РІС‹РІРµСЃС‚Рё РґРµС‚РµР№ РёР· С€РєРѕР»С‹"],
+    goals: ["найти друзей", "не попасться игрушкам", "узнать, что случилось на празднике", "вывести детей из школы"],
   },
   {
-    title: "РџРћРЎР›Р•Р”РќРР™ Р—Р’РћРќРћРљ",
+    title: "ПОСЛЕДНИЙ ЗВОНОК",
     paragraphs: [
-      "РџРѕСЃР»Рµ РїРѕСЃР»РµРґРЅРµРіРѕ Р·РІРѕРЅРєР° РІ С€РєРѕР»Рµ РґРѕР»Р¶РЅР° Р±С‹Р»Р° РЅР°СЃС‚СѓРїРёС‚СЊ С‚РёС€РёРЅР°, РЅРѕ РІРјРµСЃС‚Рѕ РЅРµС‘ РїСЂРѕСЃРЅСѓР»РёСЃСЊ СЃС‚Р°СЂС‹Рµ РёРіСЂСѓС€РєРё.",
-      "РћРЅРё РїРѕРјРЅСЏС‚ СЃС‚СЂР°С… РґРµС‚РµР№ Р»СѓС‡С€Рµ, С‡РµРј РёС… РіРѕР»РѕСЃР°, Рё РїРѕСЌС‚РѕРјСѓ РЅРµ РґР°СЋС‚ РЅРёРєРѕРјСѓ СѓР№С‚Рё.",
-      "Р›Р°РЅР° РґРѕР»Р¶РЅР° РїСЂРѕР№С‚Рё СЌС‚Р°Р¶ Р·Р° СЌС‚Р°Р¶РѕРј Рё РґРѕРєР°Р·Р°С‚СЊ, С‡С‚Рѕ РѕРґРёРЅРѕС‡РµСЃС‚РІРѕ РјРѕР¶РЅРѕ РѕС‚РїСѓСЃС‚РёС‚СЊ.",
+      "После последнего звонка школа должна была опустеть, но вместо тишины проснулись старые игрушки.",
+      "Они помнят страх детей лучше, чем их голоса, и поэтому не дают никому уйти.",
+      "Лана должна пройти этаж за этажом и доказать, что одиночество можно отпустить.",
     ],
-    goals: ["РІС‹Р¶РёС‚СЊ РІ РєРѕСЂРёРґРѕСЂР°С…", "РѕС‚С‹СЃРєР°С‚СЊ РїРѕС‚РµСЂСЏРЅРЅС‹С… СѓС‡РµРЅРёРєРѕРІ", "СЂР°СЃРєСЂС‹С‚СЊ СЃРєСЂС‹С‚СѓСЋ РїСЂР°РІРґСѓ", "СЃР±РµР¶Р°С‚СЊ РґРѕ СЂР°СЃСЃРІРµС‚Р°"],
+    goals: ["выжить в коридорах", "отыскать потерянных учеников", "раскрыть скрытую правду", "сбежать до рассвета"],
   },
 ];
-
 const INTRO_CINEMATIC_VARIANTS: IntroFrame[][] = [
   [
-    { scene: "black", line: "Р›Р°РЅР°: РЇ РІРµСЂРЅСѓР»Р°СЃСЊ С‚РѕР»СЊРєРѕ Р·Р° СЂСЋРєР·Р°РєРѕРј. РџРѕС‡РµРјСѓ РІ С€РєРѕР»Рµ С‚Р°Рє С‚РёС…Рѕ?" },
-    { scene: "school", line: "Р›Р°РЅР°: РћРєРЅР° С‚С‘РјРЅС‹Рµ... РЅРѕ РІРЅСѓС‚СЂРё Р±СѓРґС‚Рѕ РєС‚Рѕ-С‚Рѕ С…РѕРґРёС‚." },
-    { scene: "classroom", line: "Р›Р°РЅР°: Р РµР±СЏС‚Р°? Р’С‹ РµС‰С‘ Р·РґРµСЃСЊ? РћС‚РІРµС‚СЊС‚Рµ..." },
-    { scene: "lana", line: "Р›Р°РЅР°: РЎРІРµС‚ РјРѕСЂРіР°РµС‚. Р­С‚Рѕ РЅРµ РїРѕС…РѕР¶Рµ РЅР° РѕР±С‹С‡РЅСѓСЋ Р°РІР°СЂРёСЋ." },
-    { scene: "flicker", line: "Р›Р°РЅР°: РќРµС‚... С‚РѕР»СЊРєРѕ С‡С‚Рѕ РІСЃРµ СЃРёРґРµР»Рё СЂСЏРґРѕРј СЃРѕ РјРЅРѕР№." },
-    { scene: "empty", line: "Р›Р°РЅР°: РџР°СЂС‚С‹ РїСѓСЃС‚С‹Рµ. Р”СЂСѓР·СЊСЏ РёСЃС‡РµР·Р»Рё. РћСЃС‚Р°Р»РёСЃСЊ С‚РѕР»СЊРєРѕ РёС… РІРµС‰Рё." },
-    { scene: "monsters", line: "Р›Р°РЅР°: РРіСЂСѓС€РєРё РґРІРёРіР°СЋС‚СЃСЏ. РћРЅРё СЃРјРѕС‚СЂСЏС‚ С‚Р°Рє, Р±СѓРґС‚Рѕ Р·РЅР°СЋС‚ РјРѕС‘ РёРјСЏ." },
+    { scene: "black", line: "Лана: Я вернулась только за рюкзаком. Почему в школе так тихо?" },
+    { scene: "school", line: "Лана: Окна тёмные... но внутри будто кто-то ходит." },
+    { scene: "classroom", line: "Лана: Ребята? Вы ещё здесь? Ответьте..." },
+    { scene: "lana", line: "Лана: Свет моргает. Это не похоже на обычную аварию." },
+    { scene: "flicker", line: "Лана: Нет... только что все сидели рядом со мной." },
+    { scene: "empty", line: "Лана: Парты пустые. Друзья исчезли. Остались только их вещи." },
+    { scene: "monsters", line: "Лана: Игрушки двигаются. Они смотрят так, будто знают моё имя." },
   ],
   [
-    { scene: "black", line: "Р›Р°РЅР°: РџРѕСЃР»Рµ Р·РІРѕРЅРєР° С€РєРѕР»Р° РґРѕР»Р¶РЅР° Р±С‹Р»Р° РѕРїСѓСЃС‚РµС‚СЊ. РќРѕ РѕРЅР° Р±СѓРґС‚Рѕ РїСЂРѕСЃРЅСѓР»Р°СЃСЊ." },
-    { scene: "school", line: "Р›Р°РЅР°: Р“Р»Р°РІРЅС‹Р№ РІС…РѕРґ Р·Р°РєСЂС‹С‚. РљС‚Рѕ-С‚Рѕ Р·Р°РїРµСЂ РЅР°СЃ РёР·РЅСѓС‚СЂРё." },
-    { scene: "classroom", line: "Р›Р°РЅР°: РЈС‡РµРЅРёРєРё С€РµРїС‡СѓС‚СЃСЏ... РѕРЅРё С‚РѕР¶Рµ СЃР»С‹С€Р°С‚ СЌС‚Рё С€Р°РіРё?" },
-    { scene: "lana", line: "Р›Р°РЅР°: Р•СЃР»Рё СЌС‚Рѕ СЂРѕР·С‹РіСЂС‹С€, РѕРЅ СЃРѕРІСЃРµРј РЅРµ СЃРјРµС€РЅРѕР№." },
-    { scene: "flicker", line: "Р›Р°РЅР°: РЎРІРµС‚! РќРµ РіР°СЃРЅРё... РїРѕР¶Р°Р»СѓР№СЃС‚Р°." },
-    { scene: "empty", line: "Р›Р°РЅР°: Р’СЃРµ РїСЂРѕРїР°Р»Рё. Р”Р°Р¶Рµ Р·РІСѓРє РґС‹С…Р°РЅРёСЏ РёСЃС‡РµР·." },
-    { scene: "monsters", line: "Р›Р°РЅР°: РЎС‚Р°СЂС‹Рµ РёРіСЂСѓС€РєРё РІС‹С€Р»Рё РёР· С€РєР°С„РѕРІ. РћРЅРё РЅРµ С…РѕС‚СЏС‚ РѕС‚РїСѓСЃРєР°С‚СЊ РґРµС‚РµР№." },
+    { scene: "black", line: "Лана: После звонка школа должна была опустеть. Но она будто проснулась." },
+    { scene: "school", line: "Лана: Главный вход закрыт. Кто-то запер нас изнутри." },
+    { scene: "classroom", line: "Лана: Ученики шепчутся... они тоже слышат эти шаги?" },
+    { scene: "lana", line: "Лана: Если это розыгрыш, он совсем не смешной." },
+    { scene: "flicker", line: "Лана: Свет! Не гасни... пожалуйста." },
+    { scene: "empty", line: "Лана: Все пропали. Даже звук дыхания исчез." },
+    { scene: "monsters", line: "Лана: Старые игрушки вышли из шкафов. Они не хотят отпускать детей." },
   ],
   [
-    { scene: "black", line: "Р›Р°РЅР°: РЇ СЃР»С‹С€Р°Р»Р° РёСЃС‚РѕСЂРёСЋ Рѕ С€РєРѕР»СЊРЅРѕРј РїСЂР°Р·РґРЅРёРєРµ. РќР°Рј Р·Р°РїСЂРµС‰Р°Р»Рё Рѕ РЅС‘Рј РіРѕРІРѕСЂРёС‚СЊ." },
-    { scene: "school", line: "Р›Р°РЅР°: РўРµРїРµСЂСЊ С€РєРѕР»Р° РІС‹РіР»СЏРґРёС‚ С‚Р°Рє, Р±СѓРґС‚Рѕ РІСЃС‘ РµС‰С‘ Р¶РґС‘С‚ С‚РѕС‚ РїСЂР°Р·РґРЅРёРє." },
-    { scene: "classroom", line: "Р›Р°РЅР°: РќР° РґРѕСЃРєРµ РЅР°РїРёСЃР°РЅРѕ: 'РќРµ РѕСЃС‚Р°РІР»СЏР№С‚Рµ РЅР°СЃ РѕРґРЅРёС…'." },
-    { scene: "lana", line: "Р›Р°РЅР°: РќСѓР¶РЅРѕ РЅР°Р№С‚Рё РљР°СЂР»Р° Рё Р”РёРЅСѓ. РћРЅРё РЅРµ РјРѕРіР»Рё РїСЂРѕСЃС‚Рѕ РёСЃС‡РµР·РЅСѓС‚СЊ." },
-    { scene: "flicker", line: "Р›Р°РЅР°: РљС‚Рѕ-С‚Рѕ СЃС‚РѕРёС‚ Сѓ РґРІРµСЂРё... РЅРµС‚, СЌС‚Рѕ РёРіСЂСѓС€РєР°." },
-    { scene: "empty", line: "Р›Р°РЅР°: Р§РµРј С‚РёС€Рµ СЃС‚Р°РЅРѕРІРёС‚СЃСЏ РєР»Р°СЃСЃ, С‚РµРј РіСЂРѕРјС‡Рµ СЃР»С‹С€РЅРѕ Р·Р°РІРѕРґРЅРѕР№ РєР»СЋС‡РёРє." },
-    { scene: "monsters", line: "Р›Р°РЅР°: РћРЅРё РЅРµ Р·Р»С‹Рµ? РќРµС‚... РѕРЅРё РЅР°РїСѓРіР°РЅС‹. РќРѕ РІСЃС‘ СЂР°РІРЅРѕ РѕРїР°СЃРЅС‹." },
+    { scene: "black", line: "Лана: Я слышала историю о школьном празднике. Нам запрещали о нём говорить." },
+    { scene: "school", line: "Лана: Теперь школа выглядит так, будто всё ещё ждёт тот праздник." },
+    { scene: "classroom", line: "Лана: На доске написано: 'Не оставляйте нас одних'." },
+    { scene: "lana", line: "Лана: Нужно найти Карла и Дину. Они не могли просто исчезнуть." },
+    { scene: "flicker", line: "Лана: Кто-то стоит у двери... нет, это игрушка." },
+    { scene: "empty", line: "Лана: Чем тише становится класс, тем громче слышно заводной ключик." },
+    { scene: "monsters", line: "Лана: Они не злые? Нет... они напуганы. Но всё равно опасны." },
   ],
 ];
-
 function pickToyMonsterKind(name: string): ToyMonsterKind {
   const lower = name.toLowerCase();
   if (lower.includes("bear") || lower.includes("plush")) return "bear";
@@ -819,12 +817,12 @@ function pickToyMonsterKind(name: string): ToyMonsterKind {
 }
 
 const AMBIENT_HORROR_LINES = [
-  "A child's laugh echoes from an empty classroom.",
-  "The floorboards creak behind Lana, then go silent.",
-  "A toy bell rings once somewhere in the dark.",
-  "The lights flicker. For a second, every door looks open.",
-  "Something small runs across the ceiling tiles.",
-  "A whisper says Lana's name from the lockers.",
+  "Детский смех доносится из пустого класса.",
+  "Половицы скрипят за спиной Ланы и сразу замолкают.",
+  "Где-то в темноте один раз звенит игрушечный колокольчик.",
+  "Свет моргает. На секунду кажется, что все двери открыты.",
+  "Что-то маленькое пробегает по потолочным плитам.",
+  "Из шкафчиков шепчут имя Ланы.",
 ];
 
 function storyNoteForRoom(roomId: string) {
@@ -1047,11 +1045,11 @@ export type Upgrade = {
   id: UpgradeId; name: string; icon: typeof Swords; price: number; desc: string; max?: number;
 };
 const UPGRADES: Upgrade[] = [
-  { id: "bat",        name: "Baseball Bat",   icon: Swords,     price: 60,  desc: "1 hit вЂ” stun doll without a task.", max: 5 },
-  { id: "gun",        name: "Pistol",            icon: Crosshair,  price: 220, desc: "Shot вЂ” instantly kills doll.", max: 5 },
-  { id: "flashlight", name: "Flashlight",             icon: Flashlight, price: 140, desc: "Lights up dark hallways (floors 2вЂ“3)." },
+  { id: "bat",        name: "Baseball Bat",   icon: Swords,     price: 60,  desc: "1 hit — stun doll without a task.", max: 5 },
+  { id: "gun",        name: "Pistol",            icon: Crosshair,  price: 220, desc: "Shot — instantly kills doll.", max: 5 },
+  { id: "flashlight", name: "Flashlight",             icon: Flashlight, price: 140, desc: "Lights up dark hallways (floors 2–3)." },
   { id: "hp",         name: "Enhanced Health",  icon: Heart,      price: 180, desc: "+25 to max HP." },
-  { id: "hint",       name: "РџРѕРґСЃРєР°Р·РєРё", icon: Lightbulb, price: 90, desc: "Detailed hints in all tasks." },
+  { id: "hint",       name: "Подсказки", icon: Lightbulb, price: 90, desc: "Detailed hints in all tasks." },
 ];
 
 type Inventory = {
@@ -1082,13 +1080,13 @@ const writeSave = (s: SaveData) => {
 
 // ---- Per-task hints ----
 const TASK_HINTS: Record<TaskKind, { short: string; long: string }> = {
-  wires:    { short: "Drag the wire from the left terminal to the right one of the same color.", long: "If you make a mistake вЂ” click the left terminal again to reset the connection. Colors must match exactly." },
-  download: { short: "Р—Р°Р¶РјРё РєРЅРѕРїРєСѓ, РїРѕРєР° С€РєР°Р»Р° РЅРµ Р·Р°РїРѕР»РЅРёС‚СЃСЏ.", long: "Р•СЃР»Рё РѕС‚РїСѓСЃС‚РёС€СЊ, РїСЂРѕРіСЂРµСЃСЃ РїР°РґР°РµС‚ РјРµРґР»РµРЅРЅРѕ. РљРЅРѕРїРєСѓ РјРѕР¶РЅРѕ РЅР°Р¶Р°С‚СЊ СЃРЅРѕРІР°." },
-  reactor:  { short: "Р—Р°РїРѕРјРЅРё С†РІРµС‚Р° РїРѕ РїРѕСЂСЏРґРєСѓ Рё РїРѕРІС‚РѕСЂРё.", long: "Р•СЃР»Рё РѕС€РёР±С‘С€СЊСЃСЏ, С†РІРµС‚Р° РїРѕРєР°Р¶СѓС‚СЃСЏ СЃРЅРѕРІР°." },
+  wires:    { short: "Drag the wire from the left terminal to the right one of the same color.", long: "If you make a mistake — click the left terminal again to reset the connection. Colors must match exactly." },
+  download: { short: "Зажми кнопку, пока шкала не заполнится.", long: "Если отпустишь, прогресс падает медленно. Кнопку можно нажать снова." },
+  reactor:  { short: "Запомни цвета по порядку и повтори.", long: "Если ошибёшься, цвета покажутся снова." },
   trash:    { short: "Hold the lever until the tank is empty.", long: "The tank refills if you release. Don't get distracted." },
-  switches: { short: "Р’РєР»СЋС‡Рё РІСЃРµ С‚СѓРјР±Р»РµСЂС‹.", long: "РџСЂРѕСЃС‚Рѕ РЅР°Р¶РјРё РєР°Р¶РґС‹Р№ РІС‹РєР»СЋС‡РµРЅРЅС‹Р№ С‚СѓРјР±Р»РµСЂ." },
-  quiz:     { short: "РџСЂРѕС‡РёС‚Р°Р№ СЃРёС‚СѓР°С†РёСЋ Рё РІС‹Р±РµСЂРё Р±РµР·РѕРїР°СЃРЅРѕРµ РґРµР№СЃС‚РІРёРµ. Р•СЃС‚СЊ 3 РїРѕРїС‹С‚РєРё.", long: "Р’РѕРїСЂРѕСЃС‹ РЅРµ РїСЂРѕ СѓСЂРѕРєРё, Р° РїСЂРѕ РІС‹Р¶РёРІР°РЅРёРµ, С€СѓРј, СЃРІРµС‚ Рё РїРѕРІРµРґРµРЅРёРµ РєСѓРєРѕР»." },
-  aim:      { short: "РќР°Р¶РјРё РєСЂР°СЃРЅС‹Рµ С†РµР»Рё.", long: "Р¦РµР»РµР№ РјРµРЅСЊС€Рµ, РІСЂРµРјРµРЅРё Р±РѕР»СЊС€Рµ." },
+  switches: { short: "Включи все тумблеры.", long: "Просто нажми каждый выключенный тумблер." },
+  quiz:     { short: "Прочитай ситуацию и выбери безопасное действие. Есть 3 попытки.", long: "Вопросы не про уроки, а про выживание, шум, свет и поведение кукол." },
+  aim:      { short: "Нажми красные цели.", long: "Целей меньше, времени больше." },
 };
 
 function HintBox({ kind, advanced }: { kind: TaskKind; advanced: boolean }) {
@@ -1099,12 +1097,12 @@ function HintBox({ kind, advanced }: { kind: TaskKind; advanced: boolean }) {
       <button onClick={() => setOpen(o => !o)}
         className="flex items-center gap-2 text-[11px] font-pixel text-amber-300 hover:text-amber-100 bg-black/40 border border-amber-700/40 rounded px-2 py-1">
         <Lightbulb className="h-3 w-3" />
-        {open ? "РЎРєСЂС‹С‚СЊ РїРѕРґСЃРєР°Р·РєСѓ" : "РџРѕРґСЃРєР°Р·РєР°"}
+        {open ? "Скрыть подсказку" : "Подсказка"}
       </button>
       {open && (
         <div className="mt-2 text-[12px] text-amber-100/90 bg-amber-900/15 border border-amber-700/30 rounded p-2">
-          <div>рџ’Ў {tip.short}</div>
-          {advanced && <div className="mt-1 text-amber-300/90">в… {tip.long}</div>}
+          <div>💡 {tip.short}</div>
+          {advanced && <div className="mt-1 text-amber-300/90">★ {tip.long}</div>}
         </div>
       )}
     </div>
@@ -1224,7 +1222,7 @@ function WiresGame({ onDone }: { onDone: (ok: boolean) => void }) {
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">РЎРѕРµРґРёРЅРё РѕРґРёРЅР°РєРѕРІС‹Рµ С†РІРµС‚Р°.</p>
+      <p className="text-sm text-muted-foreground">Соедини одинаковые цвета.</p>
       <svg ref={svgRef} width={360} height={320} onMouseMove={onMove} onMouseUp={() => setDragFrom(null)} className="bg-black/40 rounded">
         {/* connections */}
         {Object.entries(connections).map(([l, r]) => (
@@ -1256,13 +1254,13 @@ function WiresGame({ onDone }: { onDone: (ok: boolean) => void }) {
           </g>
         ))}
       </svg>
-      {allDone && <p className="text-primary font-bold">вњ“ Done!</p>}
+      {allDone && <p className="text-primary font-bold">✓ Done!</p>}
     </div>
   );
 }
 
 
-// 3) DOWNLOAD вЂ” hold button
+// 3) DOWNLOAD — hold button
 function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const [progress, setProgress] = useState(0);
   const holding = useRef(false);
@@ -1281,7 +1279,7 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
   }, [onDone]);
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">Р—Р°Р¶РјРё РєРЅРѕРїРєСѓ, РїРѕРєР° С€РєР°Р»Р° РЅРµ Р·Р°РїРѕР»РЅРёС‚СЃСЏ.</p>
+      <p className="text-sm text-muted-foreground">Зажми кнопку, пока шкала не заполнится.</p>
       <div className="w-72 h-6 bg-black/60 rounded overflow-hidden border border-primary/40">
         <div className="h-full bg-gradient-to-r from-emerald-400 to-primary transition-[width]" style={{ width: `${progress}%` }} />
       </div>
@@ -1291,14 +1289,14 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
         onMouseLeave={() => (holding.current = false)}
         onTouchStart={() => (holding.current = true)}
         onTouchEnd={() => (holding.current = false)}>
-        <Download className="mr-2 h-4 w-4" /> Р”Р•Р Р–РђРўР¬
+        <Download className="mr-2 h-4 w-4" /> ДЕРЖАТЬ
       </Button>
       <p className="font-mono text-primary">{Math.floor(progress)}%</p>
     </div>
   );
 }
 
-// 4) REACTOR вЂ” Simon
+// 4) REACTOR — Simon
 function ReactorGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const [seq] = useState(() => Array.from({ length: 3 }, () => Math.floor(Math.random() * 4)));
   const [step, setStep] = useState(0);
@@ -1331,7 +1329,7 @@ function ReactorGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const cols = ["#e84545", "#3aa3ff", "#ffd23a", "#7ad84a"];
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">{phase === "watch" ? "Р—Р°РїРѕРјРЅРё С†РІРµС‚Р°..." : "РџРѕРІС‚РѕСЂРё С†РІРµС‚Р°"}</p>
+      <p className="text-sm text-muted-foreground">{phase === "watch" ? "Запомни цвета..." : "Повтори цвета"}</p>
       <div className="grid grid-cols-2 gap-3">
         {cols.map((c, i) => (
           <button key={i} onClick={() => press(i)}
@@ -1339,12 +1337,12 @@ function ReactorGame({ onDone }: { onDone: (ok: boolean) => void }) {
             style={{ background: c, opacity: showing === i ? 1 : 0.45, transform: showing === i ? "scale(1.05)" : "scale(1)" }} />
         ))}
       </div>
-      <p className="text-xs text-muted-foreground">РЁР°Рі {step}/{seq.length}</p>
+      <p className="text-xs text-muted-foreground">Шаг {step}/{seq.length}</p>
     </div>
   );
 }
 
-// 5) TRASH вЂ” hold lever
+// 5) TRASH — hold lever
 function TrashGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const [level, setLevel] = useState(100);
   const holding = useRef(false);
@@ -1360,16 +1358,16 @@ function TrashGame({ onDone }: { onDone: (ok: boolean) => void }) {
   }, [onDone]);
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">Р”РµСЂР¶Рё СЂС‹С‡Р°Рі, РїРѕРєР° С€РєР°Р»Р° РЅРµ РѕРїСѓСЃС‚РµРµС‚.</p>
+      <p className="text-sm text-muted-foreground">Держи рычаг, пока шкала не опустеет.</p>
       <div className="w-32 h-56 bg-black/60 border-2 border-amber-700 rounded relative overflow-hidden">
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-amber-700 to-amber-500" style={{ height: `${level}%` }}>
-          <div className="text-[10px] text-center pt-1">рџ—‘пёЏ</div>
+          <div className="text-[10px] text-center pt-1">🗑️</div>
         </div>
       </div>
       <Button size="lg"
         onMouseDown={() => (holding.current = true)} onMouseUp={() => (holding.current = false)} onMouseLeave={() => (holding.current = false)}
         onTouchStart={() => (holding.current = true)} onTouchEnd={() => (holding.current = false)}>
-        <Trash2 className="mr-2 h-4 w-4" /> РўРЇРќРЈРўР¬
+        <Trash2 className="mr-2 h-4 w-4" /> ТЯНУТЬ
       </Button>
     </div>
   );
@@ -1381,7 +1379,7 @@ function SwitchesGame({ onDone }: { onDone: (ok: boolean) => void }) {
   useEffect(() => { if (s.every(Boolean)) setTimeout(() => onDone(true), 300); }, [s, onDone]);
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">Р’РєР»СЋС‡Рё РІСЃРµ С‚СѓРјР±Р»РµСЂС‹.</p>
+      <p className="text-sm text-muted-foreground">Включи все тумблеры.</p>
       <div className="flex gap-3 bg-black/60 p-4 rounded border border-amber-700">
         {s.map((on, i) => (
           <button key={i} onClick={() => setS(p => p.map((v, j) => j === i ? !v : v))}
@@ -1399,16 +1397,16 @@ function SwitchesGame({ onDone }: { onDone: (ok: boolean) => void }) {
 }
 
 
-// 8) QUIZ вЂ” survival/story question
+// 8) QUIZ — survival/story question
 const QUIZ_POOL = [
-  { q: "РЎРІРµС‚ РЅР°С‡Р°Р» РјРёРіР°С‚СЊ. Р§С‚Рѕ Р±РµР·РѕРїР°СЃРЅРµРµ СЃРґРµР»Р°С‚СЊ РїРµСЂРІС‹Рј?", o: ["Р—Р°РјРµСЂРµС‚СЊ Рё СЃР»СѓС€Р°С‚СЊ", "Р‘РµР¶Р°С‚СЊ РїРѕ РєРѕСЂРёРґРѕСЂСѓ", "РљСЂРёС‡Р°С‚СЊ РґСЂСѓР·СЊСЏРј", "РЎС‚СѓС‡Р°С‚СЊ РїРѕ С€РєР°С„Р°Рј"], a: 0 },
-  { q: "Р—Р°РІРѕРґРЅР°СЏ РѕР±РµР·СЊСЏРЅРєР° СЂРµР°РіРёСЂСѓРµС‚ РЅР° Р·РІСѓРє. РљР°Рє РїСЂРѕР№С‚Рё РјРёРјРѕ?", o: ["РРґС‚Рё С‚РёС…Рѕ", "Р‘СЂРѕСЃРёС‚СЊ РєРЅРёРіСѓ РІ РѕРєРЅРѕ", "Р’РєР»СЋС‡РёС‚СЊ СЃРёСЂРµРЅСѓ", "РџРЅСѓС‚СЊ РїР°СЂС‚Сѓ"], a: 0 },
-  { q: "РљСѓРєР»Р° РёСЃС‡РµР·Р»Р° РёР· РєР»Р°СЃСЃР°. Р“РґРµ РѕРїР°СЃРЅРµРµ РІСЃРµРіРѕ СЃС‚РѕСЏС‚СЊ?", o: ["РЎРїРёРЅРѕР№ Рє РґРІРµСЂРё", "РЈ РІРєР»СЋС‡С‘РЅРЅРѕРіРѕ СЃРІРµС‚Р°", "Р СЏРґРѕРј СЃРѕ С€РєР°С„С‡РёРєРѕРј", "Р—Р° РїР°СЂС‚РѕР№"], a: 0 },
-  { q: "РњРµРґРІРµРґСЊ РёРґС‘С‚ РјРµРґР»РµРЅРЅРѕ, РЅРѕ РЅРµ РѕС‚СЃС‚Р°С‘С‚. Р§С‚Рѕ РїРѕРјРѕР¶РµС‚ РІС‹РёРіСЂР°С‚СЊ РІСЂРµРјСЏ?", o: ["Р—Р°РєСЂС‹С‚СЊ Р·Р° СЃРѕР±РѕР№ РґРІРµСЂСЊ", "Р–РґР°С‚СЊ РЅР° РјРµСЃС‚Рµ", "Р’С‹РєР»СЋС‡РёС‚СЊ С„РѕРЅР°СЂРёРє", "РЎРјРѕС‚СЂРµС‚СЊ РµРјСѓ РІ РіР»Р°Р·Р°"], a: 0 },
-  { q: "Р›Р°РЅР° РЅР°С€Р»Р° С‡СѓР¶РѕР№ С€С‘РїРѕС‚ РІ РґРёРЅР°РјРёРєРµ. Р§РµРјСѓ Р»СѓС‡С€Рµ РЅРµ РґРѕРІРµСЂСЏС‚СЊ?", o: ["Р“РѕР»РѕСЃСѓ Р±РµР· Р»РёС†Р°", "РўРёС…РёРј С€Р°РіР°Рј", "РЎРІРµС‚Сѓ С„РѕРЅР°СЂРёРєР°", "Р—Р°РєСЂС‹С‚РѕР№ РґРІРµСЂРё"], a: 0 },
-  { q: "РџРµСЂРµРґ С‚РѕР±РѕР№ РґРІРµ РґРІРµСЂРё: РёР· РѕРґРЅРѕР№ СЃР»С‹С€РµРЅ СЃРјРµС…, Р·Р° РґСЂСѓРіРѕР№ С‚РёС€РёРЅР°. РљСѓРґР° Р±РµР·РѕРїР°СЃРЅРµРµ?", o: ["Р’ С‚РёС…СѓСЋ РґРІРµСЂСЊ", "Рљ СЃРјРµС…Сѓ", "РћСЃС‚Р°С‚СЊСЃСЏ РјРµР¶РґСѓ РґРІРµСЂСЏРјРё", "РЎС‚СѓС‡Р°С‚СЊ РІ РѕР±Рµ"], a: 0 },
-  { q: "Р¤Р°СЂС„РѕСЂРѕРІР°СЏ РєСѓРєР»Р° РїРѕСЏРІРёР»Р°СЃСЊ СЂСЏРґРѕРј. Р§С‚Рѕ РІР°Р¶РЅРµРµ?", o: ["РќРµ С‚РµСЂСЏС‚СЊ РµС‘ РёР· РІРёРґР°", "РЎСЂР°Р·Сѓ СЃРµСЃС‚СЊ Р·Р° РїР°СЂС‚Сѓ", "Р‘СЂРѕСЃРёС‚СЊ Р°РїС‚РµС‡РєСѓ", "РћС‚РєСЂС‹С‚СЊ СЂСЋРєР·Р°Рє"], a: 0 },
-  { q: "РќР° РїРѕР»Сѓ Р»РµР¶РёС‚ РёРіСЂСѓС€РєР°-РїСЂРёРјР°РЅРєР°. РљРѕРіРґР° РµС‘ Р»СѓС‡С€Рµ Р±СЂРѕСЃРёС‚СЊ?", o: ["Р§С‚РѕР±С‹ РѕС‚РІР»РµС‡СЊ РєСѓРєР»Сѓ", "РљРѕРіРґР° СЂСЏРґРѕРј РЅРёРєРѕРіРѕ РЅРµС‚", "РџРѕСЃР»Рµ РїРѕР±РµРґС‹", "РџРµСЂРµРґ С‡С‚РµРЅРёРµРј Р·Р°РїРёСЃРєРё"], a: 0 },
+  { q: "Свет начал мигать. Что безопаснее сделать первым?", o: ["Замереть и слушать", "Бежать по коридору", "Кричать друзьям", "Стучать по шкафам"], a: 0 },
+  { q: "Заводная обезьянка реагирует на звук. Как пройти мимо?", o: ["Идти тихо", "Бросить книгу в окно", "Включить сирену", "Пнуть парту"], a: 0 },
+  { q: "Кукла исчезла из класса. Где опаснее всего стоять?", o: ["Спиной к двери", "У включённого света", "Рядом со шкафчиком", "За партой"], a: 0 },
+  { q: "Медведь идёт медленно, но не отстаёт. Что поможет выиграть время?", o: ["Закрыть за собой дверь", "Ждать на месте", "Выключить фонарик", "Смотреть ему в глаза"], a: 0 },
+  { q: "Лана нашла чужой шёпот в динамике. Чему лучше не доверять?", o: ["Голосу без лица", "Тихим шагам", "Свету фонарика", "Закрытой двери"], a: 0 },
+  { q: "Перед тобой две двери: из одной слышен смех, за другой тишина. Куда безопаснее?", o: ["В тихую дверь", "К смеху", "Остаться между дверями", "Стучать в обе"], a: 0 },
+  { q: "Фарфоровая кукла появилась рядом. Что важнее?", o: ["Не терять её из вида", "Сразу сесть за парту", "Бросить аптечку", "Открыть рюкзак"], a: 0 },
+  { q: "На полу лежит игрушка-приманка. Когда её лучше бросить?", o: ["Чтобы отвлечь куклу", "Когда рядом никого нет", "После победы", "Перед чтением записки"], a: 0 },
 ];
 const toQuestion = (item: { q: string; o: string[]; a: number }): AiQuestion => ({
   question: item.q,
@@ -1477,7 +1475,7 @@ function QuizGame({ onDone, levelName, dollName }: { onDone: (ok: boolean) => vo
   };
   return (
     <div className="flex flex-col items-center gap-4 max-w-md">
-      <p className="text-sm text-muted-foreground">{loading ? "Р“РѕС‚РѕРІРёРј РІРѕРїСЂРѕСЃ..." : "РџСЂРѕСЃС‚РѕР№ РІРѕРїСЂРѕСЃ."} РџРѕРїС‹С‚РєРё: {tries}</p>
+      <p className="text-sm text-muted-foreground">{loading ? "Готовим вопрос..." : "Простой вопрос."} Попытки: {tries}</p>
       <h3 className="text-lg font-display text-center">{item.question}</h3>
       <div className="grid grid-cols-2 gap-2 w-full">
         {item.options.map((o, i) => (
@@ -1504,8 +1502,8 @@ function BossRiddleGate({ onDone, levelName }: { onDone: (ok: boolean) => void; 
     <div className="flex flex-col items-center gap-4 max-w-md mx-auto text-center">
       <Impostor size={90} />
       <div>
-        <h3 className="font-display text-lg text-red-400">Р—Р°РіР°РґРєР° РњР°С‚СЂРѕРЅС‹</h3>
-        <p className="text-xs text-muted-foreground">{loading ? "РљСѓРєР»Р° СЃР»СѓС€Р°РµС‚..." : `РћС‚РІРµС‚СЊ, С‡С‚РѕР±С‹ РїСЂРѕР№С‚Рё Рє С„РёРЅР°Р»Сѓ. РџРѕРїС‹С‚РєРё: ${tries}`}</p>
+        <h3 className="font-display text-lg text-red-400">Загадка Матроны</h3>
+        <p className="text-xs text-muted-foreground">{loading ? "Кукла слушает..." : `Ответь, чтобы пройти к финалу. Попытки: ${tries}`}</p>
       </div>
       <h4 className="text-base font-display text-amber-100">{item.question}</h4>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
@@ -1523,7 +1521,7 @@ function BossEncounter({ onWin, onLose, levelName }: { onWin: () => void; onLose
   return <BossRiddleGate levelName={levelName} onDone={(ok) => ok ? setRiddleSolved(true) : onLose()} />;
 }
 
-// 9) LOCK вЂ” find code from hints
+// 9) LOCK — find code from hints
 function LockGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const target = useMemo(() => Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)), []);
   const [dials, setDials] = useState([0, 0, 0]);
@@ -1545,12 +1543,12 @@ function LockGame({ onDone }: { onDone: (ok: boolean) => void }) {
         {dials.map((d, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
             <button onClick={() => setDials(p => p.map((v, j) => j === i ? (v + 1) % 10 : v))}
-              className="text-amber-300 hover:text-amber-100 text-xl">в–І</button>
+              className="text-amber-300 hover:text-amber-100 text-xl">▲</button>
             <div className="w-12 h-14 bg-zinc-900 border border-amber-600 rounded flex items-center justify-center text-3xl font-mono text-amber-200">
               {d}
             </div>
             <button onClick={() => setDials(p => p.map((v, j) => j === i ? (v + 9) % 10 : v))}
-              className="text-amber-300 hover:text-amber-100 text-xl">в–ј</button>
+              className="text-amber-300 hover:text-amber-100 text-xl">▼</button>
           </div>
         ))}
       </div>
@@ -1558,7 +1556,7 @@ function LockGame({ onDone }: { onDone: (ok: boolean) => void }) {
   );
 }
 
-// 10) AIM вЂ” click 5 targets fast
+// 10) AIM — click 5 targets fast
 function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const [hits, setHits] = useState(0);
   const [pos, setPos] = useState({ x: 50, y: 50 });
@@ -1578,7 +1576,7 @@ function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
   };
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">РќР°Р¶РјРё 3 С†РµР»Рё. РћСЃС‚Р°Р»РѕСЃСЊ: <b className="text-red-400">{time}s</b></p>
+      <p className="text-sm text-muted-foreground">Нажми 3 цели. Осталось: <b className="text-red-400">{time}s</b></p>
       <div className="relative w-80 h-64 bg-black/70 rounded border-2 border-red-500/50 overflow-hidden">
         <button onClick={hit}
           className="absolute w-10 h-10 rounded-full bg-red-500 hover:bg-red-400 border-2 border-red-200 transition-all"
@@ -1586,7 +1584,7 @@ function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
           <Target className="h-5 w-5 mx-auto text-white" />
         </button>
       </div>
-      <p className="font-mono text-primary">РџРѕРїР°РґР°РЅРёСЏ: {hits}/3</p>
+      <p className="font-mono text-primary">Попадания: {hits}/3</p>
     </div>
   );
 }
@@ -1603,11 +1601,11 @@ function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string
 }
 
 function monsterBehaviorLabel(kind: ToyMonsterKind) {
-  if (kind === "bear") return "РїР»СЋС€РµРІС‹Р№ РјРµРґРІРµРґСЊ вЂ” РјРµРґР»РµРЅРЅРѕ РїСЂРµСЃР»РµРґСѓРµС‚";
-  if (kind === "porcelain") return "Р±Р°Р»РµСЂРёРЅР° Р±РµР· РЅРѕРі вЂ” РїРѕР»Р·С‘С‚ Рё РёСЃС‡РµР·Р°РµС‚";
-  if (kind === "monkey") return "Р·Р°РІРѕРґРЅР°СЏ РѕР±РµР·СЊСЏРЅР° вЂ” СЂРµР°РіРёСЂСѓРµС‚ РЅР° С€СѓРј";
-  if (kind === "clown") return "РєР»РѕСѓРЅ-РјР°СЂРёРѕРЅРµС‚РєР° вЂ” Р±С‹СЃС‚СЂРѕ РґРѕРіРѕРЅСЏРµС‚";
-  return "РєСѓРєР»Р° вЂ” Р±СЂРѕРґРёС‚ СЂСЏРґРѕРј";
+  if (kind === "bear") return "плюшевый медведь — медленно преследует";
+  if (kind === "porcelain") return "балерина без ног — ползёт и исчезает";
+  if (kind === "monkey") return "заводная обезьяна — реагирует на шум";
+  if (kind === "clown") return "клоун-марионетка — быстро догоняет";
+  return "кукла — бродит рядом";
 }
 
 function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }:
@@ -1776,17 +1774,17 @@ function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }
 function ScaryMenuScene() {
   // Atmospheric hero for the main menu: Lana scared in the middle,
   // Karl & Dina slightly distorted to the sides, with toy-monsters looming in
-  // the background behind translucent puppet strings вЂ” "manipulating" the kids.
+  // the background behind translucent puppet strings — "manipulating" the kids.
   return (
     <div className="scary-menu-scene">
       <div className="scary-menu-vignette" />
       <div className="scary-menu-fog" />
       <div className="scary-menu-title">
         <div className="scary-menu-title-main">WELCOME BACK TO SCHOOL</div>
-        <div className="scary-menu-title-sub">РѕРЅРё РІСЃС‘ РµС‰С‘ Р¶РґСѓС‚ РґРµС‚РµР№вЂ¦</div>
+        <div className="scary-menu-title-sub">они всё ещё ждут детей…</div>
       </div>
 
-      {/* Background monsters вЂ” large, dim, looming, with puppet strings */}
+      {/* Background monsters — large, dim, looming, with puppet strings */}
       <div className="scary-bg-monsters">
         <div className="scary-bg-monster scary-bg-bear">
           <MenuArtMonster kind="bear" size={210} />
@@ -1814,15 +1812,15 @@ function ScaryMenuScene() {
       <div className="scary-menu-kids">
         <div className="scary-menu-kid scary-menu-karl">
           <MenuArtCharacter kind="karl" size={165} facing={1} motion="scared" />
-          <div className="scary-menu-label">РљРђР Р›</div>
+          <div className="scary-menu-label">КАРЛ</div>
         </div>
         <div className="scary-menu-kid scary-menu-lana">
           <MenuArtCharacter kind="lana" size={190} facing={1} scared motion="scared" />
-          <div className="scary-menu-label scary-menu-label-main">Р›РђРќРђ</div>
+          <div className="scary-menu-label scary-menu-label-main">ЛАНА</div>
         </div>
         <div className="scary-menu-kid scary-menu-dina">
           <MenuArtCharacter kind="dina" size={165} facing={-1} motion="scared" />
-          <div className="scary-menu-label">Р”РРќРђ</div>
+          <div className="scary-menu-label">ДИНА</div>
         </div>
       </div>
 
@@ -1881,7 +1879,7 @@ function CharacterDesignBoard() {
 // stitched mouth full of jagged teeth, torn fabric body.
 function PixelDoll({ size = 80, facing = -1, hurt = false, boss = false }:
   { size?: number; facing?: 1 | -1; hurt?: boolean; boss?: boolean }) {
-  // Plush body palette вЂ” sickly rotted green for normal dolls, pink Mr Hopp plush for boss
+  // Plush body palette — sickly rotted green for normal dolls, pink Mr Hopp plush for boss
   const FUR = boss ? "#e89cb4" : "#4a7a38";
   const FURD = boss ? "#a4607a" : "#2a4a1a";
   const FURL = boss ? "#f8c0d4" : "#6aa050";
@@ -1916,7 +1914,7 @@ function PixelDoll({ size = 80, facing = -1, hurt = false, boss = false }:
       <rect x={boss ? 6 : 4} y="2" width={boss ? 2 : 1} height={boss ? 7 : 5} fill={boss ? "#c8587a" : "#2a3a18"} />
       <rect x={boss ? 20 : 17} y="2" width={boss ? 2 : 1} height={boss ? 7 : 5} fill={boss ? "#c8587a" : "#2a3a18"} />
 
-      {/* Head вЂ” round plush */}
+      {/* Head — round plush */}
       <rect x={boss ? 4 : 2} y={boss ? 8 : 5} width={boss ? 20 : 18} height={boss ? 14 : 11} fill={FUR} />
       <rect x={boss ? 4 : 2} y={boss ? 8 : 5} width={boss ? 20 : 18} height={2} fill={FURL} />
       <rect x={boss ? 4 : 2} y={boss ? 20 : 14} width={boss ? 20 : 18} height={2} fill={FURD} />
@@ -1948,7 +1946,7 @@ function PixelDoll({ size = 80, facing = -1, hurt = false, boss = false }:
       {/* mouth stitch lines */}
       <rect x={boss ? 8 : 6} y={boss ? 20 : 14} width="1" height="1" fill={STITCH} />
       <rect x={boss ? 19 : 15} y={boss ? 20 : 14} width="1" height="1" fill={STITCH} />
-      {/* Body вЂ” torn plush torso */}
+      {/* Body — torn plush torso */}
       <rect x={boss ? 6 : 4} y={boss ? 22 : 16} width={boss ? 16 : 14} height={boss ? 9 : 7} fill={FUR} />
       {/* belly patch */}
       <rect x={boss ? 9 : 7} y={boss ? 23 : 17} width={boss ? 10 : 8} height={boss ? 7 : 5} fill={BELLY} />
@@ -1977,7 +1975,7 @@ function PixelDoll({ size = 80, facing = -1, hurt = false, boss = false }:
 }
 
 
-// ============== BOSS ARENA вЂ” bat-vs-Hopp combat ==============
+// ============== BOSS ARENA — bat-vs-Hopp combat ==============
 function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void }) {
   const ARENA_W = 720;
   const ARENA_H = 360;
@@ -2010,7 +2008,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
     const dn = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
       keys.current[k] = true;
-      if ((k === " " || k === "w" || k === "arrowup" || k === "С†") && jumpY.current === 0 && jumpV.current === 0) {
+      if ((k === " " || k === "w" || k === "arrowup" || k === "ц") && jumpY.current === 0 && jumpV.current === 0) {
         jumpV.current = -11;
       }
     };
@@ -2027,8 +2025,8 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
       const dt = Math.min(50, now - last); last = now;
       // movement
       let dx = 0;
-      if (keys.current["a"] || keys.current["arrowleft"] || keys.current["С„"]) { dx -= 1; setFacing(-1); }
-      if (keys.current["d"] || keys.current["arrowright"] || keys.current["РІ"]) { dx += 1; setFacing(1); }
+      if (keys.current["a"] || keys.current["arrowleft"] || keys.current["ф"]) { dx -= 1; setFacing(-1); }
+      if (keys.current["d"] || keys.current["arrowright"] || keys.current["в"]) { dx += 1; setFacing(1); }
       if (dx) setLanaX(p => clamp(p + dx * 4.2, 30, ARENA_W - 60));
       // gravity
       if (jumpV.current !== 0 || jumpY.current > 0) {
@@ -2086,7 +2084,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
   return (
     <div className="flex flex-col items-center gap-2 max-w-full">
       <div className="flex items-center justify-between w-full px-2">
-        <div className="font-display text-red-400">THE PORCELAIN MATRON вЂ” BOSS</div>
+        <div className="font-display text-red-400">THE PORCELAIN MATRON — BOSS</div>
         <div className="flex gap-0.5">{Array.from({ length: 10 }).map((_, i) => (
           <Heart key={i} className={`h-4 w-4 ${i < bossHp ? "fill-red-500 text-red-500" : "text-zinc-700"}`} />
         ))}</div>
@@ -2110,14 +2108,14 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
         {batSpawn && (
           <div className="absolute" style={{ left: batSpawn.x - 22, bottom: FLOOR_PX - 4, width: 44, height: 44 }}>
             <div className="absolute inset-0 rounded-full animate-pulse" style={{ background: "radial-gradient(circle,#fff48a 0%,rgba(255,200,40,0.6) 35%,transparent 70%)", filter: "blur(3px)" }} />
-            <div className="absolute inset-0 flex items-center justify-center text-3xl" style={{ filter: "drop-shadow(0 0 8px #ffec8a)" }}>рџЏЏ</div>
+            <div className="absolute inset-0 flex items-center justify-center text-3xl" style={{ filter: "drop-shadow(0 0 8px #ffec8a)" }}>🏏</div>
           </div>
         )}
         {/* Lana */}
         <div className="absolute" style={{ left: lanaX - 28, bottom: FLOOR_PX - 6 + lanaY }}>
           <MenuArtCharacter kind="lana" facing={facing} size={150} scared={lanaHp < 35} motion={lanaHp < 35 ? "scared" : "idle"} />
           {hasBat && (
-            <div className="absolute" style={{ top: 14, left: facing === 1 ? 36 : -14, fontSize: 24, transform: `scaleX(${facing}) rotate(${facing === 1 ? -28 : 28}deg)`, filter: "drop-shadow(0 0 8px #ffec8a)" }}>рџЏЏ</div>
+            <div className="absolute" style={{ top: 14, left: facing === 1 ? 36 : -14, fontSize: 24, transform: `scaleX(${facing}) rotate(${facing === 1 ? -28 : 28}deg)`, filter: "drop-shadow(0 0 8px #ffec8a)" }}>🏏</div>
           )}
         </div>
         {/* Lana HP */}
@@ -2129,7 +2127,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
           <span className="font-mono text-[10px]">{lanaHp}</span>
         </div>
         <div className="absolute bottom-1 left-2 text-[9px] font-pixel text-amber-300/80 bg-black/70 px-2 py-0.5 rounded">
-          A/D move В· SPACE jump В· grab bat then ram the doll В· dodge debris!
+          A/D move · SPACE jump · grab bat then ram the doll · dodge debris!
         </div>
       </div>
     </div>
@@ -2141,13 +2139,13 @@ const SPEED = 3.5;
 const VIEW_H = 520;
 const REACH = 70;
 
-// Р’СЂРµРјСЏ Р·Р°РґР°РЅРёСЏ limits (seconds). aim has its own timer.
+// Время задания limits (seconds). aim has its own timer.
 const TIME_LIMITS: Record<TaskKind, number | null> = {
   wires: 50, download: 36, reactor: 44,
   trash: 36, switches: 36, quiz: 34, aim: null,
 };
 
-// Countdown above each task вЂ” calls onTimeout when 0.
+// Countdown above each task — calls onTimeout when 0.
 function TaskTimer({ seconds, onTimeout }: { seconds: number; onTimeout: () => void }) {
   const [left, setLeft] = useState(seconds);
   const firedRef = useRef(false);
@@ -2170,7 +2168,7 @@ function TaskTimer({ seconds, onTimeout }: { seconds: number; onTimeout: () => v
   return (
     <div className="mb-3">
       <div className="flex justify-between text-[11px] font-pixel mb-1">
-        <span className={danger ? "text-red-400 animate-pulse" : "text-amber-300"}>вЏ± Р’СЂРµРјСЏ Р·Р°РґР°РЅРёСЏ</span>
+        <span className={danger ? "text-red-400 animate-pulse" : "text-amber-300"}>⏱ Время задания</span>
         <span className={`font-mono ${danger ? "text-red-400" : "text-amber-200"}`}>{left.toFixed(1)}s</span>
       </div>
       <div className="h-2 bg-black/70 rounded overflow-hidden border border-amber-700/40">
@@ -2181,26 +2179,26 @@ function TaskTimer({ seconds, onTimeout }: { seconds: number; onTimeout: () => v
   );
 }
 
-// ====== РљСѓРєРѕР»СЊРЅР°СЏ СЂСѓРєР°, С‚СЏРЅСѓС‰Р°СЏСЃСЏ С‡РµСЂРµР· РѕРєРЅРѕ ======
+// ====== Кукольная рука, тянущаяся через окно ======
 function DollHand({ delay = 0 }: { delay?: number }) {
   return (
     <svg viewBox="0 0 40 70" width={40} height={70}
       style={{ animation: `lana-walk 1.8s ease-in-out infinite`, animationDelay: `${delay}s`, transformOrigin: "50% 0%" }}>
-      {/* РїСЂРµРґРїР»РµС‡СЊРµ */}
+      {/* предплечье */}
       <rect x="14" y="20" width="12" height="38" fill="#d8c7b6" stroke="#4a342e" strokeWidth="1.5" />
       <rect x="14" y="30" width="12" height="3" fill="#8b6f63" opacity="0.55" />
       <rect x="14" y="45" width="12" height="3" fill="#8b6f63" opacity="0.45" />
-      {/* С„Р°СЂС„РѕСЂРѕРІС‹Рµ С‚СЂРµС‰РёРЅС‹ */}
+      {/* фарфоровые трещины */}
       <line x1="16" y1="25" x2="22" y2="35" stroke="#4a342e" strokeWidth="1.1" />
       <line x1="20" y1="40" x2="24" y2="50" stroke="#4a342e" strokeWidth="1.1" />
-      {/* Р»Р°РґРѕРЅСЊ */}
+      {/* ладонь */}
       <rect x="12" y="6" width="16" height="16" fill="#ead9c8" stroke="#4a342e" strokeWidth="1.5" />
-      {/* РїР°Р»СЊС†С‹ */}
+      {/* пальцы */}
       <rect x="11" y="0" width="3" height="10" fill="#ead9c8" stroke="#4a342e" strokeWidth="1" />
       <rect x="15" y="-2" width="3" height="12" fill="#ead9c8" stroke="#4a342e" strokeWidth="1" />
       <rect x="19" y="-2" width="3" height="12" fill="#ead9c8" stroke="#4a342e" strokeWidth="1" />
       <rect x="23" y="0" width="3" height="10" fill="#ead9c8" stroke="#4a342e" strokeWidth="1" />
-      {/* РЅРѕРіС‚Рё */}
+      {/* ногти */}
       <rect x="11" y="0" width="3" height="2" fill="#211818" />
       <rect x="15" y="-2" width="3" height="2" fill="#211818" />
       <rect x="19" y="-2" width="3" height="2" fill="#211818" />
@@ -2209,14 +2207,14 @@ function DollHand({ delay = 0 }: { delay?: number }) {
   );
 }
 
-// ====== РўРѕС‡РєР° РїРѕРёСЃРєР° РІ РєРѕРјРЅР°С‚Рµ ======
+// ====== Точка поиска в комнате ======
 function SpotEl({ spot, taken, lit, active, hasKey, hasBat }:
   { spot: SearchSpot; taken: boolean; lit: boolean; active: boolean; hasKey?: boolean; hasBat?: boolean }) {
   const x = spot.x;
   let body: React.ReactNode = null;
   let labelTop = 0;
   if (spot.where === "desk") {
-    // РїР°СЂС‚Р°
+    // парта
     body = (
       <div className="absolute" style={{ left: x - 50, bottom: 24, width: 100, height: 56 }}>
         <div className="absolute left-0 right-0 top-0 h-3 bg-[#8a6a3a] border-2 border-[#3a2a14]" />
@@ -2227,7 +2225,7 @@ function SpotEl({ spot, taken, lit, active, hasKey, hasBat }:
     );
     labelTop = 8;
   } else if (spot.where === "underDesk") {
-    // РїРѕРґ РїР°СЂС‚РѕР№ вЂ” С‰РµР»СЊ
+    // под партой — щель
     body = (
       <div className="absolute" style={{ left: x - 50, bottom: 24, width: 100, height: 56 }}>
         <div className="absolute left-0 right-0 top-0 h-3 bg-[#7a5a2a] border-2 border-[#2a1a08]" />
@@ -2276,7 +2274,7 @@ function SpotEl({ spot, taken, lit, active, hasKey, hasBat }:
     >
       <div style={{ position: "absolute", inset: 0 }}>
         {body}
-        {/* РєР»РёРєР°Р±РµР»СЊРЅР°СЏ РїРѕРґСЃРІРµС‚РєР° Р·РѕРЅС‹ */}
+        {/* кликабельная подсветка зоны */}
         <div className="absolute" style={{ left: x - 50, bottom: 18, width: 100, height: 110 }}>
           <div className={`absolute inset-0 rounded transition ${
             active && !taken
@@ -2297,33 +2295,33 @@ function SpotEl({ spot, taken, lit, active, hasKey, hasBat }:
               textShadow: "0 0 10px rgba(255,220,120,0.95), 0 2px 4px rgba(0,0,0,0.9)",
               filter: "drop-shadow(0 0 6px rgba(255,200,80,0.8))",
             }}
-            title={hasKey ? "Key" : hasBat ? "Bat" : spot.item?.name}
+            title={hasKey ? "Ключ" : hasBat ? "Бита" : spot.item?.name}
           >
-            {hasKey ? "рџ—ќ" : hasBat ? "рџЏЏ" : spot.item!.emoji}
+            {hasKey ? "🗝" : hasBat ? "🏏" : spot.item!.emoji}
           </div>
         )}
         {!taken && (
           <div className={`absolute font-pixel text-[10px] rounded px-1 animate-pulse border ${lit ? "text-amber-200 bg-black/80 border-amber-400/50" : "text-zinc-400 bg-black/80 border-zinc-700"}`}
             style={{ left: x - 24, bottom: 160 + labelTop }}>
-            {lit ? "рџ”Ќ search" : "???"}
+            {lit ? "🔍 взять" : "???"}
           </div>
         )}
         {!taken && active && (
           <div className="absolute font-pixel text-[12px] rounded px-2 py-1 animate-pulse border text-emerald-100 bg-emerald-950/90 border-emerald-300/80 shadow-[0_0_18px_rgba(110,231,183,0.45)]"
             style={{ left: x - 34, bottom: 188 + labelTop }}>
-            E РІР·СЏС‚СЊ
+            E взять
           </div>
         )}
         {taken && (spot.item || hasKey || hasBat) && (
           <div className="absolute font-pixel text-emerald-300 text-[13px]"
             style={{ left: x - 14, bottom: 135 + labelTop }}>
-            вњ“ {hasKey ? "рџ—ќ" : hasBat ? "рџЏЏ" : spot.item!.emoji}
+            ✓ {hasKey ? "🗝" : hasBat ? "🏏" : spot.item!.emoji}
           </div>
         )}
         {taken && !spot.item && !hasKey && !hasBat && (
           <div className="absolute font-pixel text-zinc-500 text-[10px]"
             style={{ left: x - 14, bottom: 135 + labelTop }}>
-            вњ— empty
+            ✗ empty
           </div>
         )}
       </div>
@@ -2331,15 +2329,15 @@ function SpotEl({ spot, taken, lit, active, hasKey, hasBat }:
   );
 }
 
-// Р”РµС‚РµСЂРјРёРЅРёСЂРѕРІР°РЅРЅС‹Р№ РєРІРµСЃС‚ РґР»СЏ РєР»Р°СЃСЃР°: РѕРїСЂРµРґРµР»СЏРµС‚, РєР°РєР°СЏ С‚РѕС‡РєР° РїСЂСЏС‡РµС‚ РєР»СЋС‡.
-// Р‘РёС‚Р° СЃРїР°РІРЅРёС‚СЃСЏ Р Р•Р”РљРћ вЂ” С‚РѕР»СЊРєРѕ РІ РѕРґРЅРѕРј РєР»Р°СЃСЃРµ РЅР° СЌС‚Р°Р¶ (РєР»Р°СЃСЃСѓ СЃ РЅР°РёРјРµРЅСЊС€РёРј x).
+// Детерминированный квест для класса: определяет, какая точка прячет ключ.
+// Бита спавнится редко — только в одном классе на этаж (классу с наименьшим x).
 function getClassroomQuest(classroom: Classroom, levelId: number) {
   let h = 0;
   for (let i = 0; i < classroom.id.length; i++) h = (h * 31 + classroom.id.charCodeAt(i)) >>> 0;
   h = (h + levelId * 997) >>> 0;
   const n = classroom.spots.length;
   const keyIdx = h % n;
-  // Р‘РёС‚Р° вЂ” С‚РѕР»СЊРєРѕ РІ РїРµСЂРІРѕРј РєР»Р°СЃСЃРµ СѓСЂРѕРІРЅСЏ (РѕРґРёРЅ РЅР° СЌС‚Р°Р¶)
+  // Бита — только в первом классе уровня (один на этаж)
   const lvl = levels.find(l => l.id === levelId);
   const isBatClass = !!lvl && lvl.classrooms[0]?.id === classroom.id;
   let batIdx = isBatClass ? ((h * 7 + 3) % n) : -1;
@@ -2347,8 +2345,8 @@ function getClassroomQuest(classroom: Classroom, levelId: number) {
   return { keyIdx, batIdx, hasBat: isBatClass };
 }
 
-const KEY_ITEM: LootItem = { name: "Door key", emoji: "рџ—ќ", strengthGain: 0 };
-const BAT_ITEM: LootItem = { name: "Baseball bat", emoji: "рџЏЏ", strengthGain: 0 };
+const KEY_ITEM: LootItem = { name: "Door key", emoji: "🗝", strengthGain: 0 };
+const BAT_ITEM: LootItem = { name: "Baseball bat", emoji: "🏏", strengthGain: 0 };
 
 type ClassroomTheme = {
   kind: "math" | "physics" | "lab" | "computer" | "music" | "art" | "library" | "cafeteria" | "gym" | "history" | "storage" | "default";
@@ -2361,7 +2359,7 @@ type ClassroomTheme = {
 
 function getClassroomTheme(name: string): ClassroomTheme {
   const n = name.toLowerCase();
-  if (/math|РјР°С‚/.test(n)) return {
+  if (/math|мат/.test(n)) return {
     kind: "math",
     board: ["x + 7 = ?", "2 + 2 = 4", "FIND KEY"],
     wall: "linear-gradient(180deg,#181528,#0d0b18 72%,#07040d)",
@@ -2369,15 +2367,15 @@ function getClassroomTheme(name: string): ClassroomTheme {
     accent: "#8fb6ff",
     light: "rgba(120,170,255,0.14)",
   };
-  if (/physics|С„РёР·|astronomy|Р°СЃС‚СЂ/.test(n)) return {
+  if (/physics|физ|astronomy|астр/.test(n)) return {
     kind: "physics",
-    board: ["E = mcВІ", "ORBIT SHIFT", "KEY?"],
+    board: ["E = mc²", "ORBIT SHIFT", "KEY?"],
     wall: "linear-gradient(180deg,#101a2a,#090d18 72%,#05060d)",
     floor: "repeating-linear-gradient(90deg,#1f2630 0 54px,#171d25 54px 108px)",
     accent: "#76d7ff",
     light: "rgba(118,215,255,0.13)",
   };
-  if (/lab|laboratory|biology|Р±РёРѕ|С…РёРј/.test(n)) return {
+  if (/lab|laboratory|biology|био|хим/.test(n)) return {
     kind: "lab",
     board: ["DO NOT MIX", "PH 7?", "LOCKED"],
     wall: "linear-gradient(180deg,#10251e,#07140f 72%,#040907)",
@@ -2385,7 +2383,7 @@ function getClassroomTheme(name: string): ClassroomTheme {
     accent: "#55d889",
     light: "rgba(80,220,140,0.13)",
   };
-  if (/computer|server|РєРѕРјРї/.test(n)) return {
+  if (/computer|server|комп/.test(n)) return {
     kind: "computer",
     board: ["LOGIN: ???", "POWER LOW", "KEY FILE"],
     wall: "linear-gradient(180deg,#0b1722,#060b13 72%,#030509)",
@@ -2393,7 +2391,7 @@ function getClassroomTheme(name: string): ClassroomTheme {
     accent: "#41e0c8",
     light: "rgba(65,224,200,0.13)",
   };
-  if (/music|РјСѓР·/.test(n)) return {
+  if (/music|муз/.test(n)) return {
     kind: "music",
     board: ["PLAY QUIET", "la la...", "KEY NOTE"],
     wall: "linear-gradient(180deg,#211326,#110814 72%,#09040a)",
@@ -2401,7 +2399,7 @@ function getClassroomTheme(name: string): ClassroomTheme {
     accent: "#d7a7ff",
     light: "rgba(215,167,255,0.13)",
   };
-  if (/art|studio|РёСЃРєСѓСЃ|СЂРёСЃ/.test(n)) return {
+  if (/art|studio|искус|рис/.test(n)) return {
     kind: "art",
     board: ["RED PAINT?", "DON'T LOOK", "KEY"],
     wall: "linear-gradient(180deg,#261816,#120a09 72%,#080403)",
@@ -2409,7 +2407,7 @@ function getClassroomTheme(name: string): ClassroomTheme {
     accent: "#ff8a66",
     light: "rgba(255,138,102,0.12)",
   };
-  if (/library|archive|Р»РёС‚|Р±РёР±Р»/.test(n)) return {
+  if (/library|archive|лит|библ/.test(n)) return {
     kind: "library",
     board: ["SILENCE", "BOOK 13", "KEY PAGE"],
     wall: "linear-gradient(180deg,#201713,#100b08 72%,#080403)",
@@ -2417,7 +2415,7 @@ function getClassroomTheme(name: string): ClassroomTheme {
     accent: "#d6ad68",
     light: "rgba(214,173,104,0.12)",
   };
-  if (/cafeteria|canteen|РєСѓС…|СЃС‚РѕР»РѕРІ/.test(n)) return {
+  if (/cafeteria|canteen|кух|столов/.test(n)) return {
     kind: "cafeteria",
     board: ["LUNCH 00:00", "NO FOOD", "KEY TRAY"],
     wall: "linear-gradient(180deg,#241914,#120c08 72%,#080403)",
@@ -2425,7 +2423,7 @@ function getClassroomTheme(name: string): ClassroomTheme {
     accent: "#f0b45f",
     light: "rgba(240,180,95,0.12)",
   };
-  if (/gym|СЃРїРѕСЂС‚/.test(n)) return {
+  if (/gym|спорт/.test(n)) return {
     kind: "gym",
     board: ["RUN QUIET", "LOCKER 4", "KEY"],
     wall: "linear-gradient(180deg,#1c1c24,#0f0f16 72%,#07070b)",
@@ -2433,7 +2431,7 @@ function getClassroomTheme(name: string): ClassroomTheme {
     accent: "#f4d35e",
     light: "rgba(244,211,94,0.12)",
   };
-  if (/history|geo|map|РёСЃС‚|РіРµРѕ/.test(n)) return {
+  if (/history|geo|map|ист|гео/.test(n)) return {
     kind: "history",
     board: ["OLD MAP", "YEAR 19??", "KEY ROOM"],
     wall: "linear-gradient(180deg,#231d16,#110d08 72%,#070403)",
@@ -2441,7 +2439,7 @@ function getClassroomTheme(name: string): ClassroomTheme {
     accent: "#c9a36a",
     light: "rgba(201,163,106,0.12)",
   };
-  if (/storage|attic|locker|utility|boiler|basement|СЃРєР»Р°Рґ|С‡РµСЂРґР°Рє/.test(n)) return {
+  if (/storage|attic|locker|utility|boiler|basement|склад|чердак/.test(n)) return {
     kind: "storage",
     board: ["BOX 7", "DO NOT OPEN", "KEY"],
     wall: "linear-gradient(180deg,#1b1715,#0e0a08 72%,#070403)",
@@ -2463,7 +2461,7 @@ function SubjectDecor({ theme }: { theme: ClassroomTheme }) {
   const accent = theme.accent;
   if (theme.kind === "math") return (
     <>
-      <div className="absolute font-mono text-[13px] text-blue-200/65" style={{ left: 230, top: 42 }}>ПЂ В· в€љ9 В· 12%</div>
+      <div className="absolute font-mono text-[13px] text-blue-200/65" style={{ left: 230, top: 42 }}>π · √9 · 12%</div>
       <div className="absolute border border-blue-200/30" style={{ left: 238, top: 82, width: 62, height: 38, transform: "rotate(-8deg)" }} />
       <div className="absolute font-mono text-[11px] text-blue-100/55" style={{ left: 322, top: 120 }}>x = ?</div>
     </>
@@ -2473,7 +2471,7 @@ function SubjectDecor({ theme }: { theme: ClassroomTheme }) {
       <div className="absolute rounded-full border border-cyan-200/40" style={{ left: 236, top: 52, width: 72, height: 26, transform: "rotate(-22deg)" }} />
       <div className="absolute rounded-full border border-cyan-200/35" style={{ left: 236, top: 52, width: 72, height: 26, transform: "rotate(22deg)" }} />
       <div className="absolute rounded-full" style={{ left: 268, top: 60, width: 8, height: 8, background: accent, boxShadow: `0 0 16px ${accent}` }} />
-      <div className="absolute text-cyan-100/60 text-[24px]" style={{ left: 330, top: 82 }}>в„</div>
+      <div className="absolute text-cyan-100/60 text-[24px]" style={{ left: 330, top: 82 }}>☄</div>
     </>
   );
   if (theme.kind === "lab") return (
@@ -2485,7 +2483,7 @@ function SubjectDecor({ theme }: { theme: ClassroomTheme }) {
           </div>
         ))}
       </div>
-      <div className="absolute text-emerald-200/70 text-[18px]" style={{ left: 350, top: 50 }}>вЈ</div>
+      <div className="absolute text-emerald-200/70 text-[18px]" style={{ left: 350, top: 50 }}>☣</div>
     </>
   );
   if (theme.kind === "computer") return (
@@ -2526,8 +2524,8 @@ function SubjectDecor({ theme }: { theme: ClassroomTheme }) {
   if (theme.kind === "cafeteria") return (
     <>
       <div className="absolute bg-zinc-800/80 border border-zinc-500/40" style={{ left: 230, top: 116, width: 120, height: 18 }} />
-      <div className="absolute text-amber-200/70 text-[22px]" style={{ left: 246, top: 82 }}>рџЌЅ</div>
-      <div className="absolute text-amber-200/60 text-[18px]" style={{ left: 312, top: 88 }}>в•</div>
+      <div className="absolute text-amber-200/70 text-[22px]" style={{ left: 246, top: 82 }}>🍽</div>
+      <div className="absolute text-amber-200/60 text-[18px]" style={{ left: 312, top: 88 }}>☕</div>
     </>
   );
   if (theme.kind === "gym") return (
@@ -2553,7 +2551,7 @@ function SubjectDecor({ theme }: { theme: ClassroomTheme }) {
   return null;
 }
 
-// ====== РЎС†РµРЅР° РІРЅСѓС‚СЂРё РєР»Р°СЃСЃР° ======
+// ====== Сцена внутри класса ======
 function ClassroomScene({
   classroom, levelId, hasFlashlight, batteryPct, onCollect, onLeave,
   lanaPalette, onConsumeBattery, onToast,
@@ -2581,7 +2579,7 @@ function ClassroomScene({
   const [doorOpen, setDoorOpen] = useState(false);
   const [roomMoving, setRoomMoving] = useState(false);
 
-  // РџРµСЂРµРґРІРёР¶РµРЅРёРµ Р›Р°РЅС‹ РїРѕ РєР»Р°СЃСЃСѓ (A/D РёР»Рё СЃС‚СЂРµР»РєРё)
+  // Передвижение Ланы по классу (A/D или стрелки)
   const [lanaX, setLanaX] = useState(20);
   const [facing, setFacing] = useState<1 | -1>(1);
   const lanaRoomXRef = useRef(20);
@@ -2595,15 +2593,15 @@ function ClassroomScene({
     if (isKeySpot) {
       setKeyFound(true);
       onCollect(KEY_ITEM, spot);
-      onToast("РљР»СЋС‡ РЅР°Р№РґРµРЅ");
+      onToast("Ключ найден");
     } else if (isBatSpot) {
       setBatFound(true);
       onCollect(BAT_ITEM, spot);
-      onToast("Р‘РёС‚Р° РЅР°Р№РґРµРЅР°. РЈРґР°СЂ: G");
+      onToast("Бита найдена. Удар: G");
     } else if (spot.item) {
       onCollect(spot.item, spot);
     } else {
-      onToast("РџСѓСЃС‚Рѕ");
+      onToast("Пусто");
     }
   }, [batSpotId, keySpotId, onCollect, onToast, taken]);
 
@@ -2639,13 +2637,13 @@ function ClassroomScene({
           onToast("Подойди ближе к столу или полке");
         }
       }
-      if (k === "a" || k === "A" || k === "ArrowLeft" || k === "С„" || k === "Р¤") { keysRef.current.l = true; setFacing(-1); }
-      if (k === "d" || k === "D" || k === "ArrowRight" || k === "РІ" || k === "Р’") { keysRef.current.r = true; setFacing(1); }
+      if (k === "a" || k === "A" || k === "ArrowLeft" || k === "ф" || k === "Ф") { keysRef.current.l = true; setFacing(-1); }
+      if (k === "d" || k === "D" || k === "ArrowRight" || k === "в" || k === "В") { keysRef.current.r = true; setFacing(1); }
     };
     const up = (e: KeyboardEvent) => {
       const k = e.key;
-      if (k === "a" || k === "A" || k === "ArrowLeft" || k === "С„" || k === "Р¤") keysRef.current.l = false;
-      if (k === "d" || k === "D" || k === "ArrowRight" || k === "РІ" || k === "Р’") keysRef.current.r = false;
+      if (k === "a" || k === "A" || k === "ArrowLeft" || k === "ф" || k === "Ф") keysRef.current.l = false;
+      if (k === "d" || k === "D" || k === "ArrowRight" || k === "в" || k === "В") keysRef.current.r = false;
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
@@ -2667,21 +2665,21 @@ function ClassroomScene({
   }, [classroom.spots, collectSpot, onToast, taken]);
 
   const openDoor = () => {
-    if (!keyFound) { onToast("рџ”’ Find the key first"); return; }
+    if (!keyFound) { onToast("🔒 Find the key first"); return; }
     setDoorOpen(true);
-    onToast("рџљЄ Door open! +15 coins");
-    onCollect({ name: "Open door", emoji: "рџљЄ", hpGain: 0 }, classroom.spots[0]);
+    onToast("🚪 Door open! +15 coins");
+    onCollect({ name: "Open door", emoji: "🚪", hpGain: 0 }, classroom.spots[0]);
   };
 
   const tryLeave = () => {
-    if (!doorOpen) { onToast("рџ”’ Р”РІРµСЂСЊ Р·Р°РєСЂС‹С‚Р° вЂ” РЅР°Р№РґРё РєР»СЋС‡"); return; }
+    if (!doorOpen) { onToast("🔒 Дверь закрыта — найди ключ"); return; }
     onLeave();
   };
 
   return (
     <div className="relative w-full overflow-hidden border-2 border-zinc-800 rounded bg-[#0a0610]"
       style={{ height: 380 }}>
-      {/* Р·Р°РґРЅСЏСЏ СЃС‚РµРЅР° */}
+      {/* задняя стена */}
       <div className="absolute inset-x-0 top-0" style={{
         height: 230,
         background: theme.wall,
@@ -2697,7 +2695,7 @@ function ClassroomScene({
       </svg>
       <SubjectDecor theme={theme} />
 
-      {/* РћРљРќРћ СЃ Р»СѓРЅРѕР№ Рё РєСѓРєРѕР»СЊРЅС‹РјРё СЂСѓРєР°РјРё */}
+      {/* ОКНО с луной и кукольными руками */}
       <div className="absolute" style={{ left: 430, top: 18, width: 190, height: 130 }}>
         <div className="absolute inset-0 border-4 border-zinc-700 overflow-hidden"
           style={{ background: "linear-gradient(180deg,#0d1a3a 0%,#1a2550 40%,#0a1530 100%)" }}>
@@ -2735,7 +2733,7 @@ function ClassroomScene({
         <div className="absolute -top-4 left-2 text-[9px] font-pixel text-red-300 animate-pulse">вљ  they are outside</div>
       </div>
 
-      {/* Р”РѕСЃРєР° */}
+      {/* Доска */}
       <div className="absolute" style={{ left: 24, top: 28, width: 180, height: 90 }}>
         <div className="absolute inset-0 bg-[#0a2a1a] border-4 border-[#3a2a1a]" />
         <div className="absolute inset-2 text-[10px] font-pixel leading-tight" style={{ color: theme.accent }}>
@@ -2743,40 +2741,40 @@ function ClassroomScene({
         </div>
       </div>
 
-      {/* Р—Р°РїРµСЂС‚Р°СЏ РґРІРµСЂСЊ СЃРїСЂР°РІР° РЅР° СЃС‚РµРЅРµ */}
+      {/* Запертая дверь справа на стене */}
       <div className="absolute" style={{ right: 16, top: 24, width: 130, height: 200 }}>
-        {/* СЂР°РјРєР° */}
+        {/* рамка */}
         <div className="absolute inset-0 bg-[#3a2618] border-4 border-[#1a0e08]" />
-        {/* С„РёР»С‘РЅРєРё */}
+        {/* филёнки */}
         <div className="absolute left-3 right-3 top-3 h-16 bg-[#2a1810] border-2 border-[#0a0604]" />
         <div className="absolute left-3 right-3 top-24 h-16 bg-[#2a1810] border-2 border-[#0a0604]" />
-        {/* СЃР»РµРґС‹ РєСЂРѕРІРё */}
+        {/* следы крови */}
         <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 130 200" preserveAspectRatio="none">
           <path d="M 20 40 C 18 60, 28 80, 22 100" stroke="#5a0a0a" strokeWidth="3" fill="none" opacity="0.85" />
           <circle cx="22" cy="100" r="3" fill="#5a0a0a" />
         </svg>
-        {/* Р·Р°РјРѕРє */}
+        {/* замок */}
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 bg-[#1a1a1a] border-2 border-[#5a5a5a] rounded-full">
-          {doorOpen ? "рџ”“" : "рџ”’"}
+          {doorOpen ? "🔓" : "🔒"}
         </div>
-        {/* СЃС‚Р°С‚СѓСЃ РґРІРµСЂРё */}
+        {/* статус двери */}
         <div className="absolute -bottom-1 left-0 right-0 text-center text-[10px] font-pixel">
           {doorOpen ? (
-            <span className="text-emerald-300">вњ“ OPEN</span>
+            <span className="text-emerald-300">✓ OPEN</span>
           ) : (
-            <span className="text-amber-200">{keyFound ? "Turn key в†’" : "рџ”’ need key"}</span>
+            <span className="text-amber-200">{keyFound ? "Повернуть ключ →" : "🔒 нужен ключ"}</span>
           )}
         </div>
       </div>
 
-      {/* РЁРєР°С„ СЃ С‚СЂСѓР±Р°РјРё */}
+      {/* Шкаф с трубами */}
       <div className="absolute" style={{ left: 230, top: 110, width: 70, height: 60 }}>
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="absolute top-0 bottom-0 w-2 bg-[#5a5a5a] border border-black" style={{ left: i * 11 }} />
         ))}
       </div>
 
-      {/* РџРѕР» */}
+      {/* Пол */}
       <div className="absolute inset-x-0 bottom-0" style={{
         height: 150,
         background: theme.floor,
@@ -2791,13 +2789,13 @@ function ClassroomScene({
         }} />
       ))}
 
-      {/* Р›Р°РЅР° вЂ” С…РѕРґРёС‚ РїРѕ РєР»Р°СЃСЃСѓ (A/D РёР»Рё в†ђ в†’) */}
+      {/* Лана — ходит по классу (A/D или ← →) */}
       <div className="absolute transition-none" style={{ left: lanaX, bottom: 28 }}>
         <LanaSpeech />
         <MenuArtCharacter kind="lana" facing={facing} size={135} scared={batteryPct < 20} motion={batteryPct < 20 ? "scared" : roomMoving ? "walk" : "idle"} />
       </div>
 
-      {/* РўРѕС‡РєРё РїРѕРёСЃРєР° */}
+      {/* Точки поиска */}
       {classroom.spots.map(spot => {
         const isKeySpot = spot.id === keySpotId;
         const isBatSpot = spot.id === batSpotId;
@@ -2814,7 +2812,7 @@ function ClassroomScene({
         );
       })}
 
-      {/* Р›С‘РіРєРёР№ Р»СѓРЅРЅС‹Р№ РїРѕР»СѓРјСЂР°Рє вЂ” РІРёРґРЅРѕ РІРµСЃСЊ РєР»Р°СЃСЃ, РЅРѕ СЃ Р°С‚РјРѕСЃС„РµСЂРѕР№ */}
+      {/* Лёгкий лунный полумрак — видно весь класс, но с атмосферой */}
       <div className="absolute inset-0 pointer-events-none"
         style={{
             background: "radial-gradient(ellipse 600px 320px at 65% 25%, rgba(180,200,255,0.10) 0%, rgba(0,0,0,0) 60%), linear-gradient(180deg, rgba(10,10,30,0.18), rgba(0,0,0,0.32))",
@@ -2827,33 +2825,33 @@ function ClassroomScene({
           }} />
       )}
 
-      {/* РџР°РЅРµР»СЊ РєРІРµСЃС‚Р° СЃРІРµСЂС…Сѓ */}
+      {/* Панель квеста сверху */}
       <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-pixel bg-black/85 px-3 py-1 rounded border border-amber-400/40 flex items-center gap-3 z-10">
         <span className={keyFound ? "text-emerald-300" : "text-amber-200"}>
-          {keyFound ? "вњ“ Key рџ—ќ" : "вњ— Find key рџ—ќ"}
+          {keyFound ? "✓ Ключ 🗝" : "✗ Найди ключ 🗝"}
         </span>
         {quest.hasBat && (
           <span className={batFound ? "text-emerald-300" : "text-amber-200"}>
-            {batFound ? "вњ“ Bat рџЏЏ" : "вњ— Find bat рџЏЏ"}
+            {batFound ? "✓ Бита 🏏" : "✗ Найди биту 🏏"}
           </span>
         )}
-        <span className="text-zinc-400">В· Spots: {remaining}/{classroom.spots.length}</span>
+        <span className="text-zinc-400">· Spots: {remaining}/{classroom.spots.length}</span>
       </div>
 
-      {/* РџР°РЅРµР»СЊ РґРІРµСЂРё вЂ” СѓРїСЂР°РІР»РµРЅРёРµ РєРІРµСЃС‚РѕРј */}
+      {/* Панель двери — управление квестом */}
       <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2 z-10">
         <div className="flex items-center gap-2 bg-black/85 border border-amber-700/60 rounded p-2">
           {!doorOpen && (
             <Button size="sm" onClick={openDoor} disabled={!keyFound}>
-              {keyFound ? "рџ—ќ Open door" : "рџ”’ Need key"}
+              {keyFound ? "🗝 Открыть дверь" : "🔒 Нужен ключ"}
             </Button>
           )}
           {doorOpen && (
-            <span className="text-emerald-300 font-pixel text-xs px-2">рџљЄ Door open</span>
+            <span className="text-emerald-300 font-pixel text-xs px-2">🚪 Door open</span>
           )}
         </div>
         <Button size="sm" variant={doorOpen ? "default" : "secondary"} onClick={tryLeave} disabled={!doorOpen}>
-          {doorOpen ? "в†’ Exit to hallway" : "рџ”’ Locked"}
+          {doorOpen ? "→ Выйти в коридор" : "🔒 Закрыто"}
         </Button>
       </div>
     </div>
@@ -2950,7 +2948,7 @@ export default function EscapeGame() {
   const [checkpoint, setCheckpoint] = useState<Checkpoint | null>(null);
   const [ambientLine, setAmbientLine] = useState("");
 
-  // ===== Noise lure (thrown toy) вЂ” dolls С…РѕРґСЊР±Р° to this x =====
+  // ===== Noise lure (thrown toy) — dolls ходьба to this x =====
   const [lure, setLure] = useState<{ x: number; until: number; emoji: string } | null>(null);
   const lureRef = useRef<typeof lure>(null); lureRef.current = lure;
 
@@ -2966,7 +2964,7 @@ export default function EscapeGame() {
   useEffect(() => {
     const dn = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      if ((k === " " || k === "w" || k === "arrowup" || k === "С†") && jumpYRef.current === 0 && jumpVRef.current === 0 && modal.kind === "none" && started) {
+      if ((k === " " || k === "w" || k === "arrowup" || k === "ц") && jumpYRef.current === 0 && jumpVRef.current === 0 && modal.kind === "none" && started) {
         jumpVRef.current = -11;
       }
     };
@@ -2985,7 +2983,7 @@ export default function EscapeGame() {
         if (ny === 0) jumpVRef.current = 0;
         setJumpY(ny);
       }
-      // obstacle damage вЂ” glass
+      // obstacle damage — glass
       const obs = levels[level]?.obstacles ?? [];
       const now = performance.now();
       if (jumpYRef.current < 18 && now - lastGlassRef.current > 900) {
@@ -2999,7 +2997,7 @@ export default function EscapeGame() {
               if (nh === 0) { sfxDeath(); setTimeout(() => setModal({ kind: "lose" }), 200); }
               return nh;
             });
-            setToast("рџ©ё Stepped on glass! -8 HP (jump with SPACE)");
+            setToast("🩸 Stepped on glass! -8 HP (jump with SPACE)");
             setTimeout(() => setToast(""), 1500);
             break;
           }
@@ -3011,19 +3009,19 @@ export default function EscapeGame() {
     return () => cancelAnimationFrame(raf);
   }, [started, modal.kind, level]);
 
-  // Р“РѕР»РѕРґ 0..100. Tick down over time; at 0 starts damaging HP.
+  // Голод 0..100. Tick down over time; at 0 starts damaging HP.
   const MAX_HUNGER = 100;
   const [hunger, setHunger] = useState(MAX_HUNGER);
   const hungerRef = useRef(hunger); hungerRef.current = hunger;
 
-  // РЎРёРґСЏ РЅР° РєРѕСЂС‚РѕС‡РєР°С… вЂ” РјРµРґР»РµРЅРЅРѕ, РЅРѕ Р±РµР· С€СѓРјР°.
+  // Сидя на корточках — медленно, но без шума.
   const [crouching, setCrouching] = useState(false);
   const crouchRef = useRef(false); crouchRef.current = crouching;
 
-  // РЎРїСЏС‰РёРµ РєСѓРєР»С‹, РєРѕС‚РѕСЂС‹С… СѓР¶Рµ СЂР°Р·Р±СѓРґРёР»Рё (РїРѕСЃР»Рµ СЌС‚РѕРіРѕ РІРµРґСѓС‚ СЃРµР±СЏ РєР°Рє РѕР±С‹С‡РЅС‹Рµ).
+  // Спящие куклы, которых уже разбудили (после этого ведут себя как обычные).
   const wokenRef = useRef<Set<string>>(new Set());
 
-  // ===== Р¤РѕРЅР°СЂРёРє Рё Р±Р°С‚Р°СЂРµСЏ =====
+  // ===== Фонарик и батарея =====
   const MAX_BATTERY = 100;
   const [foundFlashlight, setFoundFlashlight] = useState(false);
   const [battery, setBattery] = useState(MAX_BATTERY);
@@ -3034,7 +3032,7 @@ export default function EscapeGame() {
   const [batLeft, setBatLeft] = useState(save.owned.bat);
   const [gunLeft, setGunLeft] = useState(save.owned.gun);
   const [coins, setCoins] = useState(save.coins);
-  // Р‘РµР¶РёС‚ mode (Shift). Noisy вЂ” wakes "sleeping" dolls sooner.
+  // Бежит mode (Shift). Noisy — wakes "sleeping" dolls sooner.
   const [running, setRunning] = useState(false);
   const runningRef = useRef(false); runningRef.current = running;
 
@@ -3080,7 +3078,7 @@ export default function EscapeGame() {
         return next;
       };
 
-      // Р‘РµР¶РёС‚ near any monster = instantly heard, full chase
+      // Бежит near any monster = instantly heard, full chase
       const alertedByRun = runningRef.current && Math.abs(playerX - home) < 280 && !hidingRef.current;
       if (monsterKind === "bear") return moveHome(playerX, (alertedByRun ? 1.6 : 0.58) + level * 0.08);
       if (monsterKind === "porcelain") {
@@ -3101,7 +3099,7 @@ export default function EscapeGame() {
       }
       return home + Math.sin(t * 0.9 + idx * 1.7) * 60;
     }
-    // Sleeping (and not yet woken) вЂ” СЃС‚РѕСЏС‚ РЅР° РјРµСЃС‚Рµ.
+    // Sleeping (and not yet woken) — стоят на месте.
     if (z.sleeping && !wokenRef.current.has(z.id)) return z.x;
     const home = zomHomeRef.current[z.id] ?? z.x;
     const t = (performance.now() - tStartRef.current) / 1000;
@@ -3132,7 +3130,7 @@ export default function EscapeGame() {
         storyNotes: new Set(storyNotes),
         rescued: new Set(rescued),
       };
-      setToast(`РўРѕС‡РєР°: ${label}`);
+      setToast(`Точка: ${label}`);
       setTimeout(() => setToast(""), 1600);
       return next;
     });
@@ -3160,12 +3158,12 @@ export default function EscapeGame() {
 
   const respawnWithCrystal = useCallback(() => {
     if (!checkpoint) {
-      setToast("РќРµС‚ С‚РѕС‡РєРё РІРѕР·СЂРѕР¶РґРµРЅРёСЏ.");
+      setToast("Нет точки возрождения.");
       setTimeout(() => setToast(""), 1400);
       return;
     }
     if ((save.crystals ?? 0) < RESPAWN_CRYSTAL_COST) {
-      setToast("РќСѓР¶РµРЅ РєСЂРёСЃС‚Р°Р»Р». РљСѓРїРё РµРіРѕ РІ РјР°РіР°Р·РёРЅРµ Р·Р° РјРѕРЅРµС‚С‹.");
+      setToast("Нужен кристалл. Купи его в магазине за монеты.");
       setTimeout(() => setToast(""), 1800);
       return;
     }
@@ -3201,7 +3199,7 @@ export default function EscapeGame() {
     return () => clearInterval(id);
   }, [started, modal.kind]);
 
-  // РґРµР№СЃС‚РІРёРµ + weapon
+  // действие + weapon
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (modal.kind !== "none") return;
@@ -3216,7 +3214,7 @@ export default function EscapeGame() {
           setKilled(prev => new Set(prev).add(z.id));
           sfxGunshot();
           setCoins(c => c + 25);
-          setToast(`рџ”« ${z.name} вЂ” РѕСЃС‚Р°РЅРѕРІР»РµРЅР° РІС‹СЃС‚СЂРµР»РѕРј! +25 coins`);
+          setToast(`🔫 ${z.name} — остановлена выстрелом! +25 coins`);
           setTimeout(() => setToast(""), 1600);
           return;
         }
@@ -3235,21 +3233,21 @@ export default function EscapeGame() {
           setKilled(prev => new Set(prev).add(z.id));
           sfxBat();
           setCoins(c => c + 15);
-          setToast(`рџЏЏ ${z.name} вЂ” stunned with bat! +15 coins`);
+          setToast(`🏏 ${z.name} — stunned with bat! +15 coins`);
           setTimeout(() => setToast(""), 1600);
           return;
         }
-        setToast(k === "f" ? "рџ”« РќРµС‚ РїР°С‚СЂРѕРЅРѕРІ" : "рџЏЏ РќРµС‚ Р±РёС‚С‹");
+        setToast(k === "f" ? "🔫 Нет патронов" : "🏏 Нет биты");
         setTimeout(() => setToast(""), 1200);
         return;
       }
       if (k === "b") { setModal({ kind: "backpack" }); return; }
-      // T вЂ” throw nearest noise toy from backpack to lure dolls
-      if (k === "t" || k === "Рµ") {
+      // T — throw nearest noise toy from backpack to lure dolls
+      if (k === "t" || k === "е") {
         const list = invRef.current;
         const toyIdx = list.findIndex(it => it.noise && it.noise > 0);
         if (toyIdx === -1) {
-          setToast("рџђ° РќРµС‚ РёРіСЂСѓС€РµРє РґР»СЏ РѕС‚РІР»РµС‡РµРЅРёСЏ. РќР°Р№РґРё РїР»СЋС€РµРІСѓСЋ РёРіСЂСѓС€РєСѓ, С€РєР°С‚СѓР»РєСѓ РёР»Рё Р·РІРѕРЅРѕРє.");
+          setToast("Нет игрушек для отвлечения. Найди плюшевую игрушку, шкатулку или звонок.");
           setTimeout(() => setToast(""), 1500);
           return;
         }
@@ -3258,15 +3256,15 @@ export default function EscapeGame() {
         const throwX = clamp(px + (facing === 1 ? 220 : -220), 80, WORLD_W - 80);
         sfxPickup();
         setLure({ x: throwX, until: performance.now() + (toy.noise ?? 4000), emoji: toy.emoji });
-        setToast(`${toy.emoji} Р‘СЂРѕС€РµРЅРѕ! РљСѓРєР»С‹ РёРґСѓС‚ РЅР° Р·РІСѓРє...`);
+        setToast(`${toy.emoji} Брошено! Куклы идут на звук...`);
         setTimeout(() => setToast(""), 1500);
         return;
       }
-      // H вЂ” hide / unhide in nearest locker
-      if (k === "h" || k === "СЂ") {
+      // H — hide / unhide in nearest locker
+      if (k === "h" || k === "р") {
         if (hidingRef.current) {
           setHiding(null);
-          setToast("рџљЄ Stepped out of the locker");
+          setToast("🚪 Stepped out of the locker");
           setTimeout(() => setToast(""), 1200);
           return;
         }
@@ -3274,7 +3272,7 @@ export default function EscapeGame() {
         if (spot) {
           setHiding(spot.id);
           sfxPickup();
-          setToast("рџљЄ Hidden in the locker. Hold quietвЂ¦ (H to leave)");
+          setToast("🚪 Hidden in the locker. Hold quiet… (H to leave)");
           setTimeout(() => setToast(""), 1800);
         } else {
           setToast("No locker nearby");
@@ -3292,7 +3290,7 @@ export default function EscapeGame() {
       // exit door
       if (Math.abs(EXIT_X - px) < REACH) {
         if (!allKilled) {
-          setToast("Р”РІРµСЂСЊ РЅРµ РѕС‚РєСЂРѕРµС‚СЃСЏ: РІРїРµСЂРµРґРё РµС‰С‘ РєСѓРєР»С‹.");
+          setToast("Дверь не откроется: впереди ещё куклы.");
           setTimeout(() => setToast(""), 1800);
         } else setModal({ kind: isFinalLevel ? "doorTask" : "exit" });
       }
@@ -3301,19 +3299,19 @@ export default function EscapeGame() {
     return () => window.removeEventListener("keydown", h);
   }, [modal.kind, killed, searched, allKilled, level, gunLeft, batLeft, dolls, zx, EXIT_X]);
 
-  // game loop вЂ” movement + auto-block at dolls
+  // game loop — movement + auto-block at dolls
   useEffect(() => {
     if (!started || modal.kind !== "none") { setMoving(false); return; }
     let raf = 0;
     const tick = () => {
-      // Lure pull вЂ” drift each doll's home toward the lure x while active
+      // Lure pull — drift each doll's home toward the lure x while active
       const lureNow = lureRef.current;
       if (lureNow && performance.now() < lureNow.until) {
         for (const z of dolls) {
           if (killedRef.current.has(z.id)) continue;
           const monsterKind = pickToyMonsterKind(z.name);
           if (monsterKind === "bear" || monsterKind === "porcelain") continue;
-          // wake sleeping dolls вЂ” noise reaches them
+          // wake sleeping dolls — noise reaches them
           if (z.sleeping) wokenRef.current.add(z.id);
           const home = zomHomeRef.current[z.id] ?? z.x;
           const dist = Math.abs(home - lureNow.x);
@@ -3332,7 +3330,7 @@ export default function EscapeGame() {
       zomPosRef.current = pos;
       setZomTick(t => (t + 1) % 1000000);
 
-      // Crouch (C) вЂ” С‚РёС…Рѕ, РјРµРґР»РµРЅРЅРѕ. Run (Shift) вЂ” С€СѓРјРЅРѕ, Р±С‹СЃС‚СЂРѕ.
+      // Crouch (C) — тихо, медленно. Run (Shift) — шумно, быстро.
       const isCrouch = !!(keys.current["c"] || keys.current["control"]);
       const isRun = !isCrouch && !!(keys.current["shift"]);
       setRunning(isRun);
@@ -3361,8 +3359,8 @@ export default function EscapeGame() {
       const nowT = performance.now();
 
       // ===== Sleeping dolls: hearing detection =====
-      // РЎРёРґСЏ РЅР° РєРѕСЂС‚РѕС‡РєР°С… вЂ” РїРѕР»РЅРѕСЃС‚СЊСЋ С‚РёС…Рѕ. РЎС‚РѕСЏ вЂ” СЃР»С‹С€Р°С‚. Р‘РµРіРѕРј вЂ” СЃР»С‹С€Р°С‚ РёР·РґР°Р»РµРєР°.
-      // РЈСЃР»С‹С€Р°Р»Рё = РїСЂРѕСЃС‹РїР°СЋС‚СЃСЏ Рё СЃСЂР°Р·Сѓ РєСѓСЃР°СЋС‚ Р·Р° РѕРіСЂРѕРјРЅС‹Р№ СѓСЂРѕРЅ.
+      // Сидя на корточках — полностью тихо. Стоя — слышат. Бегом — слышат издалека.
+      // Услышали = просыпаются и сразу кусают за огромный урон.
       if (!isCrouch && !hidingRef.current) {
         const hearRange = isRun ? 130 : (dx !== 0 ? 75 : 40) - (isNinja ? 10 : 0);
         for (let i = 0; i < dolls.length; i++) {
@@ -3380,7 +3378,7 @@ export default function EscapeGame() {
             });
             setShake(true);
             setTimeout(() => setShake(false), 600);
-            setToast(`рџ± ${z.name} woke up and attacked! -${dmg} HP`);
+            setToast(`${z.name} проснулась и напала! -${dmg} HP`);
             setTimeout(() => setToast(""), 2200);
             lastBiteRef.current = nowT;
             break;
@@ -3388,14 +3386,14 @@ export default function EscapeGame() {
         }
       }
 
-      // Contact damage вЂ” patrolling doll within bite range.
+      // Contact damage — patrolling doll within bite range.
       const biteCD = isRun ? 500 : 800;
       const biteRange = (isCrouch ? 22 : (isRun ? 48 : 32)) - (isNinja ? 6 : 0);
       if (nowT - lastBiteRef.current > biteCD && !hidingRef.current) {
         for (let i = 0; i < dolls.length; i++) {
           const z = dolls[i];
           if (killedRef.current.has(z.id)) continue;
-          // РЎРїСЏС‰РёРµ, РµС‰С‘ РЅРµ СЂР°Р·Р±СѓР¶РµРЅРЅС‹Рµ, РЅРµ РєСѓСЃР°СЋС‚ РїР°СЃСЃРёРІРЅРѕ.
+          // Спящие, ещё не разбуженные, не кусают пассивно.
           if (z.sleeping && !wokenRef.current.has(z.id) && pickToyMonsterKind(z.name) !== "bear") continue;
           if (Math.abs(pos[z.id] - xRef.current) < biteRange) {
             lastBiteRef.current = nowT;
@@ -3409,13 +3407,13 @@ export default function EscapeGame() {
             });
             setShake(true);
             setTimeout(() => setShake(false), 350);
-            // Jumpscare вЂ” at most every 4s
+            // Jumpscare — at most every 4s
             if (nowT - lastJumpscareRef.current > 4000) {
               lastJumpscareRef.current = nowT;
               setJumpscare(pickToyMonsterKind(z.name));
               setTimeout(() => setJumpscare(null), 650);
             }
-            setToast(`рџ©ё ${z.name} Р°С‚Р°РєСѓРµС‚! -${dmg} HP${isRun ? " (noisy!)" : ""}`);
+            setToast(`${z.name} атакует! -${dmg} HP${isRun ? " (шумно!)" : ""}`);
             setTimeout(() => setToast(""), 1200);
             break;
           }
@@ -3432,11 +3430,11 @@ export default function EscapeGame() {
     const id = setInterval(() => {
       const px = xRef.current;
       const z = dolls.find((z, i) => !killed.has(z.id) && Math.abs((zomPosRef.current[z.id] ?? zx(z, i)) - px) < REACH);
-      if (z) { setHint(`[E] РћСЃС‚Р°РЅРѕРІРёС‚СЊ ${z.name}`); return; }
+      if (z) { setHint(`[E] Остановить ${z.name}`); return; }
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
-      if (c) { setHint(`[E] РћСЃРјРѕС‚СЂРµС‚СЊ В· ${c.name}`); return; }
+      if (c) { setHint(`[E] Осмотреть · ${c.name}`); return; }
       if (Math.abs(EXIT_X - px) < REACH) {
-        setHint(allKilled ? (isFinalLevel ? "[E] Рљ РњР°С‚СЂРѕРЅРµ" : "[E] РџРѕРґРЅСЏС‚СЊСЃСЏ РІС‹С€Рµ") : "РџСѓС‚СЊ Р·Р°РєСЂС‹С‚");
+        setHint(allKilled ? (isFinalLevel ? "[E] К Матроне" : "[E] Подняться выше") : "Путь закрыт");
         return;
       }
       setHint("");
@@ -3458,7 +3456,7 @@ export default function EscapeGame() {
       sfxKill();
       const reward = 10 + level * 5;
       setCoins(c => c + reward);
-      setToast(`рџ’Ђ ${z.name} РѕСЃС‚Р°РЅРѕРІР»РµРЅР°! +${reward} рџЄ™`);
+      setToast(`💀 ${z.name} остановлена! +${reward} рџЄ™`);
     } else {
       const dmg = Math.max(8, 25 - strength * 3);
       sfxBite();
@@ -3469,22 +3467,22 @@ export default function EscapeGame() {
       });
       setShake(true);
       setTimeout(() => setShake(false), 500);
-      setToast(`рџ’ў РљСѓРєР»Р° СѓРґР°СЂРёР»Р° Р›Р°РЅСѓ! -${dmg} HP`);
+      setToast(`💢 Кукла ударила Лану! -${dmg} HP`);
     }
     setTimeout(() => setToast(""), 1800);
     setModal({ kind: "none" });
   }, [modal, strength]);
 
-  // РџРѕРґРѕР±СЂР°С‚СЊ РїСЂРµРґРјРµС‚ РІРЅСѓС‚СЂРё СЃС†РµРЅС‹ РєР»Р°СЃСЃР°.
+  // Подобрать предмет внутри сцены класса.
   const collectSpotItem = useCallback((loot: LootItem, _spot: SearchSpot) => {
-    // Found bat вЂ” give a single-use stun weapon, hold it in hand.
+    // Found bat — give a single-use stun weapon, hold it in hand.
     if (loot.name === "Baseball bat") {
       setBatLeft(n => {
         const nn = n + 1;
         setSave(s => { const ns = { ...s, owned: { ...s.owned, bat: nn } }; writeSave(ns); return ns; });
         return nn;
       });
-      setToast("рџЏЏ Lana picked up a bat! 1 hit вЂ” press G near a doll.");
+      setToast("🏏 Lana picked up a bat! 1 hit — press G near a doll.");
       setTimeout(() => setToast(""), 2200);
       setCoins(c => c + 10);
       return;
@@ -3493,7 +3491,7 @@ export default function EscapeGame() {
     if (loot.givesFlashlight) {
       setFoundFlashlight(true);
       setBattery(b => Math.max(b, loot.battery ?? MAX_BATTERY));
-      setToast(`рџ”¦ Found ${loot.name}! Now Lana can see in the dark.`);
+      setToast(`🔦 Found ${loot.name}! Now Lana can see in the dark.`);
       setTimeout(() => setToast(""), 1800);
       setCoins(c => c + 8);
       return;
@@ -3512,18 +3510,18 @@ export default function EscapeGame() {
       setInv(prev => [...prev, item]);
       const bonus = [
         item.hp ? `+${item.hp} HP` : null,
-        item.food ? `+${item.food} рџЌґ` : null,
-        item.battery ? `+${item.battery}% рџ”‹` : null,
+        item.food ? `+${item.food} 🍴` : null,
+        item.battery ? `+${item.battery}% 🔋` : null,
       ].filter(Boolean).join(", ");
-      setToast(`рџЋ’ ${loot.emoji} ${loot.name}${bonus ? ` (${bonus})` : ""}`);
+      setToast(`🎒 ${loot.emoji} ${loot.name}${bonus ? ` (${bonus})` : ""}`);
     } else {
-      setToast(`Found: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} рџ’Є)` : ""}`);
+      setToast(`Найдено: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} сила)` : ""}`);
     }
     setCoins(c => c + 3);
     setTimeout(() => setToast(""), 1600);
   }, []);
 
-  // Р—Р°РєСЂС‹С‚СЊ РєРѕРјРЅР°С‚Сѓ вЂ” РїРѕРјРµС‚РёС‚СЊ РєР°Рє РѕР±С‹СЃРєР°РЅРЅСѓСЋ.
+  // Закрыть комнату — пометить как обысканную.
   const leaveClassroom = useCallback(() => {
     if (modal.kind !== "search") { setModal({ kind: "none" }); return; }
     const c = modal.classroom;
@@ -3559,7 +3557,7 @@ export default function EscapeGame() {
     setModal({ kind: "none" });
   }, [modal, rescued, storyNotes, level, killed, searched]);
 
-  // РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ a specific item from the backpack.
+  // Использовать конкретный предмет из рюкзака.
   const useItem = useCallback((idx: number) => {
     const it = invRef.current[idx];
     if (!it) return;
@@ -3569,18 +3567,18 @@ export default function EscapeGame() {
     if (it.strength) setStrength(s => s + it.strength);
     if (it.battery) {
       if (!hasFlashlight) {
-        setToast(`рџЄ« ${it.emoji} ${it.name}: РЅРµС‚ С„РѕРЅР°СЂРёРєР° вЂ” battery not needed now.`);
+        setToast(`🪫 ${it.emoji} ${it.name}: нет фонарика — battery not needed now.`);
       } else {
         setBattery(b => Math.min(MAX_BATTERY, b + it.battery!));
-        setToast(`рџ”‹ ${it.emoji} +${it.battery}% flashlight charge`);
+        setToast(`🔋 ${it.emoji} +${it.battery}% flashlight charge`);
       }
     } else {
-      setToast(`рџ’Љ ${it.emoji} ${it.name} used`);
+      setToast(`💊 ${it.emoji} ${it.name} used`);
     }
     setTimeout(() => setToast(""), 1400);
   }, [maxHp, hasFlashlight]);
 
-  // Auto-emergency-heal С‚РѕР»СЊРєРѕ РїСЂРё РєСЂРёС‚РёС‡РµСЃРєРѕРј HP.
+  // Auto-emergency-heal только при критическом HP.
   useEffect(() => {
     if (!started) return;
     if (modal.kind === "lose" || modal.kind === "win") return;
@@ -3594,22 +3592,22 @@ export default function EscapeGame() {
       setInv(p => p.filter((_, i) => i !== bestIdx));
       setHp(h => Math.min(maxHp, h + item.hp));
       if (item.food) setHunger(h => Math.min(MAX_HUNGER, h + item.food));
-      setToast(`рџ’Љ Auto: ${item.emoji} ${item.name} (+${item.hp} HP)`);
+      setToast(`💊 Auto: ${item.emoji} ${item.name} (+${item.hp} HP)`);
       setTimeout(() => setToast(""), 1800);
     }
   }, [hp, started, modal.kind, maxHp]);
 
-  // Р“РѕР»РѕРґ tick вЂ” СѓР±С‹РІР°РµС‚ СЃРѕ РІСЂРµРјРµРЅРµРј, РїСЂРё 0 вЂ” РєСѓСЃР°РµС‚ РіРѕР»РѕРґ.
+  // Голод tick — убывает со временем, при 0 — кусает голод.
   useEffect(() => {
     if (!started || modal.kind === "lose" || modal.kind === "win") return;
     const id = setInterval(() => {
-      if (modal.kind !== "none") return; // РЅРµ СѓР±С‹РІР°РµС‚ РІРѕ РІСЂРµРјСЏ Р·Р°РґР°РЅРёР№
+      if (modal.kind !== "none") return; // не убывает во время заданий
       setHunger(h => {
         const nh = Math.max(0, h - 1);
         if (nh === 0) {
-          // РіРѕР»РѕРґР°РµРј вЂ” С‚РµСЂСЏРµРј 2 HP
+          // голодаем — теряем 2 HP
           setHp(hh => Math.max(0, hh - 2));
-          setToast("рџЌґ Lana is hungry! -2 HP");
+          setToast("🍴 Lana is hungry! -2 HP");
           setTimeout(() => setToast(""), 1200);
         }
         return nh;
@@ -3618,7 +3616,7 @@ export default function EscapeGame() {
     return () => clearInterval(id);
   }, [started, modal.kind]);
 
-  // Р Р°Р·СЂСЏРґ Р±Р°С‚Р°СЂРµРё вЂ” С‚РѕР»СЊРєРѕ РєРѕРіРґР° С„РѕРЅР°СЂСЊ РіРѕСЂРёС‚ Рё С‚РµРјРЅРѕ (СЌС‚Р°Р¶ >= 2) РёР»Рё РјС‹ РІРЅСѓС‚СЂРё РєР»Р°СЃСЃР°.
+  // Разряд батареи — только когда фонарь горит и темно (этаж >= 2) или мы внутри класса.
   useEffect(() => {
     if (!started) return;
     if (modal.kind === "lose" || modal.kind === "win") return;
@@ -3630,7 +3628,7 @@ export default function EscapeGame() {
       setBattery(b => {
         const nb = Math.max(0, b - 1);
         if (nb === 0 && b > 0) {
-          setToast("рџЄ« Battery died! Need a new one.");
+          setToast("🪫 Battery died! Need a new one.");
           setTimeout(() => setToast(""), 1600);
         }
         return nb;
@@ -3685,9 +3683,9 @@ export default function EscapeGame() {
       });
       setScoreSubmitted(true);
       setLeaderboardKey(k => k + 1);
-      setToast("Р РµРєРѕСЂРґ РѕС‚РїСЂР°РІР»РµРЅ!");
+      setToast("Рекорд отправлен!");
     } catch (e: any) {
-      setToast("РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё: " + (e?.message ?? "unknown"));
+      setToast("Ошибка отправки: " + (e?.message ?? "неизвестно"));
     } finally {
       setSubmittingScore(false);
       setTimeout(() => setToast(""), 2000);
@@ -3696,11 +3694,11 @@ export default function EscapeGame() {
 
   const buyOutfit = (o: Outfit) => {
     if (save.ownedOutfits.includes(o.id)) return;
-    if (coins < o.price) { setToast("РќРµ С…РІР°С‚Р°РµС‚ РјРѕРЅРµС‚"); setTimeout(() => setToast(""), 1500); return; }
+    if (coins < o.price) { setToast("Не хватает монет"); setTimeout(() => setToast(""), 1500); return; }
     const ownedOutfits = Array.from(new Set([...save.ownedOutfits, o.id]));
     const ns = { ...save, coins: coins - o.price, outfit: o.id, ownedOutfits };
     setCoins(ns.coins); setSave(ns); writeSave(ns);
-    setToast(`РљСѓРїР»РµРЅРѕ: ${o.name}`); setTimeout(() => setToast(""), 1500);
+    setToast(`Куплено: ${o.name}`); setTimeout(() => setToast(""), 1500);
   };
   const equipOutfit = (o: Outfit) => {
     if (!save.ownedOutfits.includes(o.id)) return;
@@ -3708,7 +3706,7 @@ export default function EscapeGame() {
     setSave(ns); writeSave(ns);
   };
   const buyUpgrade = (u: Upgrade) => {
-    if (coins < u.price) { setToast("РќРµ С…РІР°С‚Р°РµС‚ РјРѕРЅРµС‚"); setTimeout(() => setToast(""), 1500); return; }
+    if (coins < u.price) { setToast("Не хватает монет"); setTimeout(() => setToast(""), 1500); return; }
     const owned = { ...save.owned };
     if (u.id === "bat" || u.id === "gun") {
       if ((owned[u.id] ?? 0) >= (u.max ?? 99)) return;
@@ -3722,31 +3720,31 @@ export default function EscapeGame() {
   };
   const buyCrystal = () => {
     if (coins < CRYSTAL_PRICE) {
-      setToast("РќРµ С…РІР°С‚Р°РµС‚ РјРѕРЅРµС‚ РЅР° РєСЂРёСЃС‚Р°Р»Р»");
+      setToast("Не хватает монет на кристалл");
       setTimeout(() => setToast(""), 1500);
       return;
     }
     const ns = { ...save, coins: coins - CRYSTAL_PRICE, crystals: (save.crystals ?? 0) + 1 };
     setCoins(ns.coins); setSave(ns); writeSave(ns);
-    setToast("РљСЂРёСЃС‚Р°Р»Р» РєСѓРїР»РµРЅ");
+    setToast("Кристалл куплен");
     setTimeout(() => setToast(""), 1500);
   };
 
   const ending = storyNotes.size >= Object.keys(STORY_NOTES).length && rescued.size >= RESCUE_EVENTS.length
     ? {
-        title: "РЎР•РљР Р•РўРќРђРЇ РљРћРќР¦РћР’РљРђ",
-        body: "Р›Р°РЅР° СЃРїР°СЃР°РµС‚ РљР°СЂР»Р°, Р”РёРЅСѓ Рё РґРµС‚РµР№. РЎРѕР±СЂР°РЅРЅС‹Рµ Р·Р°РїРёСЃРєРё СЂР°СЃРєСЂС‹РІР°СЋС‚ С‚Р°Р№РЅСѓ С€РєРѕР»С‹, Рё РёРіСЂСѓС€РєРё РЅР°РєРѕРЅРµС† РѕС‚РїСѓСЃРєР°СЋС‚ С‚РµС…, РєРѕРіРѕ СѓРґРµСЂР¶РёРІР°Р»Рё.",
+        title: "СЕКРЕТНАЯ КОНЦОВКА",
+        body: "Лана спасает Карла, Дину и детей. Собранные записки раскрывают тайну школы, и игрушки наконец отпускают тех, кого удерживали.",
         bonus: 350,
       }
     : rescued.size >= 2
       ? {
-          title: "РҐРћР РћРЁРђРЇ РљРћРќР¦РћР’РљРђ",
-          body: "Р›Р°РЅР° РІС‹Р±РёСЂР°РµС‚СЃСЏ СЃ РґСЂСѓР·СЊСЏРјРё Рё РЅР°Р№РґРµРЅРЅС‹РјРё РґРµС‚СЊРјРё. Р”РІРµСЂРё С€РєРѕР»С‹ РѕС‚РєСЂС‹РІР°СЋС‚СЃСЏ, РЅРѕ Р·Р° СЃС‚РµРЅР°РјРё РµС‰С‘ РѕСЃС‚Р°СЋС‚СЃСЏ С€С‘РїРѕС‚С‹.",
+          title: "ХОРОШАЯ КОНЦОВКА",
+          body: "Лана выбирается с друзьями и найденными детьми. Двери школы открываются, но за стенами ещё остаются шёпоты.",
           bonus: 250,
         }
       : {
-          title: "РћР”РРќРћРљРђРЇ РљРћРќР¦РћР’РљРђ",
-          body: "Р›Р°РЅР° РІС‹Р±РёСЂР°РµС‚СЃСЏ Р¶РёРІРѕР№, РЅРѕ С€РєРѕР»Р° СЃРѕС…СЂР°РЅСЏРµС‚ СЃР»РёС€РєРѕРј РјРЅРѕРіРѕ СЃРµРєСЂРµС‚РѕРІ. РџРѕР·Р°РґРё РёРіСЂСѓС€РєРё СЃРЅРѕРІР° Р·РѕРІСѓС‚ РґРµС‚РµР№.",
+          title: "ОДИНОКАЯ КОНЦОВКА",
+          body: "Лана выбирается живой, но школа сохраняет слишком много секретов. Позади игрушки снова зовут детей.",
           bonus: 150,
         };
 
@@ -3761,20 +3759,20 @@ export default function EscapeGame() {
             <h1 className="font-display text-2xl md:text-3xl tracking-widest text-red-500" style={{ textShadow: "0 0 16px rgba(216,34,30,0.45), 0 2px 0 #1a0000" }}>
               WELCOME BACK TO SCHOOL
             </h1>
-            <p className="font-pixel text-xs text-zinc-400 mt-1 tracking-[0.3em]">РѕРЅРё РІСЃС‘ РµС‰С‘ Р¶РґСѓС‚ РґРµС‚РµР№вЂ¦</p>
+            <p className="font-pixel text-xs text-zinc-400 mt-1 tracking-[0.3em]">они всё ещё ждут детей…</p>
           </div>
           <div className="flex items-center justify-center gap-2">
             <div className="px-3 py-1 bg-amber-900/40 border border-amber-700 rounded font-pixel text-amber-200 flex items-center gap-2">
-              <Coins className="h-4 w-4" /> {coins} РјРѕРЅРµС‚
+              <Coins className="h-4 w-4" /> {coins} монет
             </div>
             <div className="px-3 py-1 bg-cyan-950/50 border border-cyan-700 rounded font-pixel text-cyan-200 flex items-center gap-2">
-              в—† {save.crystals ?? 0} РєСЂРёСЃС‚.
+              ◆ {save.crystals ?? 0} крист.
             </div>
             <button onClick={() => setMusicOff(v => !v)}
               className="px-3 py-1 bg-black/40 border border-zinc-700 rounded font-pixel text-zinc-200 flex items-center gap-2 hover:bg-black/60"
-              title="РњСѓР·С‹РєР° РІРєР»./off">
+              title="Музыка вкл./off">
               {musicOff ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              {musicOff ? "РњСѓР·С‹РєР° РІС‹РєР»." : "РњСѓР·С‹РєР° РІРєР»."}
+              {musicOff ? "Музыка выкл." : "Музыка вкл."}
             </button>
             {authEmail && (
               <div className="max-w-[220px] truncate px-3 py-1 bg-emerald-950/50 border border-emerald-700 rounded font-pixel text-emerald-200">
@@ -3786,11 +3784,11 @@ export default function EscapeGame() {
 
           <div className="flex gap-2 justify-center">
             {[
-              { id: "play", label: "РРіСЂР°С‚СЊ", icon: ArrowUp },
-              { id: "instructions", label: "РРЅСЃС‚СЂСѓРєС†РёСЏ", icon: HelpCircle },
-              { id: "outfit", label: "РћР±СЂР°Р·С‹", icon: Shirt },
-              { id: "shop", label: "РњР°РіР°Р·РёРЅ", icon: ShoppingBag },
-              { id: "leaderboard", label: "Р РµРєРѕСЂРґС‹", icon: Trophy },
+              { id: "play", label: "Играть", icon: ArrowUp },
+              { id: "instructions", label: "Инструкция", icon: HelpCircle },
+              { id: "outfit", label: "Образы", icon: Shirt },
+              { id: "shop", label: "Магазин", icon: ShoppingBag },
+              { id: "leaderboard", label: "Рекорды", icon: Trophy },
             ].map(t => (
               <button key={t.id} onClick={() => setMenuTab(t.id as typeof menuTab)}
                 className={`px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border ${menuTab === t.id ? "bg-primary text-primary-foreground border-primary" : "bg-black/40 border-zinc-700 text-zinc-300"}`}>
@@ -3804,14 +3802,14 @@ export default function EscapeGame() {
                 disabled={signingOut}
                 className="px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border bg-black/40 border-zinc-700 text-zinc-300 hover:bg-black/60 hover:text-zinc-100 disabled:opacity-60"
               >
-                <LogOut className="h-4 w-4" /> {signingOut ? "Р’С‹С…РѕРґРёРј" : "Р’С‹Р№С‚Рё"}
+                <LogOut className="h-4 w-4" /> {signingOut ? "Выходим" : "Выйти"}
               </button>
             ) : (
               <Link
                 to="/login"
                 className="px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border bg-black/40 border-zinc-700 text-zinc-300 hover:bg-black/60 hover:text-zinc-100"
               >
-                <LogIn className="h-4 w-4" /> Р’РѕР№С‚Рё
+                <LogIn className="h-4 w-4" /> Войти
               </Link>
             )}
           </div>
@@ -3819,33 +3817,33 @@ export default function EscapeGame() {
           {menuTab === "play" && (
             <div className="bg-black/40 rounded p-4 space-y-3">
               <p className="text-sm text-muted-foreground text-center">
-                Р›Р°РЅР° РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ Р·Р° Р·Р°Р±С‹С‚С‹Рј СЂСЋРєР·Р°РєРѕРј. Р§Р°СЃС‹ РѕСЃС‚Р°РЅР°РІР»РёРІР°СЋС‚СЃСЏ, РґСЂСѓР·СЊСЏ РёСЃС‡РµР·Р°СЋС‚, Р° СЃС‚Р°СЂС‹Рµ РєСѓРєР»С‹ РЅР°С‡РёРЅР°СЋС‚ РѕС…СЂР°РЅСЏС‚СЊ С€РєРѕР»СЊРЅСѓСЋ С‚Р°Р№РЅСѓ.
+                Лана возвращается за забытым рюкзаком. Часы останавливаются, друзья исчезают, а старые куклы начинают охранять школьную тайну.
               </p>
               <div className="flex justify-center">
-                <Button size="lg" onClick={openIntroStory} className="font-display">РќРђР§РђРўР¬ РР“Р РЈ</Button>
+                <Button size="lg" onClick={openIntroStory} className="font-display">НАЧАТЬ ИГРУ</Button>
               </div>
             </div>
           )}
 
           {menuTab === "instructions" && (
             <div className="bg-black/40 rounded p-4 space-y-3">
-              <h2 className="font-display text-lg text-red-300 text-center">РРЅСЃС‚СЂСѓРєС†РёСЏ</h2>
+              <h2 className="font-display text-lg text-red-300 text-center">Инструкция</h2>
               <div className="text-left text-[12px] grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
-                <p>рџЋ® <b>A/D</b> В· <b>в†ђ/в†’</b> вЂ” С…РѕРґСЊР±Р°</p>
-                <p>рџЏѓ <b>Shift</b> вЂ” Р±РµРі, РЅРѕ РјРѕРЅСЃС‚СЂС‹ СЃР»С‹С€Р°С‚ С€СѓРј</p>
-                <p>рџ¤« <b>C</b> / <b>Ctrl</b> вЂ” РїСЂРёСЃРµСЃС‚СЊ Рё РёРґС‚Рё С‚РёС€Рµ</p>
-                <p>рџЋ’ <b>B</b> вЂ” РѕС‚РєСЂС‹С‚СЊ СЂСЋРєР·Р°Рє</p>
-                <p>вљЎ <b>E</b> / <b>Enter</b> вЂ” РґРµР№СЃС‚РІРёРµ СЂСЏРґРѕРј СЃ РїСЂРµРґРјРµС‚РѕРј</p>
-                <p>рџЏЏ <b>G</b> вЂ” РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ Р±РёС‚Сѓ СЂСЏРґРѕРј СЃ РєСѓРєР»РѕР№</p>
-                <p>рџ§ё <b>T</b> вЂ” Р±СЂРѕСЃРёС‚СЊ РёРіСЂСѓС€РєСѓ, С‡С‚РѕР±С‹ РѕС‚РІР»РµС‡СЊ РјРѕРЅСЃС‚СЂР°</p>
-                <p>рџљЄ <b>H</b> вЂ” СЃРїСЂСЏС‚Р°С‚СЊСЃСЏ РІ С€РєР°С„С‡РёРєРµ</p>
-                <p>рџ†™ <b>Space</b> вЂ” РїРµСЂРµРїСЂС‹РіРЅСѓС‚СЊ СЃС‚РµРєР»Рѕ</p>
-                <p>рџЌґ Р•РґР° РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СЃРёР»С‹, РіРѕР»РѕРґ РѕС‚РЅРёРјР°РµС‚ HP</p>
-                <p>рџґ РЎРїСЏС‰РёРµ РєСѓРєР»С‹ РїСЂРѕСЃС‹РїР°СЋС‚СЃСЏ РѕС‚ РіСЂРѕРјРєРёС… С€Р°РіРѕРІ</p>
-                <p>рџЊ‘ Р’ С‚С‘РјРЅС‹С… РєРѕСЂРёРґРѕСЂР°С… РЅСѓР¶РµРЅ С„РѕРЅР°СЂРёРє Рё Р±Р°С‚Р°СЂРµР№РєРё</p>
+                <p>🎮 <b>A/D</b> · <b>←/→</b> — ходьба</p>
+                <p>🏃 <b>Shift</b> — бег, но монстры слышат шум</p>
+                <p>🤫 <b>C</b> / <b>Ctrl</b> — присесть и идти тише</p>
+                <p>🎒 <b>B</b> — открыть рюкзак</p>
+                <p>⚡ <b>E</b> / <b>Enter</b> — действие рядом с предметом</p>
+                <p>🏏 <b>G</b> — использовать биту рядом с куклой</p>
+                <p>🧸 <b>T</b> — бросить игрушку, чтобы отвлечь монстра</p>
+                <p>🚪 <b>H</b> — спрятаться в шкафчике</p>
+                <p>↥ <b>Space</b> — перепрыгнуть стекло</p>
+                <p>🍴 Еда восстанавливает силы, голод отнимает HP</p>
+                <p>! Спящие куклы просыпаются от громких шагов</p>
+                <p>🌑 В тёмных коридорах нужен фонарик и батарейки</p>
               </div>
               <p className="text-[11px] text-muted-foreground text-center">
-                РќР° РєР°Р¶РґРѕРј СЌС‚Р°Р¶Рµ РґСЂСѓРіРѕР№ РІСЂР°Рі: РјРµРґРІРµРґСЊ, Р±Р°Р»РµСЂРёРЅР°, РѕР±РµР·СЊСЏРЅР°, РєР»РѕСѓРЅ Рё СЃРµРјСЊСЏ РњР°С‚СЂРѕРЅС‹.
+                На каждом этаже другой враг: медведь, балерина, обезьяна, клоун и семья Матроны.
               </p>
             </div>
           )}
@@ -3860,9 +3858,9 @@ export default function EscapeGame() {
                     <MenuArtCharacter kind="lana" size={135} facing={1} motion="idle" />
                     <div className="text-xs font-pixel text-center">{o.name}</div>
                     {equipped
-                      ? <div className="text-[10px] text-primary font-pixel">РќРђР”Р•РўРћ</div>
+                      ? <div className="text-[10px] text-primary font-pixel">НАДЕТО</div>
                       : owned
-                        ? <Button size="sm" variant="secondary" onClick={() => equipOutfit(o)}>РќР°РґРµС‚СЊ</Button>
+                        ? <Button size="sm" variant="secondary" onClick={() => equipOutfit(o)}>Надеть</Button>
                         : <Button size="sm" onClick={() => buyOutfit(o)} disabled={coins < o.price}>
                             <Coins className="h-3 w-3 mr-1" /> {o.price}
                           </Button>}
@@ -3875,10 +3873,10 @@ export default function EscapeGame() {
           {menuTab === "shop" && (
             <div className="bg-black/40 rounded p-4 space-y-2">
               <div className="flex items-center gap-3 p-2 border border-cyan-700 rounded bg-cyan-950/25">
-                <div className="h-6 w-6 text-cyan-200 flex items-center justify-center text-lg">в—†</div>
+                <div className="h-6 w-6 text-cyan-200 flex items-center justify-center text-lg">◆</div>
                 <div className="flex-1">
-                  <div className="font-pixel text-sm">РљСЂРёСЃС‚Р°Р»Р» РІРѕР·СЂРѕР¶РґРµРЅРёСЏ <span className="text-cyan-300">Г—{save.crystals ?? 0}</span></div>
-                  <div className="text-[11px] text-muted-foreground">РќСѓР¶РµРЅ, С‡С‚РѕР±С‹ РІРѕР·СЂРѕРґРёС‚СЊСЃСЏ Сѓ РїРѕСЃР»РµРґРЅРµР№ С‚РѕС‡РєРё РїРѕСЃР»Рµ РїРѕСЂР°Р¶РµРЅРёСЏ.</div>
+                  <div className="font-pixel text-sm">Кристалл возрождения <span className="text-cyan-300">×{save.crystals ?? 0}</span></div>
+                  <div className="text-[11px] text-muted-foreground">Нужен, чтобы возродиться у последней точки после поражения.</div>
                 </div>
                 <Button size="sm" disabled={coins < CRYSTAL_PRICE} onClick={buyCrystal}>
                   <Coins className="h-3 w-3 mr-1" /> {CRYSTAL_PRICE}
@@ -3892,23 +3890,23 @@ export default function EscapeGame() {
                   <div key={u.id} className="flex items-center gap-3 p-2 border border-zinc-700 rounded bg-black/40">
                     <I className="h-6 w-6 text-amber-300" />
                     <div className="flex-1">
-                      <div className="font-pixel text-sm">{u.name} {(u.id === "bat" || u.id === "gun") && <span className="text-amber-300">Г—{cur}</span>}</div>
+                      <div className="font-pixel text-sm">{u.name} {(u.id === "bat" || u.id === "gun") && <span className="text-amber-300">×{cur}</span>}</div>
                       <div className="text-[11px] text-muted-foreground">{u.desc}</div>
                     </div>
                     <Button size="sm" disabled={maxed || coins < u.price} onClick={() => buyUpgrade(u)}>
-                      {maxed ? "РљСѓРїР»РµРЅРѕ" : <><Coins className="h-3 w-3 mr-1" /> {u.price}</>}
+                      {maxed ? "Куплено" : <><Coins className="h-3 w-3 mr-1" /> {u.price}</>}
                     </Button>
                   </div>
                 );
               })}
-              <p className="text-[11px] text-muted-foreground text-center pt-1">РџРѕРєСѓРїРєРё СЃРѕС…СЂР°РЅСЏСЋС‚СЃСЏ РјРµР¶РґСѓ РёРіСЂР°РјРё.</p>
+              <p className="text-[11px] text-muted-foreground text-center pt-1">Покупки сохраняются между играми.</p>
             </div>
           )}
 
           {menuTab === "leaderboard" && (
             <div className="bg-black/40 rounded p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <label className="text-xs text-zinc-400 font-pixel shrink-0">РРјСЏ:</label>
+                <label className="text-xs text-zinc-400 font-pixel shrink-0">Имя:</label>
                 <Input
                   value={playerName}
                   maxLength={24}
@@ -3919,11 +3917,11 @@ export default function EscapeGame() {
                   className="h-8 text-sm"
                   placeholder="Lana"
                 />
-                <Button size="sm" variant="secondary" onClick={() => setLeaderboardKey(k => k + 1)}>в†»</Button>
+                <Button size="sm" variant="secondary" onClick={() => setLeaderboardKey(k => k + 1)}>↻</Button>
               </div>
               <Leaderboard refreshKey={leaderboardKey} />
               <p className="text-[10px] text-muted-foreground text-center">
-                РўРѕРї-20 РёРіСЂРѕРєРѕРІ РїРѕ РјРѕРЅРµС‚Р°Рј. Р РµРєРѕСЂРґ РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ РїРѕСЃР»Рµ РїРѕР±РµРґС‹ РёР»Рё РїРѕСЂР°Р¶РµРЅРёСЏ.
+                Топ-20 игроков по монетам. Рекорд отправляется после победы или поражения.
               </p>
             </div>
           )}
@@ -3980,7 +3978,7 @@ export default function EscapeGame() {
           </div>
           <div>
             <div className="flex justify-between text-[11px] mb-1">
-              <span className="flex items-center gap-1"><Utensils className="h-3 w-3 text-amber-300" /> Р“РѕР»РѕРґ</span>
+              <span className="flex items-center gap-1"><Utensils className="h-3 w-3 text-amber-300" /> Голод</span>
               <span className={`font-mono ${hunger < 25 ? "text-red-400 animate-pulse" : "text-amber-200"}`}>{hunger}</span>
             </div>
             <div className="h-2 bg-black/60 rounded border border-amber-700/40 overflow-hidden">
@@ -3990,56 +3988,56 @@ export default function EscapeGame() {
         </div>
         <div className="text-right text-xs space-y-1">
           <div className="flex gap-3 justify-end flex-wrap">
-            <span className="text-amber-300">рџЏ« Floor {cur.id}/{levels.length}</span>
+            <span className="text-amber-300">🏫 Floor {cur.id}/{levels.length}</span>
             <span className="flex items-center gap-1"><Coins className="h-3 w-3 text-amber-300" />{coins}</span>
-            <span className="text-cyan-200" title="РљСЂРёСЃС‚Р°Р»Р»С‹ РІРѕР·СЂРѕР¶РґРµРЅРёСЏ">в—† {save.crystals ?? 0}</span>
-            <span title="Bat (G)">рџЏЏ {batLeft}</span>
-            <span title="Pistol (F)">рџ”« {gunLeft}</span>
+            <span className="text-cyan-200" title="Кристаллы возрождения">◆ {save.crystals ?? 0}</span>
+            <span title="Bat (G)">🏏 {batLeft}</span>
+            <span title="Pistol (F)">🔫 {gunLeft}</span>
             {hasFlashlight && (
-              <span title={`Flashlight В· battery ${battery}%`} className={`flex items-center gap-1 ${battery === 0 ? "text-red-400 animate-pulse" : (battery < 25 ? "text-amber-400" : "text-amber-200")}`}>
+                <span title={`Фонарик · заряд ${battery}%`} className={`flex items-center gap-1 ${battery === 0 ? "text-red-400 animate-pulse" : (battery < 25 ? "text-amber-400" : "text-amber-200")}`}>
                 <Flashlight className="h-3 w-3 inline" />
                 {battery > 25 ? <BatteryFull className="h-3 w-3 inline" /> : <BatteryLow className="h-3 w-3 inline" />}
                 {battery}%
               </span>
             )}
-            <span>рџ’Ђ {killed.size}/{dolls.length}</span>
-            <span>рџ”Ќ {searched.size}/{classrooms.length}</span>
-            <span title="РќР°Р№РґРµРЅРЅС‹Рµ Р·Р°РїРёСЃРєРё">Notes {storyNotes.size}/{Object.keys(STORY_NOTES).length}</span>
-            <span title="РЎРїР°СЃС‘РЅРЅС‹Рµ РґСЂСѓР·СЊСЏ Рё РґРµС‚Рё">Saved {rescued.size}/{RESCUE_EVENTS.length}</span>
-            <span className={crouching ? "text-emerald-400" : (running ? "text-red-400" : "text-zinc-500")} title={crouching ? "РџСЂРёСЃРµР»Р° вЂ” quiet" : (running ? "Р‘РµР¶РёС‚ вЂ” noisy" : "РҐРѕРґСЊР±Р°")}>
+            <span>💀 {killed.size}/{dolls.length}</span>
+            <span>🔍 {searched.size}/{classrooms.length}</span>
+            <span title="Найденные записки">Notes {storyNotes.size}/{Object.keys(STORY_NOTES).length}</span>
+            <span title="Спасённые друзья и дети">Saved {rescued.size}/{RESCUE_EVENTS.length}</span>
+            <span className={crouching ? "text-emerald-400" : (running ? "text-red-400" : "text-zinc-500")} title={crouching ? "Присела — тихо" : (running ? "Бежит — шумно" : "Ходьба")}>
               {crouching ? <ArrowDown className="h-3 w-3 inline" /> : (running ? <Volume2 className="h-3 w-3 inline" /> : <VolumeX className="h-3 w-3 inline" />)}
             </span>
           </div>
           <div className="flex gap-1 justify-end items-center min-h-[18px]">
             <button onClick={() => setModal({ kind: "backpack" })}
               className="flex items-center gap-1 text-[10px] text-amber-200 hover:text-amber-100 bg-black/60 border border-amber-700/60 rounded px-2 py-0.5 font-pixel">
-              <Backpack className="h-3 w-3" /> Р СЋРєР·Р°Рє [B] В· {inv.length}
+              <Backpack className="h-3 w-3" /> Рюкзак [B] · {inv.length}
             </button>
             {inv.slice(0, 5).map((it, i) => (
-              <span key={it.id + i} title={`${it.name}${it.hp ? ` +${it.hp} HP` : ""}${it.food ? ` +${it.food} рџЌґ` : ""}`}
+              <span key={it.id + i} title={`${it.name}${it.hp ? ` +${it.hp} HP` : ""}${it.food ? ` +${it.food} 🍴` : ""}`}
                 className="bg-black/60 border border-amber-700/60 rounded px-1 text-sm leading-none">
                 {it.emoji}
               </span>
             ))}
             {inv.length > 5 && <span className="text-[10px] text-amber-300">+{inv.length - 5}</span>}
             <button onClick={beginGame}
-              title="Р—Р°РЅРѕРІРѕ"
+              title="Заново"
               className="ml-2 flex items-center gap-1 text-[10px] text-amber-200 hover:text-amber-100 bg-black/60 border border-amber-700/60 rounded px-2 py-0.5 font-pixel">
-              в†» Р—Р°РЅРѕРІРѕ
+              ↻ Заново
             </button>
             {checkpoint && (
               <span className="text-[10px] text-emerald-300 bg-black/60 border border-emerald-700/60 rounded px-2 py-0.5 font-pixel">
-                РўРѕС‡РєР°: {checkpoint.label}
+                Точка: {checkpoint.label}
               </span>
             )}
             <button onClick={() => { setStarted(false); setMenuTab("play"); setModal({ kind: "none" }); }}
-              title="Р’ РјРµРЅСЋ"
+              title="В меню"
               className="flex items-center gap-2 text-[13px] text-red-100 hover:text-white bg-red-950/80 border-2 border-red-500/80 rounded px-4 py-2 font-pixel shadow-[0_0_16px_rgba(127,29,29,0.35)]">
-              вњ• РњРµРЅСЋ
+              ✕ Меню
             </button>
           </div>
           {allKilled && <div className="text-emerald-400 font-bold animate-pulse">
-            в†’ {isFinalLevel ? "Рљ РњР°С‚СЂРѕРЅРµ!" : "РќР°РІРµСЂС…!"}
+            → {isFinalLevel ? "К Матроне!" : "Наверх!"}
           </div>}
         </div>
       </div>
@@ -4192,7 +4190,7 @@ export default function EscapeGame() {
                     {c.name}
                   </div>
                   {isDone && (
-                    <div className="absolute inset-0 flex items-center justify-center text-emerald-400 text-3xl font-bold">вњ“</div>
+                    <div className="absolute inset-0 flex items-center justify-center text-emerald-400 text-3xl font-bold">✓</div>
                   )}
                 </div>
               </div>
@@ -4204,7 +4202,7 @@ export default function EscapeGame() {
             <div className={`relative w-24 h-40 border-4 rounded-t-md ${allKilled ? "border-emerald-400 glow-toxic" : "border-red-700"}`}
               style={{ background: allKilled ? "linear-gradient(180deg,#1a3a1a,#0a1a0a)" : "linear-gradient(180deg,#2a0a0a,#1a0505)" }}>
               <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/90 text-[10px] text-emerald-300 px-2 py-0.5 rounded whitespace-nowrap font-pixel">
-                {allKilled ? (isFinalLevel ? "EXIT OPEN" : "STAIRS в–І") : (isFinalLevel ? "EXIT в›”" : "STAIRS в›”")}
+                {allKilled ? (isFinalLevel ? "ВЫХОД ОТКРЫТ" : "ЛЕСТНИЦА ▲") : (isFinalLevel ? "ВЫХОД ЗАКРЫТ" : "ЛЕСТНИЦА ЗАКРЫТА")}
               </div>
               {isFinalLevel
                 ? <DoorClosed className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-white/60" />
@@ -4225,7 +4223,7 @@ export default function EscapeGame() {
             </div>
           ))}
 
-          {/* Hide spots вЂ” lockers along the wall */}
+          {/* Hide spots — lockers along the wall */}
           {(cur.hideSpots ?? []).map(s => {
             const near = Math.abs(s.x - x) < REACH;
             const inUse = hiding === s.id;
@@ -4244,7 +4242,7 @@ export default function EscapeGame() {
                   {/* door split */}
                   <div className="absolute left-1/2 top-0 bottom-0 w-px bg-black/70" />
                   {inUse && (
-                    <div className="absolute inset-0 flex items-center justify-center text-[18px]">рџ‘ЃпёЏ</div>
+                    <div className="absolute inset-0 flex items-center justify-center text-[18px]">👁️</div>
                   )}
                   {near && !inUse && (
                     <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black/80 text-emerald-200 text-[9px] px-1 rounded font-pixel whitespace-nowrap">
@@ -4294,7 +4292,7 @@ export default function EscapeGame() {
                     Zzz
                   </div>
                   <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-blue-900/80 text-blue-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
-                    рџґ {z.name}
+                    Zzz {z.name}
                   </div>
                 </div>
               );
@@ -4313,7 +4311,7 @@ export default function EscapeGame() {
                 />
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
                   <TaskIcon kind={z.kind} className="h-3 w-3" />
-                  {z.name} В· {monsterBehaviorLabel(monsterKind)}
+                  {z.name} · {monsterBehaviorLabel(monsterKind)}
                 </div>
               </div>
             );
@@ -4323,7 +4321,7 @@ export default function EscapeGame() {
           <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 - jumpY, transition: jumpY === 0 ? "top 0.1s" : "none", opacity: 1 }}>
             {hiding && (
               <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/85 text-emerald-200 text-[9px] px-2 py-0.5 rounded font-pixel whitespace-nowrap">
-                рџљЄ Hidden вЂ” H to leave
+                🚪 Hidden — H to leave
               </div>
             )}
             <LanaSpeech side={facing === 1 ? "left" : "right"} />
@@ -4342,14 +4340,14 @@ export default function EscapeGame() {
                     transformOrigin: "50% 100%",
                     filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.8))",
                   }}
-                  title="Bat вЂ” 1 hit (G)"
+                  title="Bat — 1 hit (G)"
                 >
-                  рџЏЏ
+                  🏏
                 </div>
               )}
             </div>
             {crouching && (
-              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-emerald-900/80 text-emerald-100 text-[9px] px-1 rounded font-pixel">рџ¤« quiet</div>
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-emerald-900/80 text-emerald-100 text-[9px] px-1 rounded font-pixel">🤫 quiet</div>
             )}
           </div>
 
@@ -4358,7 +4356,7 @@ export default function EscapeGame() {
         </div>
       </div>
 
-      {/* Darkness overlay вЂ” 2-3 СЌС‚Р°Р¶. РЎ РІРєР»СЋС‡С‘РЅРЅС‹Рј С„РѕРЅР°СЂС‘Рј вЂ” Р±РѕР»СЊС€РѕР№ РєРѕРЅСѓСЃ, РёРЅР°С‡Рµ вЂ” РєСЂРѕС€РµС‡РЅС‹Р№ РєСЂСѓР¶РѕРє. */}
+      {/* Darkness overlay — 2-3 этаж. С включённым фонарём — большой конус, иначе — крошечный кружок. */}
       {level >= 1 && (
         <div className="absolute inset-0 pointer-events-none z-20"
           style={{
@@ -4372,12 +4370,12 @@ export default function EscapeGame() {
       {level >= 1 && !flashlightOn && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 bg-red-900/80 border border-red-500 text-red-100 px-3 py-1 rounded font-pixel text-xs">
           {!hasFlashlight
-            ? "рџЊ‘ Dark! РќР°Р№РґРё С„РѕРЅР°СЂРёРє РІ РєР»Р°СЃСЃРµ РёР»Рё РєСѓРїРё РІ РјР°РіР°Р·РёРЅРµ В· РёРґРё С‚РёС…Рѕ"
-            : "рџЄ« Battery died! РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ a new one from backpack [B]"}
+            ? "Темно! Найди фонарик в классе или купи в магазине · иди тихо"
+            : "Батарейка села! Используй новую из рюкзака [B]"}
         </div>
       )}
 
-      {/* РџРѕРґСЃРєР°Р·РєР° + toast */}
+      {/* Подсказка + toast */}
       {hint && modal.kind === "none" && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-black/85 border border-primary/50 px-4 py-2 rounded font-display text-sm text-primary animate-pulse">
           {hint}
@@ -4396,8 +4394,8 @@ export default function EscapeGame() {
 
       {/* Modals */}
       {modal.kind !== "none" && (
-        <div className="absolute inset-0 z-40 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`bg-zinc-900 border-2 border-primary/60 rounded-lg w-full p-6 relative ${modal.kind === "search" ? "max-w-4xl" : "max-w-2xl"}`}>
+        <div className="absolute inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`bg-zinc-900 border-2 border-primary/60 rounded-lg w-[min(92vw,720px)] max-h-[86vh] overflow-y-auto p-4 relative ${modal.kind === "search" ? "md:w-[min(92vw,820px)]" : ""}`}>
             {modal.kind !== "win" && modal.kind !== "lose" && modal.kind !== "boss" && (
               <button onClick={() => setModal({ kind: "none" })} className="absolute top-2 right-2 text-zinc-400 hover:text-white">
                 <X className="h-5 w-5" />
@@ -4415,16 +4413,16 @@ export default function EscapeGame() {
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-[11px] font-pixel">
                   <div className="bg-black/40 border border-zinc-700 rounded p-2">
-                    Notes<br /><span className="text-amber-300">{storyNotes.size}/{Object.keys(STORY_NOTES).length}</span>
+                    Записки<br /><span className="text-amber-300">{storyNotes.size}/{Object.keys(STORY_NOTES).length}</span>
                   </div>
                   <div className="bg-black/40 border border-zinc-700 rounded p-2">
-                    Saved<br /><span className="text-emerald-300">{rescued.size}/{RESCUE_EVENTS.length}</span>
+                    Спасено<br /><span className="text-emerald-300">{rescued.size}/{RESCUE_EVENTS.length}</span>
                   </div>
                   <div className="bg-black/40 border border-zinc-700 rounded p-2">
-                    Checkpoint<br /><span className="text-primary">{checkpoint?.label ?? "none"}</span>
+                    Точка<br /><span className="text-primary">{checkpoint?.label ?? "нет"}</span>
                   </div>
                 </div>
-                <Button onClick={() => setModal({ kind: "none" })}>Keep moving</Button>
+                <Button onClick={() => setModal({ kind: "none" })}>Продолжить</Button>
               </div>
             )}
 
@@ -4436,7 +4434,7 @@ export default function EscapeGame() {
                     <h2 className="font-display text-lg text-red-400">{modal.doll.name}</h2>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <TaskIcon kind={modal.doll.kind} className="h-3 w-3" />
-                      {monsterBehaviorLabel(pickToyMonsterKind(modal.doll.name))} В· СЂРµС€Рё Р»С‘РіРєРѕРµ Р·Р°РґР°РЅРёРµ, С‡С‚РѕР±С‹ РІС‹Р¶РёС‚СЊ
+                      {monsterBehaviorLabel(pickToyMonsterKind(modal.doll.name))} · реши задание, чтобы выжить
                     </p>
                   </div>
                 </div>
@@ -4464,17 +4462,17 @@ export default function EscapeGame() {
                   <div>
                     <h3 className="font-display text-lg text-primary">{modal.classroom.name}</h3>
                     <p className="text-[11px] text-muted-foreground">
-                      Р’ РєР»Р°СЃСЃРµ РјРѕР¶РЅРѕ РЅР°Р№С‚Рё С„РѕРЅР°СЂРёРєРё, Р±Р°С‚Р°СЂРµР№РєРё, РµРґСѓ Рё Р°РїС‚РµС‡РєРё. Р—Р° РѕРєРЅРѕРј С‚РµРїРµСЂСЊ С‚РѕР»СЊРєРѕ СЃС‚Р°СЂС‹Рµ РєСѓРєР»С‹.
+                      В классе можно найти фонарики, батарейки, еду и аптечки. За окном теперь только старые куклы.
                     </p>
                   </div>
                   <div className="text-[11px] font-pixel text-amber-200 flex items-center gap-2">
                     {hasFlashlight ? (
                       <span className={`flex items-center gap-1 ${battery > 0 ? "text-amber-200" : "text-red-400 animate-pulse"}`}>
                         {battery > 25 ? <BatteryFull className="h-4 w-4" /> : <BatteryLow className="h-4 w-4" />}
-                        рџ”¦ {battery}%
+                        🔦 {battery}%
                       </span>
                     ) : (
-                      <span className="text-red-300">рџ”¦ РЅРµС‚ С„РѕРЅР°СЂРёРєР°</span>
+                      <span className="text-red-300">🔦 нет фонарика</span>
                     )}
                   </div>
                 </div>
@@ -4484,18 +4482,18 @@ export default function EscapeGame() {
                   hasFlashlight={hasFlashlight}
                   batteryPct={battery}
                   onCollect={(loot, spot) => {
-                    if (loot.emoji === "рџљЄ") {
-                      // С‚СЂРёРіРіРµСЂ "РґРІРµСЂСЊ РѕС‚РєСЂС‹С‚Р°" вЂ” РґР°С‘Рј РЅР°РіСЂР°РґСѓ
+                    if (loot.emoji === "🚪") {
+                      // триггер "дверь открыта" — даём награду
                       setCoins(c => c + 15);
                       return;
                     }
-                    if (loot.emoji === "рџ—ќ") {
-                      // РєР»СЋС‡ вЂ” РЅРµ РєР»Р°РґС‘Рј РІ СЂСЋРєР·Р°Рє, РїСЂРѕСЃС‚Рѕ Р±РѕРЅСѓСЃ
+                    if (loot.emoji === "🗝") {
+                      // ключ — не кладём в рюкзак, просто бонус
                       setCoins(c => c + 5);
                       return;
                     }
-                    if (loot.emoji === "рџЏЏ") {
-                      // Р±РёС‚Р° РёР· РєР»Р°СЃСЃР° вЂ” РѕРґРЅРѕСЂР°Р·РѕРІР°СЏ, РЅРµ СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ РјРµР¶РґСѓ Р·Р°Р±РµРіР°РјРё
+                    if (loot.emoji === "🏏") {
+                      // бита из класса — одноразовая, не сохраняется между забегами
                       setBatLeft(n => n + 1);
                       return;
                     }
@@ -4517,15 +4515,15 @@ export default function EscapeGame() {
               isFinalLevel ? (
                 <div className="flex flex-col items-center gap-4 text-center max-w-md">
                   <Impostor size={80} />
-                  <h3 className="font-display text-lg text-red-400">Р¤Р°СЂС„РѕСЂРѕРІР°СЏ РњР°С‚СЂРѕРЅР° Р¶РґС‘С‚ Сѓ РІС‹С…РѕРґР°</h3>
-                  <p>"I kept them safe, Lana. Why would you take them into the dark outside?"</p>
-                  <Button onClick={() => setModal({ kind: "boss" })}>Р’РѕР№С‚Рё</Button>
+                  <h3 className="font-display text-lg text-red-400">Фарфоровая Матрона ждёт у выхода</h3>
+                  <p>«Я берегла их, Лана. Зачем тебе уводить их в темноту снаружи?»</p>
+                  <Button onClick={() => setModal({ kind: "boss" })}>Войти</Button>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4 text-center max-w-md">
                   <ArrowUp className="h-12 w-12 text-emerald-400" />
-                  <h3 className="font-display text-lg text-emerald-400">Р›РµСЃС‚РЅРёС†Р° РЅР° СЃР»РµРґСѓСЋС‰РёР№ СЌС‚Р°Р¶</h3>
-                  <p>Floor {cur.id} РїСЂРѕР№РґРµРЅ. РџРѕРґРЅРёРјР°Р№СЃСЏ РІС‹С€Рµ.</p>
+                  <h3 className="font-display text-lg text-emerald-400">Лестница на следующий этаж</h3>
+                  <p>Этаж {cur.id} пройден. Поднимайся выше.</p>
                   <Button onClick={() => {
                     setLevel(level + 1);
                     setX(120);
@@ -4537,9 +4535,9 @@ export default function EscapeGame() {
                     wokenRef.current = new Set();
                     setHp(h => Math.min(maxHp, h + 20));
                     setModal({ kind: "none" });
-                    setToast(`в–І Floor ${cur.id + 1}`);
+                    setToast(`▲ Этаж ${cur.id + 1}`);
                     setTimeout(() => setToast(""), 1800);
-                  }}>РџРѕРґРЅСЏС‚СЊСЃСЏ в–І</Button>
+                  }}>Подняться ▲</Button>
                 </div>
               )
             )}
@@ -4549,20 +4547,20 @@ export default function EscapeGame() {
                 <div className="flex items-center gap-3 mb-3">
                   <DoorClosed className="h-10 w-10 text-amber-400" />
                   <div>
-                    <h2 className="font-display text-lg text-amber-300">Р—Р°РјРѕРє РґРІРµСЂРё</h2>
-                    <p className="text-xs text-muted-foreground">РЎРѕРµРґРёРЅРё РїСЂРѕРІРѕРґР°, С‡С‚РѕР±С‹ РѕС‚РєСЂС‹С‚СЊ РїСѓС‚СЊ Рє С„Р°СЂС„РѕСЂРѕРІРѕР№ РєСѓРєР»Рµ.</p>
+                    <h2 className="font-display text-lg text-amber-300">Замок двери</h2>
+                    <p className="text-xs text-muted-foreground">Соедини провода, чтобы открыть путь к фарфоровой кукле.</p>
                   </div>
                 </div>
                 <HintBox kind="wires" advanced={save.owned.hint} />
                 <TaskTimer seconds={45} onTimeout={() => {
                   setHp(h => Math.max(0, h - 15));
                   setShake(true); setTimeout(() => setShake(false), 400);
-                  setToast("рџ©ё A doll crept up at the door! -15 HP");
+                  setToast("Кукла подкралась к двери! -15 HP");
                   setTimeout(() => setToast(""), 1600);
                   setModal({ kind: "none" });
                 }} />
                 <WiresGame onDone={(ok) => {
-                  if (ok) { setToast("рџљЄ Door open!"); setTimeout(() => setToast(""), 1500); setModal({ kind: "boss" }); }
+                  if (ok) { setToast("Дверь открыта!"); setTimeout(() => setToast(""), 1500); setModal({ kind: "boss" }); }
                   else { setHp(h => Math.max(0, h - 10)); setModal({ kind: "none" }); }
                 }} />
               </div>
@@ -4577,8 +4575,8 @@ export default function EscapeGame() {
                 <div className="flex items-center gap-3 mb-1">
                   <Backpack className="h-7 w-7 text-amber-300" />
                   <div>
-                    <h2 className="font-display text-lg text-amber-300">Р СЋРєР·Р°Рє Р›Р°РЅС‹</h2>
-                    <p className="text-xs text-muted-foreground">РСЃРїРѕР»СЊР·СѓР№ РїСЂРµРґРјРµС‚С‹, С‡С‚РѕР±С‹ Р»РµС‡РёС‚СЊСЃСЏ, РµСЃС‚СЊ РёР»Рё СЃС‚Р°РЅРѕРІРёС‚СЊСЃСЏ СЃРёР»СЊРЅРµРµ.</p>
+                    <h2 className="font-display text-lg text-amber-300">Рюкзак Ланы</h2>
+                    <p className="text-xs text-muted-foreground">Используй предметы, чтобы лечиться, есть или становиться сильнее.</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
@@ -4586,22 +4584,22 @@ export default function EscapeGame() {
                     <div className="text-red-300">HP</div><div className="font-mono">{hp}/{maxHp}</div>
                   </div>
                   <div className="bg-black/40 border border-amber-700/40 rounded p-2 text-center">
-                    <div className="text-amber-300">Р“РѕР»РѕРґ</div><div className="font-mono">{hunger}/{MAX_HUNGER}</div>
+                    <div className="text-amber-300">Голод</div><div className="font-mono">{hunger}/{MAX_HUNGER}</div>
                   </div>
                   <div className="bg-black/40 border border-emerald-700/40 rounded p-2 text-center">
-                    <div className="text-emerald-300">Strength</div><div className="font-mono">Г—{strength}</div>
+                    <div className="text-emerald-300">Сила</div><div className="font-mono">×{strength}</div>
                   </div>
                 </div>
                 {hasFlashlight && (
                   <div className="bg-black/40 border border-amber-600/40 rounded p-2 text-xs flex items-center justify-between">
-                    <span className="flex items-center gap-2"><Flashlight className="h-4 w-4 text-amber-200" /> Flashlight</span>
+                    <span className="flex items-center gap-2"><Flashlight className="h-4 w-4 text-amber-200" /> Фонарик</span>
                     <span className={`font-mono ${battery === 0 ? "text-red-400" : battery < 25 ? "text-amber-400" : "text-amber-200"}`}>
-                      рџ”‹ {battery}%
+                      🔋 {battery}%
                     </span>
                   </div>
                 )}
                 {inv.length === 0 ? (
-                  <p className="text-center text-muted-foreground text-sm py-6">Р СЋРєР·Р°Рє РїСѓСЃС‚. РС‰Рё РїСЂРµРґРјРµС‚С‹ РІ РєР»Р°СЃСЃР°С….</p>
+                  <p className="text-center text-muted-foreground text-sm py-6">Рюкзак пуст. Ищи предметы в классах.</p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto">
                     {inv.map((it, idx) => (
@@ -4611,18 +4609,18 @@ export default function EscapeGame() {
                           <div className="text-sm font-pixel truncate">{it.name}</div>
                           <div className="text-[10px] text-muted-foreground">
                             {it.hp ? `+${it.hp} HP ` : ""}
-                            {it.food ? `+${it.food} рџЌґ ` : ""}
-                            {it.strength ? `+${it.strength} рџ’Є ` : ""}
-                            {it.battery ? `+${it.battery}% рџ”‹` : ""}
+                            {it.food ? `+${it.food} 🍴 ` : ""}
+                            {it.strength ? `+${it.strength} 💪 ` : ""}
+                            {it.battery ? `+${it.battery}% 🔋` : ""}
                           </div>
                         </div>
-                        <Button size="sm" onClick={() => useItem(idx)}>РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ</Button>
+                         <Button size="sm" onClick={() => useItem(idx)}>Использовать</Button>
                       </div>
                     ))}
                   </div>
                 )}
                 <div className="flex justify-end">
-                  <Button variant="secondary" onClick={() => setModal({ kind: "none" })}>Р—Р°РєСЂС‹С‚СЊ</Button>
+                  <Button variant="secondary" onClick={() => setModal({ kind: "none" })}>Закрыть</Button>
                 </div>
               </div>
             )}
@@ -4633,53 +4631,53 @@ export default function EscapeGame() {
                 <p>{ending.body}</p>
                 <div className="flex justify-center"><MenuArtCharacter kind="lana" size={140} scared /></div>
                 <div className="grid grid-cols-3 gap-2 text-[11px] font-pixel">
-                  <div className="bg-black/40 border border-zinc-700 rounded p-2">Notes<br /><span className="text-amber-300">{storyNotes.size}/{Object.keys(STORY_NOTES).length}</span></div>
-                  <div className="bg-black/40 border border-zinc-700 rounded p-2">Saved<br /><span className="text-emerald-300">{rescued.size}/{RESCUE_EVENTS.length}</span></div>
-                  <div className="bg-black/40 border border-zinc-700 rounded p-2">Bonus<br /><span className="text-primary">+{ending.bonus}</span></div>
+                  <div className="bg-black/40 border border-zinc-700 rounded p-2">Записки<br /><span className="text-amber-300">{storyNotes.size}/{Object.keys(STORY_NOTES).length}</span></div>
+                  <div className="bg-black/40 border border-zinc-700 rounded p-2">Спасено<br /><span className="text-emerald-300">{rescued.size}/{RESCUE_EVENTS.length}</span></div>
+                  <div className="bg-black/40 border border-zinc-700 rounded p-2">Бонус<br /><span className="text-primary">+{ending.bonus}</span></div>
                 </div>
-                <p className="text-amber-300 font-pixel">Р‘РѕРЅСѓСЃ РєРѕРЅС†РѕРІРєРё: +{ending.bonus} coins</p>
+                <p className="text-amber-300 font-pixel">Бонус концовки: +{ending.bonus} coins</p>
                 <div className="flex items-center gap-2 justify-center">
                   <Input
                     value={playerName}
                     maxLength={24}
                     onChange={(e) => setPlayerName(e.target.value)}
                     className="h-8 text-sm max-w-[180px]"
-                    placeholder="Your name"
+                    placeholder="Имя"
                     disabled={scoreSubmitted}
                   />
                   <Button size="sm" variant="secondary" disabled={scoreSubmitted || submittingScore}
                     onClick={() => submitMyScore(true)}>
                     <Trophy className="h-3 w-3 mr-1" />
-                    {scoreSubmitted ? "Submitted" : "To records"}
+                    {scoreSubmitted ? "Отправлено" : "В рекорды"}
                   </Button>
                 </div>
                 <Button onClick={() => {
                   setCoins(c => c + ending.bonus);
                   setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" });
-                }}>РњРµРЅСЋ</Button>
+                }}>Меню</Button>
               </div>
             )}
 
             {modal.kind === "lose" && (
               <div className="text-center space-y-4">
                 <Skull className="h-16 w-16 text-red-500 mx-auto" />
-                <h2 className="font-display text-2xl text-red-400">Р›Р°РЅР° РЅРµ СЃРјРѕРіР»Р° РІС‹Р±СЂР°С‚СЊСЃСЏ</h2>
+                <h2 className="font-display text-2xl text-red-400">Лана не смогла выбраться</h2>
                 <p className="text-sm text-zinc-200">
-                  РљСѓРєР»С‹ СЃРЅРѕРІР° Р·Р°РєСЂС‹Р»Рё РєРѕСЂРёРґРѕСЂ. Р’С‹Р±РµСЂРё, С‡С‚Рѕ РґРµР»Р°С‚СЊ РґР°Р»СЊС€Рµ.
+                  Куклы снова закрыли коридор. Выбери, что делать дальше.
                 </p>
                 <div className="grid grid-cols-3 gap-2 text-[11px] font-pixel">
                   <div className="bg-black/40 border border-zinc-700 rounded p-2">
-                    Р­С‚Р°Р¶<br /><span className="text-amber-300">{cur.id}/{levels.length}</span>
+                    Этаж<br /><span className="text-amber-300">{cur.id}/{levels.length}</span>
                   </div>
                   <div className="bg-black/40 border border-zinc-700 rounded p-2">
-                    РњРѕРЅРµС‚С‹<br /><span className="text-amber-300">{coins}</span>
+                    Монеты<br /><span className="text-amber-300">{coins}</span>
                   </div>
                   <div className="bg-black/40 border border-cyan-700 rounded p-2">
-                    РљСЂРёСЃС‚Р°Р»Р»С‹<br /><span className="text-cyan-300">в—† {save.crystals ?? 0}</span>
+                    Кристаллы<br /><span className="text-cyan-300">◆ {save.crystals ?? 0}</span>
                   </div>
                 </div>
                 <p className="text-xs text-zinc-400">
-                  РљСЂРёСЃС‚Р°Р»Р»С‹ РїРѕРєСѓРїР°СЋС‚СЃСЏ РІ РјР°РіР°Р·РёРЅРµ Р·Р° РјРѕРЅРµС‚С‹. РџРµСЂРµСЂРѕР¶РґРµРЅРёРµ СЃС‚РѕРёС‚ в—† {RESPAWN_CRYSTAL_COST}.
+                  Кристаллы покупаются в магазине за монеты. Перерождение стоит ◆ {RESPAWN_CRYSTAL_COST}.
                 </p>
                 <div className="flex items-center gap-2 justify-center">
                   <Input
@@ -4687,13 +4685,13 @@ export default function EscapeGame() {
                     maxLength={24}
                     onChange={(e) => setPlayerName(e.target.value)}
                     className="h-8 text-sm max-w-[180px]"
-                    placeholder="РРјСЏ"
+                    placeholder="Имя"
                     disabled={scoreSubmitted}
                   />
                   <Button size="sm" variant="secondary" disabled={scoreSubmitted || submittingScore}
                     onClick={() => submitMyScore(false)}>
                     <Trophy className="h-3 w-3 mr-1" />
-                    {scoreSubmitted ? "РћС‚РїСЂР°РІР»РµРЅРѕ" : "Р’ СЂРµРєРѕСЂРґС‹"}
+                    {scoreSubmitted ? "Отправлено" : "В рекорды"}
                   </Button>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -4701,20 +4699,20 @@ export default function EscapeGame() {
                     variant="secondary"
                     onClick={() => { setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" }); }}
                   >
-                    Р’С‹Р№С‚Рё РёР· РёРіСЂС‹
+                    Выйти из игры
                   </Button>
                   <Button variant="secondary" onClick={beginGame}>
-                    РќР°С‡Р°С‚СЊ Р·Р°РЅРѕРІРѕ
+                    Начать заново
                   </Button>
                   <Button
                     onClick={respawnWithCrystal}
                     disabled={!checkpoint || (save.crystals ?? 0) < RESPAWN_CRYSTAL_COST}
-                    title={!checkpoint ? "РўРѕС‡РєР° РІРѕР·СЂРѕР¶РґРµРЅРёСЏ РµС‰С‘ РЅРµ РЅР°Р№РґРµРЅР°" : "РџРѕС‚СЂР°С‚РёС‚СЊ РєСЂРёСЃС‚Р°Р»Р» Рё РІРµСЂРЅСѓС‚СЊСЃСЏ Рє С‚РѕС‡РєРµ"}
+                    title={!checkpoint ? "Точка возрождения ещё не найдена" : "Потратить кристалл и вернуться к точке"}
                   >
-                    в—† РџРµСЂРµСЂРѕРґРёС‚СЊСЃСЏ
+                    ◆ Переродиться
                   </Button>
                 </div>
-                {!checkpoint && <p className="text-[11px] text-red-300">РўРѕС‡РєР° РІРѕР·СЂРѕР¶РґРµРЅРёСЏ РµС‰С‘ РЅРµ РЅР°Р№РґРµРЅР°.</p>}
+                {!checkpoint && <p className="text-[11px] text-red-300">Точка возрождения ещё не найдена.</p>}
               </div>
             )}
           </div>
