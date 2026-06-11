@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+﻿import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { getServerConfig } from "../config.server";
@@ -40,20 +40,21 @@ export const generateAiQuestion = createServerFn({ method: "POST" })
   .validator(z.object({
     kind: z.enum(["quiz", "riddle"]),
     levelName: z.string().max(80),
-    zombieName: z.string().max(80).optional(),
+    dollName: z.string().max(80).optional(),
   }))
   .handler(async ({ data }) => {
     const config = getServerConfig();
     if (!config.geminiApiKey) return { question: null as AiQuestion | null };
 
     const style = data.kind === "riddle"
-      ? "a spooky logic riddle for the final school principal boss"
-      : "a school knowledge quiz question";
+      ? "простую страшную загадку для финальной куклы"
+      : "вопрос средней сложности про выживание в хоррор-школе";
     const prompt = [
-      `Create ${style} for a pixel horror school escape game.`,
-      `Level: ${data.levelName}.`,
-      data.zombieName ? `Enemy: ${data.zombieName}.` : "",
-      "Use simple English suitable for teens.",
+      `Создай ${style} для пиксельного хоррор-квеста в школе.`,
+      `Этаж: ${data.levelName}.`,
+      data.dollName ? `Кукла: ${data.dollName}.` : "",
+      "Пиши только на русском языке. Не спрашивай школьную программу: никакой математики, химии, литературы, географии, дат или учебных фактов.",
+      "Вопрос должен быть про шум, свет, укрытие, двери, куклу, осторожность или сюжет. Сложность средняя, понятная подростку.",
       "Return only valid JSON with this exact shape:",
       '{"question":"...","options":["...","...","...","..."],"answer":0}',
       "answer must be the zero-based index of the correct option.",

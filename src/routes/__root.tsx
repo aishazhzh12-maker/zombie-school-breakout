@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+﻿import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -77,15 +77,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "зомби школа" },
-      { name: "description", content: "Главная героиня заперта в школе помоги ей выбраться." },
+      { title: "DOLLS OF THE SCHOOL" },
+      { name: "description", content: "Лана заперта в школе с ожившими куклами. Помоги ей найти друзей и выбраться." },
       { name: "author", content: "aishazhzh12-maker" },
-      { property: "og:title", content: "зомби школа" },
-      { property: "og:description", content: "Главная героиня заперта в школе помоги ей выбраться." },
+      { property: "og:title", content: "DOLLS OF THE SCHOOL" },
+      { property: "og:description", content: "Школьный хоррор про Лану, друзей и оживших кукол." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "зомби школа" },
-      { name: "twitter:description", content: "Главная героиня заперта в школе помоги ей выбраться." },
+      { name: "twitter:title", content: "DOLLS OF THE SCHOOL" },
+      { name: "twitter:description", content: "Лана заперта в школе с ожившими куклами. Помоги ей выбраться." },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3188cd14-acfb-4d70-8fa3-dc37e995719e" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3188cd14-acfb-4d70-8fa3-dc37e995719e" },
     ],

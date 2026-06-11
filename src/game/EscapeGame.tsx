@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   levels, bossRiddles,
   FLOOR_Y, CEIL_Y,
-  type Classroom, type Zombie, type TaskKind, type LootItem, type SearchSpot,
+  type Classroom, type Doll, type TaskKind, type LootItem, type SearchSpot,
 } from "./data";
 import { sfxGunshot, sfxBat, sfxKill, sfxBite, sfxDeath, sfxGrowl, sfxBoom, sfxSwing, sfxPickup, playMusic, stopMusic, setMusicMuted } from "./sounds";
 import {
@@ -18,6 +18,13 @@ import {
 import { Leaderboard, submitScore } from "./Leaderboard";
 import { supabase } from "@/integrations/supabase/client";
 import { generateAiQuestion, type AiQuestion } from "@/lib/api/ai-questions.functions";
+import menuLanaCutout from "../assets/ref-lana.png";
+import menuBearCutout from "../assets/ref-bear.png";
+import menuBallerinaCutout from "../assets/ref-doll.png";
+import menuMonkeyCutout from "../assets/ref-monkey.png";
+import menuClownCutout from "../assets/ref-clown.png";
+import menuFriendGirlCutout from "../assets/ref-dina.png";
+import menuFriendBoyCutout from "../assets/ref-karl.png";
 
 
 
@@ -25,7 +32,7 @@ type Vec = { x: number; y: number };
 
 type Modal =
   | { kind: "none" }
-  | { kind: "task"; zombie: Zombie }
+  | { kind: "task"; doll: Doll }
   | { kind: "search"; classroom: Classroom }
   | { kind: "exit" }
   | { kind: "doorTask" }
@@ -106,7 +113,7 @@ type PixelPalette = {
 
 /**
  * FRONT-FACING chunky pixel sprite (16x22 grid) with HEAD TURNED to the side.
- * Body stands frontal — both shoulders, both legs visible. Head + eyes look
+ * Body stands frontal вЂ” both shoulders, both legs visible. Head + eyes look
  * toward `facing` (1 = looks right, -1 = looks left).
  */
 function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead = false }:
@@ -155,10 +162,10 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
   px(6, 7, K); px(9, 7, K);
   // skin fill
   box(5, 1, 10, 6, S);
-  // shading on the cheek opposite the turn (head looks right → shade left cheek)
+  // shading on the cheek opposite the turn (head looks right в†’ shade left cheek)
   px(5, 5, Sh); px(5, 6, Sh); px(6, 6, Sh);
 
-  // ============ HAIR (top crown only — does NOT cover eyes) ============
+  // ============ HAIR (top crown only вЂ” does NOT cover eyes) ============
   if (isBoss) {
     // bald with thin grey rim
     px(5, 1, Hh); px(10, 1, Hh);
@@ -175,7 +182,7 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
     px(7, 1, Hh); px(8, 1, Hh);
   }
 
-  // ============ PONYTAIL (girl) — behind head on the LEFT ============
+  // ============ PONYTAIL (girl) вЂ” behind head on the LEFT ============
   if (isGirl) {
     px(3, 3, PT); px(3, 4, PT);
     px(2, 4, PT); px(2, 5, PT);
@@ -205,11 +212,11 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
   }
 
   // ============ EYES (symmetric, large, clearly visible) ============
-  // Eye whites — two pixels each
+  // Eye whites вЂ” two pixels each
   px(6, 3, W); px(7, 3, W);
   px(9, 3, W); px(10, 3, W);
   // Pupils shifted toward facing side (right by default) so it looks like glancing sideways
-  // facing=1 → pupils on the right pixel of each eye (cols 7 & 10)
+  // facing=1 в†’ pupils on the right pixel of each eye (cols 7 & 10)
   px(7, 3, EYE);
   px(10, 3, EYE);
   // Brows above each eye
@@ -232,7 +239,7 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
   // ============ NOSE & MOUTH (centered) ============
   // small nose between eyes
   px(8, 4, Sh);
-  // mouth — small smile centered
+  // mouth вЂ” small smile centered
   px(7, 5, MOUTH); px(8, 5, MOUTH);
   if (isGirl) {
     // smaller heart-shaped lips
@@ -339,6 +346,7 @@ function PixelHuman({ palette, facing = 1, size = 72, variant = "student", dead 
 
 type TeenKind = "lana" | "karl" | "dina";
 type TeenMotion = "idle" | "walk" | "run" | "scared";
+type MonsterMotion = "idle" | "walk" | "run";
 
 function PixelTeen({
   kind = "lana",
@@ -389,12 +397,12 @@ function PixelTeen({
       const arm = [0, -1, -2, -1, 0, 1, 0, -1, -2, -1][frame];
       return { bob: frame % 2 ? -1 : 0, lean: -3 + jitter, hip: jitter, hair: 1 - jitter, coat: jitter, leftLeg: -1, rightLeg: 1, leftArm: -5 + arm, rightArm: -4 - arm };
     }
-    const walk = motion === "walk";
-    const stride = walk ? [-5, -4, -2, 1, 4, 5, 3, 0, -3, -5] : [-8, -6, -3, 2, 7, 8, 4, 0, -5, -8];
+    const walking = motion === "walk";
+    const stride = walking ? [-5, -4, -2, 1, 4, 5, 3, 0, -3, -5] : [-8, -6, -3, 2, 7, 8, 4, 0, -5, -8];
     const counter = [-stride[frame], -stride[frame] * 0.7];
     return {
       bob: [0, -1, -2, -1, 0, -1, -2, -1, 0, 0][frame],
-      lean: walk ? [-1, -1, 0, 1, 2, 1, 0, -1, -2, -1][frame] : [-3, -2, -1, 1, 3, 2, 0, -2, -3, -3][frame],
+      lean: walking ? [-1, -1, 0, 1, 2, 1, 0, -1, -2, -1][frame] : [-3, -2, -1, 1, 3, 2, 0, -2, -3, -3][frame],
       hip: Math.round(stride[frame] * 0.22),
       hair: Math.round(counter[0] * 0.18),
       coat: Math.round(counter[0] * 0.15),
@@ -457,7 +465,13 @@ function PixelTeen({
         <Rect x={sx + 23 + p.coat} y={43 + sy} w={6} h={14} fill={blazerDark} />
         <Rect x={sx + 36 - p.coat} y={43 + sy} w={6} h={14} fill={blazerDark} />
         <Rect x={sx + 23} y={57 + sy} w={18} h={4} fill={outline} />
-        {kind === "lana" && <Rect x={sx + 22 + p.coat} y={55 + sy} w={7} h={2} fill="#725041" opacity={0.85} />}
+        {kind === "lana" && (
+          <>
+            <Rect x={sx + 15 - p.coat} y={35 + sy} w={5} h={20} fill="#6b3f34" />
+            <Rect x={sx + 16 - p.coat} y={37 + sy} w={4} h={18} fill="#8a5746" />
+            <Rect x={sx + 22 + p.coat} y={55 + sy} w={7} h={2} fill="#725041" opacity={0.85} />
+          </>
+        )}
         {kind === "lana" && (
           <>
             <Rect x={sx + 30} y={37 + sy} w={5} h={11} fill="#7d1d2d" />
@@ -551,7 +565,7 @@ function PixelTeen({
 function StoryPortrait({ title }: { title: string }) {
   const lower = title.toLowerCase();
   const kind: TeenKind = lower.includes("karl") ? "karl" : lower.includes("dina") ? "dina" : "lana";
-  return <PixelTeen kind={kind} size={104} scared />;
+  return <MenuArtCharacter kind={kind} size={kind === "lana" ? 150 : 125} scared />;
 }
 
 function IntroCinematic({
@@ -596,15 +610,17 @@ function IntroCinematic({
                 </div>
               </div>
               <div className="intro-film-classroom">
-                <div className="intro-board">НЕ ОСТАВЛЯЙТЕ НАС ОДНИХ</div>
+                <div className="intro-board">РќР• РћРЎРўРђР’Р›РЇР™РўР• РќРђРЎ РћР”РќРРҐ</div>
                 <div className="intro-window" />
                 <div className="intro-desks">
                   {Array.from({ length: 6 }, (_, i) => (
                     <div key={i} className="intro-desk">
                       {(current.scene === "classroom" || current.scene === "lana" || current.scene === "flicker") && i !== 2 && (
-                        <PixelTeen kind={i % 2 ? "karl" : "dina"} size={54} facing={i % 2 ? -1 : 1} />
+                        <div className={current.scene === "flicker" ? "intro-friend-distort" : ""}>
+                          <MenuArtCharacter kind={i % 2 ? "karl" : "dina"} size={80} facing={i % 2 ? -1 : 1} />
+                        </div>
                       )}
-                      {i === 2 && <PixelTeen kind="lana" size={68} scared={current.scene === "flicker"} motion={current.scene === "flicker" ? "scared" : "idle"} />}
+                      {i === 2 && <MenuArtCharacter kind="lana" size={98} scared={current.scene === "flicker"} motion={current.scene === "flicker" ? "scared" : "idle"} />}
                     </div>
                   ))}
                 </div>
@@ -612,17 +628,17 @@ function IntroCinematic({
               {(current.scene === "flicker" || current.scene === "empty") && <div className="intro-flicker" />}
               {current.scene === "monsters" && (
                 <div className="intro-monster-lineup">
-                  <ToyMonster kind="bear" size={108} />
-                  <ToyMonster kind="porcelain" size={108} />
-                  <ToyMonster kind="monkey" size={98} />
-                  <ToyMonster kind="clown" size={110} />
-                  <ToyMonster kind="porcelain" size={138} boss />
+                  <MenuArtMonster kind="bear" size={160} />
+                  <MenuArtMonster kind="porcelain" size={130} />
+                  <MenuArtMonster kind="monkey" size={130} />
+                  <MenuArtMonster kind="clown" size={190} />
+                  <MenuArtMonster kind="porcelain" size={170} boss />
                 </div>
               )}
             </>
           )}
         </div>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/92 to-transparent px-4 pb-4 pt-20">
+        <div className="intro-dialog-panel absolute inset-x-0 bg-gradient-to-t from-black via-black/92 to-transparent px-4 pb-4 pt-20">
           <div className="mx-auto max-w-3xl border border-red-900/70 bg-black/80 p-3 text-center">
             <p className="text-sm leading-relaxed text-zinc-100 md:text-base">{current.line}</p>
             <div className="mt-3 flex items-center justify-center gap-1">
@@ -631,14 +647,14 @@ function IntroCinematic({
               ))}
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap justify-center gap-2">
+          <div className="intro-actions mt-3 flex flex-wrap justify-center gap-2">
             <Button variant="secondary" onClick={() => setFrame(f => Math.min(frames.length - 1, f + 1))} disabled={isLast}>
-              Дальше
+              Р”Р°Р»СЊС€Рµ
             </Button>
-            <Button variant="secondary" onClick={onShuffle}>Другая версия</Button>
-            <Button onClick={onStart} className="font-display">НАЧАТЬ ПОБЕГ</Button>
+            <Button variant="secondary" onClick={onShuffle}>Р”СЂСѓРіР°СЏ РІРµСЂСЃРёСЏ</Button>
+            <Button onClick={onStart} className="font-display">РќРђР§РђРўР¬ РџРћР‘Р•Р“</Button>
             <button type="button" onClick={onClose} className="rounded border border-zinc-700 bg-black/60 px-3 py-2 text-xs font-pixel text-zinc-300 hover:text-white">
-              Close
+              Р—Р°РєСЂС‹С‚СЊ
             </button>
           </div>
         </div>
@@ -652,11 +668,11 @@ const LANA_LINES = [
   "Where is the key?..",
   "Shhh, don't wake them",
   "Gotta find the exit!",
-  "I can do this 💜",
+  "I can do this рџ’њ",
   "Hmm, maybe in the desk?",
   "Hear footsteps?",
   "Hope the battery doesn't die",
-  "Almost there…",
+  "Almost thereвЂ¦",
   "I think there's something here",
   "Stay calm, Lana",
 ];
@@ -664,7 +680,7 @@ const LANA_LINES = [
 const STORY_NOTES: Record<string, StoryNote> = {
   "l1-7": {
     id: "note-backpack",
-    title: "Lana's Backpack",
+    title: "Р СЋРєР·Р°Рє Р›Р°РЅС‹",
     body: "Lana came back after rehearsal for her forgotten backpack. The lights began to blink, the clocks froze, and the school became too quiet.",
   },
   "l1-basement-stairs": {
@@ -717,79 +733,79 @@ const RESCUE_EVENTS: RescueEvent[] = [
 
 const INTRO_STORIES: IntroStory[] = [
   {
-    title: "СЮЖЕТ",
+    title: "РЎР®Р–Р•Рў",
     paragraphs: [
-      "Много лет назад в школе произошёл несчастный случай во время старого праздника с игрушками.",
-      "Взрослые скрыли правду, а забытые игрушки впитали страх и одиночество детей.",
-      "Теперь они ожили и удерживают учеников внутри школы, потому что боятся снова остаться одни.",
+      "РњРЅРѕРіРѕ Р»РµС‚ РЅР°Р·Р°Рґ РІ С€РєРѕР»Рµ РїСЂРѕРёР·РѕС€С‘Р» РЅРµСЃС‡Р°СЃС‚РЅС‹Р№ СЃР»СѓС‡Р°Р№ РІРѕ РІСЂРµРјСЏ СЃС‚Р°СЂРѕРіРѕ РїСЂР°Р·РґРЅРёРєР° СЃ РёРіСЂСѓС€РєР°РјРё.",
+      "Р’Р·СЂРѕСЃР»С‹Рµ СЃРєСЂС‹Р»Рё РїСЂР°РІРґСѓ, Р° Р·Р°Р±С‹С‚С‹Рµ РёРіСЂСѓС€РєРё РІРїРёС‚Р°Р»Рё СЃС‚СЂР°С… Рё РѕРґРёРЅРѕС‡РµСЃС‚РІРѕ РґРµС‚РµР№.",
+      "РўРµРїРµСЂСЊ РѕРЅРё РѕР¶РёР»Рё Рё СѓРґРµСЂР¶РёРІР°СЋС‚ СѓС‡РµРЅРёРєРѕРІ РІРЅСѓС‚СЂРё С€РєРѕР»С‹, РїРѕС‚РѕРјСѓ С‡С‚Рѕ Р±РѕСЏС‚СЃСЏ СЃРЅРѕРІР° РѕСЃС‚Р°С‚СЊСЃСЏ РѕРґРЅРё.",
     ],
-    goals: ["найти друзей", "узнать правду", "освободить детей", "выбраться наружу"],
+    goals: ["РЅР°Р№С‚Рё РґСЂСѓР·РµР№", "СѓР·РЅР°С‚СЊ РїСЂР°РІРґСѓ", "РѕСЃРІРѕР±РѕРґРёС‚СЊ РґРµС‚РµР№", "РІС‹Р±СЂР°С‚СЊСЃСЏ РЅР°СЂСѓР¶Сѓ"],
   },
   {
-    title: "НОЧЬ В ШКОЛЕ",
+    title: "РќРћР§Р¬ Р’ РЁРљРћР›Р•",
     paragraphs: [
-      "Лана возвращается за забытым рюкзаком, но коридоры уже не похожи на обычную школу.",
-      "Часы остановились, двери заперлись, а старые игрушки начали шептать имена пропавших учеников.",
-      "Чтобы выйти, Лане придётся понять, почему школа не отпускает детей после звонка.",
+      "Р›Р°РЅР° РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ Р·Р° Р·Р°Р±С‹С‚С‹Рј СЂСЋРєР·Р°РєРѕРј, РЅРѕ РєРѕСЂРёРґРѕСЂС‹ СѓР¶Рµ РЅРµ РїРѕС…РѕР¶Рё РЅР° РѕР±С‹С‡РЅСѓСЋ С€РєРѕР»Сѓ.",
+      "Р§Р°СЃС‹ РѕСЃС‚Р°РЅРѕРІРёР»РёСЃСЊ, РґРІРµСЂРё Р·Р°РїРµСЂР»РёСЃСЊ, Р° СЃС‚Р°СЂС‹Рµ РёРіСЂСѓС€РєРё РЅР°С‡Р°Р»Рё С€РµРїС‚Р°С‚СЊ РёРјРµРЅР° РїСЂРѕРїР°РІС€РёС… СѓС‡РµРЅРёРєРѕРІ.",
+      "Р§С‚РѕР±С‹ РІС‹Р№С‚Рё, Р›Р°РЅРµ РїСЂРёРґС‘С‚СЃСЏ РїРѕРЅСЏС‚СЊ, РїРѕС‡РµРјСѓ С€РєРѕР»Р° РЅРµ РѕС‚РїСѓСЃРєР°РµС‚ РґРµС‚РµР№ РїРѕСЃР»Рµ Р·РІРѕРЅРєР°.",
     ],
-    goals: ["найти ключи", "спасти друзей", "собрать записки", "дойти до выхода"],
+    goals: ["РЅР°Р№С‚Рё РєР»СЋС‡Рё", "СЃРїР°СЃС‚Рё РґСЂСѓР·РµР№", "СЃРѕР±СЂР°С‚СЊ Р·Р°РїРёСЃРєРё", "РґРѕР№С‚Рё РґРѕ РІС‹С…РѕРґР°"],
   },
   {
-    title: "ТАЙНА ИГРУШЕК",
+    title: "РўРђР™РќРђ РР“Р РЈРЁР•Рљ",
     paragraphs: [
-      "Когда-то школьные игрушки были частью спектакля, который закончился трагедией.",
-      "После этого их спрятали на чердаке, но одиночество сделало их живыми и злыми.",
-      "Они не хотят причинять боль, но считают, что внутри школы детям безопаснее, чем снаружи.",
+      "РљРѕРіРґР°-С‚Рѕ С€РєРѕР»СЊРЅС‹Рµ РёРіСЂСѓС€РєРё Р±С‹Р»Рё С‡Р°СЃС‚СЊСЋ СЃРїРµРєС‚Р°РєР»СЏ, РєРѕС‚РѕСЂС‹Р№ Р·Р°РєРѕРЅС‡РёР»СЃСЏ С‚СЂР°РіРµРґРёРµР№.",
+      "РџРѕСЃР»Рµ СЌС‚РѕРіРѕ РёС… СЃРїСЂСЏС‚Р°Р»Рё РЅР° С‡РµСЂРґР°РєРµ, РЅРѕ РѕРґРёРЅРѕС‡РµСЃС‚РІРѕ СЃРґРµР»Р°Р»Рѕ РёС… Р¶РёРІС‹РјРё Рё Р·Р»С‹РјРё.",
+      "РћРЅРё РЅРµ С…РѕС‚СЏС‚ РїСЂРёС‡РёРЅСЏС‚СЊ Р±РѕР»СЊ, РЅРѕ СЃС‡РёС‚Р°СЋС‚, С‡С‚Рѕ РІРЅСѓС‚СЂРё С€РєРѕР»С‹ РґРµС‚СЏРј Р±РµР·РѕРїР°СЃРЅРµРµ, С‡РµРј СЃРЅР°СЂСѓР¶Рё.",
     ],
-    goals: ["не шуметь", "искать улики", "освободить запертых детей", "сломать старое проклятие"],
+    goals: ["РЅРµ С€СѓРјРµС‚СЊ", "РёСЃРєР°С‚СЊ СѓР»РёРєРё", "РѕСЃРІРѕР±РѕРґРёС‚СЊ Р·Р°РїРµСЂС‚С‹С… РґРµС‚РµР№", "СЃР»РѕРјР°С‚СЊ СЃС‚Р°СЂРѕРµ РїСЂРѕРєР»СЏС‚РёРµ"],
   },
   {
-    title: "ЗАБЫТЫЙ ПРАЗДНИК",
+    title: "Р—РђР‘Р«РўР«Р™ РџР РђР—Р”РќРРљ",
     paragraphs: [
-      "В актовом зале когда-то прошёл праздник, о котором больше никто не говорит.",
-      "После него несколько детей исчезли, а игрушки остались ждать, что с ними снова будут играть.",
-      "Теперь школа закрывается сама, и только Лана может открыть двери тем, кто застрял внутри.",
+      "Р’ Р°РєС‚РѕРІРѕРј Р·Р°Р»Рµ РєРѕРіРґР°-С‚Рѕ РїСЂРѕС€С‘Р» РїСЂР°Р·РґРЅРёРє, Рѕ РєРѕС‚РѕСЂРѕРј Р±РѕР»СЊС€Рµ РЅРёРєС‚Рѕ РЅРµ РіРѕРІРѕСЂРёС‚.",
+      "РџРѕСЃР»Рµ РЅРµРіРѕ РЅРµСЃРєРѕР»СЊРєРѕ РґРµС‚РµР№ РёСЃС‡РµР·Р»Рё, Р° РёРіСЂСѓС€РєРё РѕСЃС‚Р°Р»РёСЃСЊ Р¶РґР°С‚СЊ, С‡С‚Рѕ СЃ РЅРёРјРё СЃРЅРѕРІР° Р±СѓРґСѓС‚ РёРіСЂР°С‚СЊ.",
+      "РўРµРїРµСЂСЊ С€РєРѕР»Р° Р·Р°РєСЂС‹РІР°РµС‚СЃСЏ СЃР°РјР°, Рё С‚РѕР»СЊРєРѕ Р›Р°РЅР° РјРѕР¶РµС‚ РѕС‚РєСЂС‹С‚СЊ РґРІРµСЂРё С‚РµРј, РєС‚Рѕ Р·Р°СЃС‚СЂСЏР» РІРЅСѓС‚СЂРё.",
     ],
-    goals: ["найти друзей", "не попасться игрушкам", "узнать, что случилось на празднике", "вывести детей из школы"],
+    goals: ["РЅР°Р№С‚Рё РґСЂСѓР·РµР№", "РЅРµ РїРѕРїР°СЃС‚СЊСЃСЏ РёРіСЂСѓС€РєР°Рј", "СѓР·РЅР°С‚СЊ, С‡С‚Рѕ СЃР»СѓС‡РёР»РѕСЃСЊ РЅР° РїСЂР°Р·РґРЅРёРєРµ", "РІС‹РІРµСЃС‚Рё РґРµС‚РµР№ РёР· С€РєРѕР»С‹"],
   },
   {
-    title: "ПОСЛЕДНИЙ ЗВОНОК",
+    title: "РџРћРЎР›Р•Р”РќРР™ Р—Р’РћРќРћРљ",
     paragraphs: [
-      "После последнего звонка в школе должна была наступить тишина, но вместо неё проснулись старые игрушки.",
-      "Они помнят страх детей лучше, чем их голоса, и поэтому не дают никому уйти.",
-      "Лана должна пройти этаж за этажом и доказать, что одиночество можно отпустить.",
+      "РџРѕСЃР»Рµ РїРѕСЃР»РµРґРЅРµРіРѕ Р·РІРѕРЅРєР° РІ С€РєРѕР»Рµ РґРѕР»Р¶РЅР° Р±С‹Р»Р° РЅР°СЃС‚СѓРїРёС‚СЊ С‚РёС€РёРЅР°, РЅРѕ РІРјРµСЃС‚Рѕ РЅРµС‘ РїСЂРѕСЃРЅСѓР»РёСЃСЊ СЃС‚Р°СЂС‹Рµ РёРіСЂСѓС€РєРё.",
+      "РћРЅРё РїРѕРјРЅСЏС‚ СЃС‚СЂР°С… РґРµС‚РµР№ Р»СѓС‡С€Рµ, С‡РµРј РёС… РіРѕР»РѕСЃР°, Рё РїРѕСЌС‚РѕРјСѓ РЅРµ РґР°СЋС‚ РЅРёРєРѕРјСѓ СѓР№С‚Рё.",
+      "Р›Р°РЅР° РґРѕР»Р¶РЅР° РїСЂРѕР№С‚Рё СЌС‚Р°Р¶ Р·Р° СЌС‚Р°Р¶РѕРј Рё РґРѕРєР°Р·Р°С‚СЊ, С‡С‚Рѕ РѕРґРёРЅРѕС‡РµСЃС‚РІРѕ РјРѕР¶РЅРѕ РѕС‚РїСѓСЃС‚РёС‚СЊ.",
     ],
-    goals: ["выжить в коридорах", "отыскать потерянных учеников", "раскрыть скрытую правду", "сбежать до рассвета"],
+    goals: ["РІС‹Р¶РёС‚СЊ РІ РєРѕСЂРёРґРѕСЂР°С…", "РѕС‚С‹СЃРєР°С‚СЊ РїРѕС‚РµСЂСЏРЅРЅС‹С… СѓС‡РµРЅРёРєРѕРІ", "СЂР°СЃРєСЂС‹С‚СЊ СЃРєСЂС‹С‚СѓСЋ РїСЂР°РІРґСѓ", "СЃР±РµР¶Р°С‚СЊ РґРѕ СЂР°СЃСЃРІРµС‚Р°"],
   },
 ];
 
 const INTRO_CINEMATIC_VARIANTS: IntroFrame[][] = [
   [
-    { scene: "black", line: "Лана: Я вернулась только за рюкзаком. Почему в школе так тихо?" },
-    { scene: "school", line: "Лана: Окна тёмные... но внутри будто кто-то ходит." },
-    { scene: "classroom", line: "Лана: Ребята? Вы ещё здесь? Ответьте..." },
-    { scene: "lana", line: "Лана: Свет моргает. Это не похоже на обычную аварию." },
-    { scene: "flicker", line: "Лана: Нет... только что все сидели рядом со мной." },
-    { scene: "empty", line: "Лана: Парты пустые. Друзья исчезли. Остались только их вещи." },
-    { scene: "monsters", line: "Лана: Игрушки двигаются. Они смотрят так, будто знают моё имя." },
+    { scene: "black", line: "Р›Р°РЅР°: РЇ РІРµСЂРЅСѓР»Р°СЃСЊ С‚РѕР»СЊРєРѕ Р·Р° СЂСЋРєР·Р°РєРѕРј. РџРѕС‡РµРјСѓ РІ С€РєРѕР»Рµ С‚Р°Рє С‚РёС…Рѕ?" },
+    { scene: "school", line: "Р›Р°РЅР°: РћРєРЅР° С‚С‘РјРЅС‹Рµ... РЅРѕ РІРЅСѓС‚СЂРё Р±СѓРґС‚Рѕ РєС‚Рѕ-С‚Рѕ С…РѕРґРёС‚." },
+    { scene: "classroom", line: "Р›Р°РЅР°: Р РµР±СЏС‚Р°? Р’С‹ РµС‰С‘ Р·РґРµСЃСЊ? РћС‚РІРµС‚СЊС‚Рµ..." },
+    { scene: "lana", line: "Р›Р°РЅР°: РЎРІРµС‚ РјРѕСЂРіР°РµС‚. Р­С‚Рѕ РЅРµ РїРѕС…РѕР¶Рµ РЅР° РѕР±С‹С‡РЅСѓСЋ Р°РІР°СЂРёСЋ." },
+    { scene: "flicker", line: "Р›Р°РЅР°: РќРµС‚... С‚РѕР»СЊРєРѕ С‡С‚Рѕ РІСЃРµ СЃРёРґРµР»Рё СЂСЏРґРѕРј СЃРѕ РјРЅРѕР№." },
+    { scene: "empty", line: "Р›Р°РЅР°: РџР°СЂС‚С‹ РїСѓСЃС‚С‹Рµ. Р”СЂСѓР·СЊСЏ РёСЃС‡РµР·Р»Рё. РћСЃС‚Р°Р»РёСЃСЊ С‚РѕР»СЊРєРѕ РёС… РІРµС‰Рё." },
+    { scene: "monsters", line: "Р›Р°РЅР°: РРіСЂСѓС€РєРё РґРІРёРіР°СЋС‚СЃСЏ. РћРЅРё СЃРјРѕС‚СЂСЏС‚ С‚Р°Рє, Р±СѓРґС‚Рѕ Р·РЅР°СЋС‚ РјРѕС‘ РёРјСЏ." },
   ],
   [
-    { scene: "black", line: "Лана: После звонка школа должна была опустеть. Но она будто проснулась." },
-    { scene: "school", line: "Лана: Главный вход закрыт. Кто-то запер нас изнутри." },
-    { scene: "classroom", line: "Лана: Ученики шепчутся... они тоже слышат эти шаги?" },
-    { scene: "lana", line: "Лана: Если это розыгрыш, он совсем не смешной." },
-    { scene: "flicker", line: "Лана: Свет! Не гасни... пожалуйста." },
-    { scene: "empty", line: "Лана: Все пропали. Даже звук дыхания исчез." },
-    { scene: "monsters", line: "Лана: Старые игрушки вышли из шкафов. Они не хотят отпускать детей." },
+    { scene: "black", line: "Р›Р°РЅР°: РџРѕСЃР»Рµ Р·РІРѕРЅРєР° С€РєРѕР»Р° РґРѕР»Р¶РЅР° Р±С‹Р»Р° РѕРїСѓСЃС‚РµС‚СЊ. РќРѕ РѕРЅР° Р±СѓРґС‚Рѕ РїСЂРѕСЃРЅСѓР»Р°СЃСЊ." },
+    { scene: "school", line: "Р›Р°РЅР°: Р“Р»Р°РІРЅС‹Р№ РІС…РѕРґ Р·Р°РєСЂС‹С‚. РљС‚Рѕ-С‚Рѕ Р·Р°РїРµСЂ РЅР°СЃ РёР·РЅСѓС‚СЂРё." },
+    { scene: "classroom", line: "Р›Р°РЅР°: РЈС‡РµРЅРёРєРё С€РµРїС‡СѓС‚СЃСЏ... РѕРЅРё С‚РѕР¶Рµ СЃР»С‹С€Р°С‚ СЌС‚Рё С€Р°РіРё?" },
+    { scene: "lana", line: "Р›Р°РЅР°: Р•СЃР»Рё СЌС‚Рѕ СЂРѕР·С‹РіСЂС‹С€, РѕРЅ СЃРѕРІСЃРµРј РЅРµ СЃРјРµС€РЅРѕР№." },
+    { scene: "flicker", line: "Р›Р°РЅР°: РЎРІРµС‚! РќРµ РіР°СЃРЅРё... РїРѕР¶Р°Р»СѓР№СЃС‚Р°." },
+    { scene: "empty", line: "Р›Р°РЅР°: Р’СЃРµ РїСЂРѕРїР°Р»Рё. Р”Р°Р¶Рµ Р·РІСѓРє РґС‹С…Р°РЅРёСЏ РёСЃС‡РµР·." },
+    { scene: "monsters", line: "Р›Р°РЅР°: РЎС‚Р°СЂС‹Рµ РёРіСЂСѓС€РєРё РІС‹С€Р»Рё РёР· С€РєР°С„РѕРІ. РћРЅРё РЅРµ С…РѕС‚СЏС‚ РѕС‚РїСѓСЃРєР°С‚СЊ РґРµС‚РµР№." },
   ],
   [
-    { scene: "black", line: "Лана: Я слышала историю о школьном празднике. Нам запрещали о нём говорить." },
-    { scene: "school", line: "Лана: Теперь школа выглядит так, будто всё ещё ждёт тот праздник." },
-    { scene: "classroom", line: "Лана: На доске написано: 'Не оставляйте нас одних'." },
-    { scene: "lana", line: "Лана: Нужно найти Карла и Дину. Они не могли просто исчезнуть." },
-    { scene: "flicker", line: "Лана: Кто-то стоит у двери... нет, это игрушка." },
-    { scene: "empty", line: "Лана: Чем тише становится класс, тем громче слышно заводной ключик." },
-    { scene: "monsters", line: "Лана: Они не злые? Нет... они напуганы. Но всё равно опасны." },
+    { scene: "black", line: "Р›Р°РЅР°: РЇ СЃР»С‹С€Р°Р»Р° РёСЃС‚РѕСЂРёСЋ Рѕ С€РєРѕР»СЊРЅРѕРј РїСЂР°Р·РґРЅРёРєРµ. РќР°Рј Р·Р°РїСЂРµС‰Р°Р»Рё Рѕ РЅС‘Рј РіРѕРІРѕСЂРёС‚СЊ." },
+    { scene: "school", line: "Р›Р°РЅР°: РўРµРїРµСЂСЊ С€РєРѕР»Р° РІС‹РіР»СЏРґРёС‚ С‚Р°Рє, Р±СѓРґС‚Рѕ РІСЃС‘ РµС‰С‘ Р¶РґС‘С‚ С‚РѕС‚ РїСЂР°Р·РґРЅРёРє." },
+    { scene: "classroom", line: "Р›Р°РЅР°: РќР° РґРѕСЃРєРµ РЅР°РїРёСЃР°РЅРѕ: 'РќРµ РѕСЃС‚Р°РІР»СЏР№С‚Рµ РЅР°СЃ РѕРґРЅРёС…'." },
+    { scene: "lana", line: "Р›Р°РЅР°: РќСѓР¶РЅРѕ РЅР°Р№С‚Рё РљР°СЂР»Р° Рё Р”РёРЅСѓ. РћРЅРё РЅРµ РјРѕРіР»Рё РїСЂРѕСЃС‚Рѕ РёСЃС‡РµР·РЅСѓС‚СЊ." },
+    { scene: "flicker", line: "Р›Р°РЅР°: РљС‚Рѕ-С‚Рѕ СЃС‚РѕРёС‚ Сѓ РґРІРµСЂРё... РЅРµС‚, СЌС‚Рѕ РёРіСЂСѓС€РєР°." },
+    { scene: "empty", line: "Р›Р°РЅР°: Р§РµРј С‚РёС€Рµ СЃС‚Р°РЅРѕРІРёС‚СЃСЏ РєР»Р°СЃСЃ, С‚РµРј РіСЂРѕРјС‡Рµ СЃР»С‹С€РЅРѕ Р·Р°РІРѕРґРЅРѕР№ РєР»СЋС‡РёРє." },
+    { scene: "monsters", line: "Р›Р°РЅР°: РћРЅРё РЅРµ Р·Р»С‹Рµ? РќРµС‚... РѕРЅРё РЅР°РїСѓРіР°РЅС‹. РќРѕ РІСЃС‘ СЂР°РІРЅРѕ РѕРїР°СЃРЅС‹." },
   ],
 ];
 
@@ -798,9 +814,8 @@ function pickToyMonsterKind(name: string): ToyMonsterKind {
   if (lower.includes("bear") || lower.includes("plush")) return "bear";
   if (lower.includes("monkey") || lower.includes("music box")) return "monkey";
   if (lower.includes("clown")) return "clown";
-  // Porcelain / white doll removed — replaced by puppet for a darker look
-  if (lower.includes("doll") || lower.includes("porcelain") || lower.includes("matron")) return "puppet";
-  return "puppet";
+  if (lower.includes("ballerina") || lower.includes("doll") || lower.includes("porcelain") || lower.includes("matron")) return "porcelain";
+  return "porcelain";
 }
 
 const AMBIENT_HORROR_LINES = [
@@ -869,15 +884,15 @@ function LanaSpeech({ side = "right" }: { side?: "left" | "right" }) {
 
 
 // Palettes
-// Ruby-style (Mr Hopp's Playhouse): pale skin, red hair, pink dress, red bow
+// Lana matches the menu art: dark hair, navy school uniform, red tie, muted backpack.
 const PAL_LANA: PixelPalette = {
-  skin: "#fde0cc", skinShade: "#e0a890",
-  hair: "#d62828", hairShade: "#7a1010",
-  shirt: "#f088b0", shirtShade: "#a04068",
-  pants: "#3a1428", pantsShade: "#1a0814",
-  shoes: "#1a0a14",
-  accent: "#e84545",
-  ponytail: "#d62828",
+  skin: "#d6a786", skinShade: "#986247",
+  hair: "#151116", hairShade: "#2f2630",
+  shirt: "#202b3a", shirtShade: "#0d1119",
+  pants: "#1b1f32", pantsShade: "#0b0d15",
+  shoes: "#0a090d",
+  accent: "#7d1d2d",
+  ponytail: "#151116",
 };
 const PAL_MILA: PixelPalette = {
   skin: "#f0c098", skinShade: "#c89070",
@@ -1032,11 +1047,11 @@ export type Upgrade = {
   id: UpgradeId; name: string; icon: typeof Swords; price: number; desc: string; max?: number;
 };
 const UPGRADES: Upgrade[] = [
-  { id: "bat",        name: "Baseball Bat",   icon: Swords,     price: 60,  desc: "1 hit — stun zombie without a task.", max: 5 },
-  { id: "gun",        name: "Pistol",            icon: Crosshair,  price: 220, desc: "Shot — instantly kills zombie.", max: 5 },
-  { id: "flashlight", name: "Flashlight",             icon: Flashlight, price: 140, desc: "Lights up dark hallways (floors 2–3)." },
+  { id: "bat",        name: "Baseball Bat",   icon: Swords,     price: 60,  desc: "1 hit вЂ” stun doll without a task.", max: 5 },
+  { id: "gun",        name: "Pistol",            icon: Crosshair,  price: 220, desc: "Shot вЂ” instantly kills doll.", max: 5 },
+  { id: "flashlight", name: "Flashlight",             icon: Flashlight, price: 140, desc: "Lights up dark hallways (floors 2вЂ“3)." },
   { id: "hp",         name: "Enhanced Health",  icon: Heart,      price: 180, desc: "+25 to max HP." },
-  { id: "hint",       name: "Extra Hints", icon: Lightbulb, price: 90, desc: "Detailed hints in all tasks." },
+  { id: "hint",       name: "РџРѕРґСЃРєР°Р·РєРё", icon: Lightbulb, price: 90, desc: "Detailed hints in all tasks." },
 ];
 
 type Inventory = {
@@ -1046,18 +1061,20 @@ type Inventory = {
 const EMPTY_INV: Inventory = { bat: 0, gun: 0, flashlight: false, hp: false, hint: false };
 
 const SAVE_KEY = "escape-school-save-v1";
-type SaveData = { coins: number; outfit: string; owned: Inventory; ownedOutfits: string[] };
+const CRYSTAL_PRICE = 120;
+const RESPAWN_CRYSTAL_COST = 1;
+type SaveData = { coins: number; crystals: number; outfit: string; owned: Inventory; ownedOutfits: string[] };
 const DEFAULT_OUTFITS = ["classic"];
 const loadSave = (): SaveData => {
-  if (typeof window === "undefined") return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] };
+  if (typeof window === "undefined") return { coins: 0, crystals: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] };
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] };
+    if (!raw) return { coins: 0, crystals: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] };
     const p = JSON.parse(raw);
     const ownedOutfits: string[] = Array.isArray(p.ownedOutfits) ? p.ownedOutfits : [];
     const merged = Array.from(new Set([...DEFAULT_OUTFITS, ...ownedOutfits, p.outfit ?? "classic"]));
-    return { coins: p.coins ?? 0, outfit: p.outfit ?? "classic", owned: { ...EMPTY_INV, ...(p.owned ?? {}) }, ownedOutfits: merged };
-  } catch { return { coins: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] }; }
+    return { coins: p.coins ?? 0, crystals: p.crystals ?? 0, outfit: p.outfit ?? "classic", owned: { ...EMPTY_INV, ...(p.owned ?? {}) }, ownedOutfits: merged };
+  } catch { return { coins: 0, crystals: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] }; }
 };
 const writeSave = (s: SaveData) => {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
@@ -1065,13 +1082,13 @@ const writeSave = (s: SaveData) => {
 
 // ---- Per-task hints ----
 const TASK_HINTS: Record<TaskKind, { short: string; long: string }> = {
-  wires:    { short: "Drag the wire from the left terminal to the right one of the same color.", long: "If you make a mistake — click the left terminal again to reset the connection. Colors must match exactly." },
-  download: { short: "Hold the button and don't release until the bar reaches 100%.", long: "If you release — progress drops fast. Don't move the mouse off the button." },
-  reactor:  { short: "Remember the colors in order and repeat them.", long: "If you make a mistake — the sequence will be shown again from the start. Count out loud." },
+  wires:    { short: "Drag the wire from the left terminal to the right one of the same color.", long: "If you make a mistake вЂ” click the left terminal again to reset the connection. Colors must match exactly." },
+  download: { short: "Р—Р°Р¶РјРё РєРЅРѕРїРєСѓ, РїРѕРєР° С€РєР°Р»Р° РЅРµ Р·Р°РїРѕР»РЅРёС‚СЃСЏ.", long: "Р•СЃР»Рё РѕС‚РїСѓСЃС‚РёС€СЊ, РїСЂРѕРіСЂРµСЃСЃ РїР°РґР°РµС‚ РјРµРґР»РµРЅРЅРѕ. РљРЅРѕРїРєСѓ РјРѕР¶РЅРѕ РЅР°Р¶Р°С‚СЊ СЃРЅРѕРІР°." },
+  reactor:  { short: "Р—Р°РїРѕРјРЅРё С†РІРµС‚Р° РїРѕ РїРѕСЂСЏРґРєСѓ Рё РїРѕРІС‚РѕСЂРё.", long: "Р•СЃР»Рё РѕС€РёР±С‘С€СЊСЃСЏ, С†РІРµС‚Р° РїРѕРєР°Р¶СѓС‚СЃСЏ СЃРЅРѕРІР°." },
   trash:    { short: "Hold the lever until the tank is empty.", long: "The tank refills if you release. Don't get distracted." },
-  switches: { short: "Turn ALL switches ON.", long: "Just click each OFF switch — no traps, no combinations." },
-  quiz:     { short: "Read the question carefully, you have 2 tries.", long: "If unsure — pick the most believable one, time is short." },
-  aim:      { short: "Click the red targets as fast as you can.", long: "Don't wave the mouse — the target appears randomly. Aim for the center." },
+  switches: { short: "Р’РєР»СЋС‡Рё РІСЃРµ С‚СѓРјР±Р»РµСЂС‹.", long: "РџСЂРѕСЃС‚Рѕ РЅР°Р¶РјРё РєР°Р¶РґС‹Р№ РІС‹РєР»СЋС‡РµРЅРЅС‹Р№ С‚СѓРјР±Р»РµСЂ." },
+  quiz:     { short: "РџСЂРѕС‡РёС‚Р°Р№ СЃРёС‚СѓР°С†РёСЋ Рё РІС‹Р±РµСЂРё Р±РµР·РѕРїР°СЃРЅРѕРµ РґРµР№СЃС‚РІРёРµ. Р•СЃС‚СЊ 3 РїРѕРїС‹С‚РєРё.", long: "Р’РѕРїСЂРѕСЃС‹ РЅРµ РїСЂРѕ СѓСЂРѕРєРё, Р° РїСЂРѕ РІС‹Р¶РёРІР°РЅРёРµ, С€СѓРј, СЃРІРµС‚ Рё РїРѕРІРµРґРµРЅРёРµ РєСѓРєРѕР»." },
+  aim:      { short: "РќР°Р¶РјРё РєСЂР°СЃРЅС‹Рµ С†РµР»Рё.", long: "Р¦РµР»РµР№ РјРµРЅСЊС€Рµ, РІСЂРµРјРµРЅРё Р±РѕР»СЊС€Рµ." },
 };
 
 function HintBox({ kind, advanced }: { kind: TaskKind; advanced: boolean }) {
@@ -1082,12 +1099,12 @@ function HintBox({ kind, advanced }: { kind: TaskKind; advanced: boolean }) {
       <button onClick={() => setOpen(o => !o)}
         className="flex items-center gap-2 text-[11px] font-pixel text-amber-300 hover:text-amber-100 bg-black/40 border border-amber-700/40 rounded px-2 py-1">
         <Lightbulb className="h-3 w-3" />
-        {open ? "Hide hint" : "Hint"}
+        {open ? "РЎРєСЂС‹С‚СЊ РїРѕРґСЃРєР°Р·РєСѓ" : "РџРѕРґСЃРєР°Р·РєР°"}
       </button>
       {open && (
         <div className="mt-2 text-[12px] text-amber-100/90 bg-amber-900/15 border border-amber-700/30 rounded p-2">
-          <div>💡 {tip.short}</div>
-          {advanced && <div className="mt-1 text-amber-300/90">★ {tip.long}</div>}
+          <div>рџ’Ў {tip.short}</div>
+          {advanced && <div className="mt-1 text-amber-300/90">в… {tip.long}</div>}
         </div>
       )}
     </div>
@@ -1098,13 +1115,81 @@ function HintBox({ kind, advanced }: { kind: TaskKind; advanced: boolean }) {
 function Crewmate({ color, facing = 1, size = 80, dead = false, palette, motion = "idle" }:
   { color: string; facing?: 1 | -1; size?: number; dead?: boolean; palette?: PixelPalette; motion?: TeenMotion }) {
   const isLana = color === "#ff66aa";
-  const pal = palette ?? (isLana ? PAL_LANA : (PALETTES[color] ?? { ...PAL_MILA, shirt: color, shirtShade: color }));
-  if (isLana) return <PixelTeen kind="lana" facing={facing} size={Math.round(size * 1.18)} scared={dead || motion === "scared"} motion={motion} palette={pal} />;
+  const pal = isLana ? PAL_LANA : (palette ?? (PALETTES[color] ?? { ...PAL_MILA, shirt: color, shirtShade: color }));
+  if (isLana) return <MenuArtCharacter kind="lana" facing={facing} size={Math.round(size * 1.9)} scared={dead || motion === "scared"} motion={motion} />;
   return <PixelHuman palette={pal} facing={facing} size={size} variant={isLana ? "girl" : "student"} dead={dead} />;
 }
 
+function MenuArtCharacter({
+  kind = "lana",
+  facing = 1,
+  size = 120,
+  scared = false,
+  motion = "idle",
+}: {
+  kind?: TeenKind;
+  facing?: 1 | -1;
+  size?: number;
+  scared?: boolean;
+  motion?: TeenMotion;
+}) {
+  const src = kind === "lana" ? menuLanaCutout : kind === "karl" ? menuFriendBoyCutout : menuFriendGirlCutout;
+  const className = motion === "run" ? "menu-art-run" : motion === "walk" ? "menu-art-walk" : scared || motion === "scared" ? "menu-art-scared" : "";
+  const style = {
+    height: size,
+    width: "auto",
+    "--face": facing,
+  } as CSSProperties;
+  return (
+    <img
+      src={src}
+      alt=""
+      draggable={false}
+      className={`menu-art-cutout ${className}`}
+      style={style}
+    />
+  );
+}
+
+function MenuArtMonster({
+  kind,
+  size = 120,
+  facing = -1,
+  hurt = false,
+  boss = false,
+  motion = "walk",
+}: {
+  kind: ToyMonsterKind;
+  size?: number;
+  facing?: 1 | -1;
+  hurt?: boolean;
+  boss?: boolean;
+  motion?: MonsterMotion;
+}) {
+  const src =
+    kind === "bear" ? menuBearCutout :
+    kind === "monkey" ? menuMonkeyCutout :
+    kind === "clown" ? menuClownCutout :
+    menuBallerinaCutout;
+  const motionClass = motion === "run" ? "menu-art-monster-run" : motion === "walk" ? "menu-art-monster-walk" : "menu-art-monster-idle";
+  const style = {
+    height: boss ? Math.round(size * 1.18) : size,
+    width: "auto",
+    "--face": facing,
+  } as CSSProperties;
+  return (
+    <img
+      src={src}
+      alt=""
+      draggable={false}
+      className={`menu-art-cutout menu-art-monster ${motionClass} ${hurt ? "menu-art-hurt" : ""} ${boss ? "menu-art-boss" : ""}`}
+      style={style}
+    />
+  );
+}
+
 function Impostor({ size = 80 }: { size?: number }) {
-  return <ToyMonster kind="porcelain" size={size} boss facing={-1} />;
+  return <MenuArtMonster kind="porcelain" size={size} boss facing={-1} />;
 }
 
 
@@ -1113,7 +1198,7 @@ function Impostor({ size = 80 }: { size?: number }) {
 // 1) WIRES
 function WiresGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const colors = useMemo(() => {
-    const c = ["#e84545", "#3aa3ff", "#ffd23a", "#7ad84a"];
+    const c = ["#e84545", "#3aa3ff", "#ffd23a"];
     const left = [...c];
     const right = [...c].sort(() => Math.random() - 0.5);
     return { left, right };
@@ -1126,7 +1211,7 @@ function WiresGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const leftY = (i: number) => 40 + i * 70;
   const rightY = (i: number) => 40 + i * 70;
 
-  const allDone = Object.keys(connections).length === 4 &&
+  const allDone = Object.keys(connections).length === colors.left.length &&
     Object.entries(connections).every(([l, r]) => colors.left[+l] === colors.right[r]);
 
   useEffect(() => { if (allDone) setTimeout(() => onDone(true), 500); }, [allDone, onDone]);
@@ -1139,7 +1224,7 @@ function WiresGame({ onDone }: { onDone: (ok: boolean) => void }) {
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">Drag the wires: connect matching colors.</p>
+      <p className="text-sm text-muted-foreground">РЎРѕРµРґРёРЅРё РѕРґРёРЅР°РєРѕРІС‹Рµ С†РІРµС‚Р°.</p>
       <svg ref={svgRef} width={360} height={320} onMouseMove={onMove} onMouseUp={() => setDragFrom(null)} className="bg-black/40 rounded">
         {/* connections */}
         {Object.entries(connections).map(([l, r]) => (
@@ -1171,13 +1256,13 @@ function WiresGame({ onDone }: { onDone: (ok: boolean) => void }) {
           </g>
         ))}
       </svg>
-      {allDone && <p className="text-primary font-bold">✓ Done!</p>}
+      {allDone && <p className="text-primary font-bold">вњ“ Done!</p>}
     </div>
   );
 }
 
 
-// 3) DOWNLOAD — hold button
+// 3) DOWNLOAD вЂ” hold button
 function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const [progress, setProgress] = useState(0);
   const holding = useRef(false);
@@ -1185,7 +1270,7 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
   useEffect(() => {
     const tick = () => {
       setProgress(p => {
-        const np = holding.current ? Math.min(100, p + 0.8) : Math.max(0, p - 1.2);
+        const np = holding.current ? Math.min(100, p + 3) : Math.max(0, p - 0.2);
         if (np >= 100) { onDone(true); return 100; }
         return np;
       });
@@ -1196,7 +1281,7 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
   }, [onDone]);
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">Hold the button. Release — and it rolls back.</p>
+      <p className="text-sm text-muted-foreground">Р—Р°Р¶РјРё РєРЅРѕРїРєСѓ, РїРѕРєР° С€РєР°Р»Р° РЅРµ Р·Р°РїРѕР»РЅРёС‚СЃСЏ.</p>
       <div className="w-72 h-6 bg-black/60 rounded overflow-hidden border border-primary/40">
         <div className="h-full bg-gradient-to-r from-emerald-400 to-primary transition-[width]" style={{ width: `${progress}%` }} />
       </div>
@@ -1206,16 +1291,16 @@ function DownloadGame({ onDone }: { onDone: (ok: boolean) => void }) {
         onMouseLeave={() => (holding.current = false)}
         onTouchStart={() => (holding.current = true)}
         onTouchEnd={() => (holding.current = false)}>
-        <Download className="mr-2 h-4 w-4" /> HOLD
+        <Download className="mr-2 h-4 w-4" /> Р”Р•Р Р–РђРўР¬
       </Button>
       <p className="font-mono text-primary">{Math.floor(progress)}%</p>
     </div>
   );
 }
 
-// 4) REACTOR — Simon
+// 4) REACTOR вЂ” Simon
 function ReactorGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const [seq] = useState(() => Array.from({ length: 7 }, () => Math.floor(Math.random() * 4)));
+  const [seq] = useState(() => Array.from({ length: 3 }, () => Math.floor(Math.random() * 4)));
   const [step, setStep] = useState(0);
   const [showing, setShowing] = useState(-1);
   const [phase, setPhase] = useState<"watch" | "input">("watch");
@@ -1228,7 +1313,7 @@ function ReactorGame({ onDone }: { onDone: (ok: boolean) => void }) {
       setTimeout(() => setShowing(-1), 400);
       i++;
       if (i >= seq.length) { clearInterval(t); setTimeout(() => setPhase("input"), 500); }
-    }, 700);
+    }, 650);
     return () => clearInterval(t);
   }, [phase, seq]);
 
@@ -1246,7 +1331,7 @@ function ReactorGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const cols = ["#e84545", "#3aa3ff", "#ffd23a", "#7ad84a"];
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">{phase === "watch" ? "Watch…" : "Repeat the sequence"}</p>
+      <p className="text-sm text-muted-foreground">{phase === "watch" ? "Р—Р°РїРѕРјРЅРё С†РІРµС‚Р°..." : "РџРѕРІС‚РѕСЂРё С†РІРµС‚Р°"}</p>
       <div className="grid grid-cols-2 gap-3">
         {cols.map((c, i) => (
           <button key={i} onClick={() => press(i)}
@@ -1254,19 +1339,19 @@ function ReactorGame({ onDone }: { onDone: (ok: boolean) => void }) {
             style={{ background: c, opacity: showing === i ? 1 : 0.45, transform: showing === i ? "scale(1.05)" : "scale(1)" }} />
         ))}
       </div>
-      <p className="text-xs text-muted-foreground">Step {step}/{seq.length}</p>
+      <p className="text-xs text-muted-foreground">РЁР°Рі {step}/{seq.length}</p>
     </div>
   );
 }
 
-// 5) TRASH — hold lever
+// 5) TRASH вЂ” hold lever
 function TrashGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const [level, setLevel] = useState(100);
   const holding = useRef(false);
   useEffect(() => {
     const id = setInterval(() => {
       setLevel(l => {
-        const nl = holding.current ? Math.max(0, l - 1.5) : Math.min(100, l + 0.6);
+        const nl = holding.current ? Math.max(0, l - 6) : Math.min(100, l + 0.12);
         if (nl <= 0) onDone(true);
         return nl;
       });
@@ -1275,16 +1360,16 @@ function TrashGame({ onDone }: { onDone: (ok: boolean) => void }) {
   }, [onDone]);
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">Pull the lever down until the tank is empty.</p>
+      <p className="text-sm text-muted-foreground">Р”РµСЂР¶Рё СЂС‹С‡Р°Рі, РїРѕРєР° С€РєР°Р»Р° РЅРµ РѕРїСѓСЃС‚РµРµС‚.</p>
       <div className="w-32 h-56 bg-black/60 border-2 border-amber-700 rounded relative overflow-hidden">
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-amber-700 to-amber-500" style={{ height: `${level}%` }}>
-          <div className="text-[10px] text-center pt-1">🗑️</div>
+          <div className="text-[10px] text-center pt-1">рџ—‘пёЏ</div>
         </div>
       </div>
       <Button size="lg"
         onMouseDown={() => (holding.current = true)} onMouseUp={() => (holding.current = false)} onMouseLeave={() => (holding.current = false)}
         onTouchStart={() => (holding.current = true)} onTouchEnd={() => (holding.current = false)}>
-        <Trash2 className="mr-2 h-4 w-4" /> PULL
+        <Trash2 className="mr-2 h-4 w-4" /> РўРЇРќРЈРўР¬
       </Button>
     </div>
   );
@@ -1292,11 +1377,11 @@ function TrashGame({ onDone }: { onDone: (ok: boolean) => void }) {
 
 // 6) SWITCHES
 function SwitchesGame({ onDone }: { onDone: (ok: boolean) => void }) {
-  const [s, setS] = useState<boolean[]>(() => Array.from({ length: 5 }, () => Math.random() < 0.5));
+  const [s, setS] = useState<boolean[]>(() => Array.from({ length: 3 }, () => false));
   useEffect(() => { if (s.every(Boolean)) setTimeout(() => onDone(true), 300); }, [s, onDone]);
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">All switches must be ON.</p>
+      <p className="text-sm text-muted-foreground">Р’РєР»СЋС‡Рё РІСЃРµ С‚СѓРјР±Р»РµСЂС‹.</p>
       <div className="flex gap-3 bg-black/60 p-4 rounded border border-amber-700">
         {s.map((on, i) => (
           <button key={i} onClick={() => setS(p => p.map((v, j) => j === i ? !v : v))}
@@ -1314,22 +1399,29 @@ function SwitchesGame({ onDone }: { onDone: (ok: boolean) => void }) {
 }
 
 
-// 8) QUIZ — school question
+// 8) QUIZ вЂ” survival/story question
 const QUIZ_POOL = [
-  { q: "Capital of Australia?", o: ["Sydney", "Canberra", "Melbourne", "Perth"], a: 1 },
-  { q: "How many planets in the Solar System?", o: ["7", "8", "9", "10"], a: 1 },
-  { q: "Author of War and Peace?", o: ["Dostoevsky", "Chekhov", "Tolstoy", "Pushkin"], a: 2 },
-  { q: "Chemical symbol for gold?", o: ["Go", "Gd", "Au", "Ag"], a: 2 },
-  { q: "How many chromosomes do humans have?", o: ["23", "44", "46", "48"], a: 2 },
-  { q: "Longest river in the world?", o: ["Amazon", "Nile", "Yangtze", "Volga"], a: 1 },
-  { q: "Who discovered the law of gravity?", o: ["Einstein", "Newton", "Galileo", "Kepler"], a: 1 },
+  { q: "РЎРІРµС‚ РЅР°С‡Р°Р» РјРёРіР°С‚СЊ. Р§С‚Рѕ Р±РµР·РѕРїР°СЃРЅРµРµ СЃРґРµР»Р°С‚СЊ РїРµСЂРІС‹Рј?", o: ["Р—Р°РјРµСЂРµС‚СЊ Рё СЃР»СѓС€Р°С‚СЊ", "Р‘РµР¶Р°С‚СЊ РїРѕ РєРѕСЂРёРґРѕСЂСѓ", "РљСЂРёС‡Р°С‚СЊ РґСЂСѓР·СЊСЏРј", "РЎС‚СѓС‡Р°С‚СЊ РїРѕ С€РєР°С„Р°Рј"], a: 0 },
+  { q: "Р—Р°РІРѕРґРЅР°СЏ РѕР±РµР·СЊСЏРЅРєР° СЂРµР°РіРёСЂСѓРµС‚ РЅР° Р·РІСѓРє. РљР°Рє РїСЂРѕР№С‚Рё РјРёРјРѕ?", o: ["РРґС‚Рё С‚РёС…Рѕ", "Р‘СЂРѕСЃРёС‚СЊ РєРЅРёРіСѓ РІ РѕРєРЅРѕ", "Р’РєР»СЋС‡РёС‚СЊ СЃРёСЂРµРЅСѓ", "РџРЅСѓС‚СЊ РїР°СЂС‚Сѓ"], a: 0 },
+  { q: "РљСѓРєР»Р° РёСЃС‡РµР·Р»Р° РёР· РєР»Р°СЃСЃР°. Р“РґРµ РѕРїР°СЃРЅРµРµ РІСЃРµРіРѕ СЃС‚РѕСЏС‚СЊ?", o: ["РЎРїРёРЅРѕР№ Рє РґРІРµСЂРё", "РЈ РІРєР»СЋС‡С‘РЅРЅРѕРіРѕ СЃРІРµС‚Р°", "Р СЏРґРѕРј СЃРѕ С€РєР°С„С‡РёРєРѕРј", "Р—Р° РїР°СЂС‚РѕР№"], a: 0 },
+  { q: "РњРµРґРІРµРґСЊ РёРґС‘С‚ РјРµРґР»РµРЅРЅРѕ, РЅРѕ РЅРµ РѕС‚СЃС‚Р°С‘С‚. Р§С‚Рѕ РїРѕРјРѕР¶РµС‚ РІС‹РёРіСЂР°С‚СЊ РІСЂРµРјСЏ?", o: ["Р—Р°РєСЂС‹С‚СЊ Р·Р° СЃРѕР±РѕР№ РґРІРµСЂСЊ", "Р–РґР°С‚СЊ РЅР° РјРµСЃС‚Рµ", "Р’С‹РєР»СЋС‡РёС‚СЊ С„РѕРЅР°СЂРёРє", "РЎРјРѕС‚СЂРµС‚СЊ РµРјСѓ РІ РіР»Р°Р·Р°"], a: 0 },
+  { q: "Р›Р°РЅР° РЅР°С€Р»Р° С‡СѓР¶РѕР№ С€С‘РїРѕС‚ РІ РґРёРЅР°РјРёРєРµ. Р§РµРјСѓ Р»СѓС‡С€Рµ РЅРµ РґРѕРІРµСЂСЏС‚СЊ?", o: ["Р“РѕР»РѕСЃСѓ Р±РµР· Р»РёС†Р°", "РўРёС…РёРј С€Р°РіР°Рј", "РЎРІРµС‚Сѓ С„РѕРЅР°СЂРёРєР°", "Р—Р°РєСЂС‹С‚РѕР№ РґРІРµСЂРё"], a: 0 },
+  { q: "РџРµСЂРµРґ С‚РѕР±РѕР№ РґРІРµ РґРІРµСЂРё: РёР· РѕРґРЅРѕР№ СЃР»С‹С€РµРЅ СЃРјРµС…, Р·Р° РґСЂСѓРіРѕР№ С‚РёС€РёРЅР°. РљСѓРґР° Р±РµР·РѕРїР°СЃРЅРµРµ?", o: ["Р’ С‚РёС…СѓСЋ РґРІРµСЂСЊ", "Рљ СЃРјРµС…Сѓ", "РћСЃС‚Р°С‚СЊСЃСЏ РјРµР¶РґСѓ РґРІРµСЂСЏРјРё", "РЎС‚СѓС‡Р°С‚СЊ РІ РѕР±Рµ"], a: 0 },
+  { q: "Р¤Р°СЂС„РѕСЂРѕРІР°СЏ РєСѓРєР»Р° РїРѕСЏРІРёР»Р°СЃСЊ СЂСЏРґРѕРј. Р§С‚Рѕ РІР°Р¶РЅРµРµ?", o: ["РќРµ С‚РµСЂСЏС‚СЊ РµС‘ РёР· РІРёРґР°", "РЎСЂР°Р·Сѓ СЃРµСЃС‚СЊ Р·Р° РїР°СЂС‚Сѓ", "Р‘СЂРѕСЃРёС‚СЊ Р°РїС‚РµС‡РєСѓ", "РћС‚РєСЂС‹С‚СЊ СЂСЋРєР·Р°Рє"], a: 0 },
+  { q: "РќР° РїРѕР»Сѓ Р»РµР¶РёС‚ РёРіСЂСѓС€РєР°-РїСЂРёРјР°РЅРєР°. РљРѕРіРґР° РµС‘ Р»СѓС‡С€Рµ Р±СЂРѕСЃРёС‚СЊ?", o: ["Р§С‚РѕР±С‹ РѕС‚РІР»РµС‡СЊ РєСѓРєР»Сѓ", "РљРѕРіРґР° СЂСЏРґРѕРј РЅРёРєРѕРіРѕ РЅРµС‚", "РџРѕСЃР»Рµ РїРѕР±РµРґС‹", "РџРµСЂРµРґ С‡С‚РµРЅРёРµРј Р·Р°РїРёСЃРєРё"], a: 0 },
 ];
 const toQuestion = (item: { q: string; o: string[]; a: number }): AiQuestion => ({
   question: item.q,
   options: item.o as [string, string, string, string],
   answer: item.a,
 });
-const pickLocalQuiz = () => toQuestion(QUIZ_POOL[Math.floor(Math.random() * QUIZ_POOL.length)]);
+let lastLocalQuizIndex = -1;
+const pickLocalQuiz = () => {
+  let index = Math.floor(Math.random() * QUIZ_POOL.length);
+  if (QUIZ_POOL.length > 1 && index === lastLocalQuizIndex) index = (index + 1) % QUIZ_POOL.length;
+  lastLocalQuizIndex = index;
+  return toQuestion(QUIZ_POOL[index]);
+};
 const pickLocalRiddle = () => {
   const item = bossRiddles[Math.floor(Math.random() * bossRiddles.length)];
   return {
@@ -1342,7 +1434,7 @@ const pickLocalRiddle = () => {
 function useGeneratedQuestion(args: {
   kind: "quiz" | "riddle";
   levelName: string;
-  zombieName?: string;
+  dollName?: string;
   fallback: AiQuestion;
 }) {
   const [item, setItem] = useState<AiQuestion>(args.fallback);
@@ -1356,7 +1448,7 @@ function useGeneratedQuestion(args: {
       data: {
         kind: args.kind,
         levelName: args.levelName,
-        zombieName: args.zombieName,
+        dollName: args.dollName,
       },
     }).then(({ question }) => {
       if (alive && question) setItem(question);
@@ -1366,15 +1458,15 @@ function useGeneratedQuestion(args: {
       if (alive) setLoading(false);
     });
     return () => { alive = false; };
-  }, [args.kind, args.levelName, args.zombieName, args.fallback]);
+  }, [args.kind, args.levelName, args.dollName, args.fallback]);
 
   return { item, loading };
 }
 
-function QuizGame({ onDone, levelName, zombieName }: { onDone: (ok: boolean) => void; levelName: string; zombieName: string }) {
+function QuizGame({ onDone, levelName, dollName }: { onDone: (ok: boolean) => void; levelName: string; dollName: string }) {
   const fallback = useMemo(() => pickLocalQuiz(), []);
-  const { item, loading } = useGeneratedQuestion({ kind: "quiz", levelName, zombieName, fallback });
-  const [tries, setTries] = useState(2);
+  const { item, loading } = useGeneratedQuestion({ kind: "quiz", levelName, dollName, fallback });
+  const [tries, setTries] = useState(3);
   const pick = (i: number) => {
     if (i === item.answer) onDone(true);
     else {
@@ -1385,7 +1477,7 @@ function QuizGame({ onDone, levelName, zombieName }: { onDone: (ok: boolean) => 
   };
   return (
     <div className="flex flex-col items-center gap-4 max-w-md">
-      <p className="text-sm text-muted-foreground">{loading ? "Fresh question..." : "School question."} Tries: {tries}</p>
+      <p className="text-sm text-muted-foreground">{loading ? "Р“РѕС‚РѕРІРёРј РІРѕРїСЂРѕСЃ..." : "РџСЂРѕСЃС‚РѕР№ РІРѕРїСЂРѕСЃ."} РџРѕРїС‹С‚РєРё: {tries}</p>
       <h3 className="text-lg font-display text-center">{item.question}</h3>
       <div className="grid grid-cols-2 gap-2 w-full">
         {item.options.map((o, i) => (
@@ -1398,8 +1490,8 @@ function QuizGame({ onDone, levelName, zombieName }: { onDone: (ok: boolean) => 
 
 function BossRiddleGate({ onDone, levelName }: { onDone: (ok: boolean) => void; levelName: string }) {
   const fallback = useMemo(() => pickLocalRiddle(), []);
-  const { item, loading } = useGeneratedQuestion({ kind: "riddle", levelName, zombieName: "The Porcelain Matron", fallback });
-  const [tries, setTries] = useState(2);
+  const { item, loading } = useGeneratedQuestion({ kind: "riddle", levelName, dollName: "The Porcelain Matron", fallback });
+  const [tries, setTries] = useState(3);
   const pick = (i: number) => {
     if (i === item.answer) onDone(true);
     else {
@@ -1412,8 +1504,8 @@ function BossRiddleGate({ onDone, levelName }: { onDone: (ok: boolean) => void; 
     <div className="flex flex-col items-center gap-4 max-w-md mx-auto text-center">
       <Impostor size={90} />
       <div>
-        <h3 className="font-display text-lg text-red-400">The Matron's Riddle</h3>
-        <p className="text-xs text-muted-foreground">{loading ? "The doll is listening..." : `Answer to enter the final fight. Tries: ${tries}`}</p>
+        <h3 className="font-display text-lg text-red-400">Р—Р°РіР°РґРєР° РњР°С‚СЂРѕРЅС‹</h3>
+        <p className="text-xs text-muted-foreground">{loading ? "РљСѓРєР»Р° СЃР»СѓС€Р°РµС‚..." : `РћС‚РІРµС‚СЊ, С‡С‚РѕР±С‹ РїСЂРѕР№С‚Рё Рє С„РёРЅР°Р»Сѓ. РџРѕРїС‹С‚РєРё: ${tries}`}</p>
       </div>
       <h4 className="text-base font-display text-amber-100">{item.question}</h4>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
@@ -1431,7 +1523,7 @@ function BossEncounter({ onWin, onLose, levelName }: { onWin: () => void; onLose
   return <BossRiddleGate levelName={levelName} onDone={(ok) => ok ? setRiddleSolved(true) : onLose()} />;
 }
 
-// 9) LOCK — find code from hints
+// 9) LOCK вЂ” find code from hints
 function LockGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const target = useMemo(() => Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)), []);
   const [dials, setDials] = useState([0, 0, 0]);
@@ -1453,12 +1545,12 @@ function LockGame({ onDone }: { onDone: (ok: boolean) => void }) {
         {dials.map((d, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
             <button onClick={() => setDials(p => p.map((v, j) => j === i ? (v + 1) % 10 : v))}
-              className="text-amber-300 hover:text-amber-100 text-xl">▲</button>
+              className="text-amber-300 hover:text-amber-100 text-xl">в–І</button>
             <div className="w-12 h-14 bg-zinc-900 border border-amber-600 rounded flex items-center justify-center text-3xl font-mono text-amber-200">
               {d}
             </div>
             <button onClick={() => setDials(p => p.map((v, j) => j === i ? (v + 9) % 10 : v))}
-              className="text-amber-300 hover:text-amber-100 text-xl">▼</button>
+              className="text-amber-300 hover:text-amber-100 text-xl">в–ј</button>
           </div>
         ))}
       </div>
@@ -1466,11 +1558,11 @@ function LockGame({ onDone }: { onDone: (ok: boolean) => void }) {
   );
 }
 
-// 10) AIM — click 5 targets fast
+// 10) AIM вЂ” click 5 targets fast
 function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const [hits, setHits] = useState(0);
   const [pos, setPos] = useState({ x: 50, y: 50 });
-  const [time, setTime] = useState(8);
+  const [time, setTime] = useState(16);
   useEffect(() => {
     const id = setInterval(() => setTime(t => {
       if (t <= 0.1) { clearInterval(id); onDone(false); return 0; }
@@ -1482,11 +1574,11 @@ function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
   const hit = () => {
     const n = hits + 1;
     setHits(n);
-    if (n >= 5) onDone(true); else respawn();
+    if (n >= 3) onDone(true); else respawn();
   };
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">Hit 5 times. Time left: <b className="text-red-400">{time}s</b></p>
+      <p className="text-sm text-muted-foreground">РќР°Р¶РјРё 3 С†РµР»Рё. РћСЃС‚Р°Р»РѕСЃСЊ: <b className="text-red-400">{time}s</b></p>
       <div className="relative w-80 h-64 bg-black/70 rounded border-2 border-red-500/50 overflow-hidden">
         <button onClick={hit}
           className="absolute w-10 h-10 rounded-full bg-red-500 hover:bg-red-400 border-2 border-red-200 transition-all"
@@ -1494,7 +1586,7 @@ function AimGame({ onDone }: { onDone: (ok: boolean) => void }) {
           <Target className="h-5 w-5 mx-auto text-white" />
         </button>
       </div>
-      <p className="font-mono text-primary">Hits: {hits}/5</p>
+      <p className="font-mono text-primary">РџРѕРїР°РґР°РЅРёСЏ: {hits}/3</p>
     </div>
   );
 }
@@ -1511,11 +1603,11 @@ function TaskIcon({ kind, className = "" }: { kind: TaskKind; className?: string
 }
 
 function monsterBehaviorLabel(kind: ToyMonsterKind) {
-  if (kind === "bear") return "plush rabbit — slow stalker";
-  if (kind === "porcelain") return "crawling doll — vanishes";
-  if (kind === "monkey") return "music doll — hears noise";
-  if (kind === "clown") return "marionette — chases";
-  return "crawler — wanders";
+  if (kind === "bear") return "РїР»СЋС€РµРІС‹Р№ РјРµРґРІРµРґСЊ вЂ” РјРµРґР»РµРЅРЅРѕ РїСЂРµСЃР»РµРґСѓРµС‚";
+  if (kind === "porcelain") return "Р±Р°Р»РµСЂРёРЅР° Р±РµР· РЅРѕРі вЂ” РїРѕР»Р·С‘С‚ Рё РёСЃС‡РµР·Р°РµС‚";
+  if (kind === "monkey") return "Р·Р°РІРѕРґРЅР°СЏ РѕР±РµР·СЊСЏРЅР° вЂ” СЂРµР°РіРёСЂСѓРµС‚ РЅР° С€СѓРј";
+  if (kind === "clown") return "РєР»РѕСѓРЅ-РјР°СЂРёРѕРЅРµС‚РєР° вЂ” Р±С‹СЃС‚СЂРѕ РґРѕРіРѕРЅСЏРµС‚";
+  return "РєСѓРєР»Р° вЂ” Р±СЂРѕРґРёС‚ СЂСЏРґРѕРј";
 }
 
 function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }:
@@ -1530,10 +1622,10 @@ function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }
       : "drop-shadow(0 5px 4px rgba(0,0,0,0.55))";
 
   const colors = {
-    bear: { a: "#c47a90", b: "#5b1a2a", c: "#e0a5b6", e: "#ff1a1a" },
-    porcelain: { a: "#e8dfd4", b: "#9b8790", c: "#5e2938", e: "#2b050b" },
-    monkey: { a: "#7b4b24", b: "#3a2112", c: "#c49a52", e: "#ff2323" },
-    clown: { a: "#f2eee3", b: "#9a1f32", c: "#25528f", e: "#111111" },
+    bear: { a: "#8a6842", b: "#3b2818", c: "#c49a6c", e: "#ff1a1a" },
+    porcelain: { a: "#d8d1c8", b: "#9b8790", c: "#b06f88", e: "#1a0508" },
+    monkey: { a: "#7b4b24", b: "#2b1a10", c: "#caa36a", e: "#ff2323" },
+    clown: { a: "#e3ded5", b: "#5b3340", c: "#1d314f", e: "#090609" },
     puppet: { a: "#4a7a38", b: "#243b1b", c: "#6aa050", e: "#ff1818" },
   }[kind];
   const grime = kind === "porcelain" ? "#1b1214" : "#120b08";
@@ -1549,63 +1641,59 @@ function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }
       <ellipse cx={W / 2} cy={H - 0.5} rx={W / 2.5} ry="0.8" fill="#000" opacity="0.48" />
       {kind === "bear" && (
         <>
-          {/* Long plush rabbit ears */}
-          <rect x="6" y="0" width="3" height="11" fill={colors.a} />
-          <rect x="7" y="1" width="1" height="8" fill="#f0c2cf" />
-          <rect x="19" y="0" width="3" height="11" fill={colors.a} />
-          <rect x="20" y="1" width="1" height="8" fill="#f0c2cf" />
-          {/* Stitched seam on left ear (torn) */}
-          <rect x="6" y="4" width="1" height="1" fill={colors.b} />
-          <rect x="6" y="6" width="1" height="1" fill={colors.b} />
-          {/* Head */}
-          <rect x="4" y="9" width="20" height="14" fill={colors.a} />
-          {/* Big black button eyes with red pinpoint pupils */}
+          <rect x="5" y="4" width="6" height="6" fill={colors.b} />
+          <rect x="6" y="5" width="4" height="4" fill={colors.a} />
+          <rect x="18" y="3" width="6" height="7" fill={colors.b} />
+          <rect x="19" y="4" width="4" height="5" fill={colors.a} />
+          <rect x="4" y="8" width="21" height="15" fill={colors.a} />
+          <rect x="6" y="10" width="17" height="11" fill="#9b7448" opacity="0.75" />
           <rect x="7" y="12" width="5" height="5" fill="#050303" />
-          <rect x="16" y="12" width="5" height="5" fill="#050303" />
-          <rect x="9" y="14" width="1" height="1" fill={colors.e} />
-          <rect x="18" y="14" width="1" height="1" fill={colors.e} />
-          {/* Stitched cross mouth, bloodied */}
-          <rect x="11" y="19" width="8" height="1" fill="#1a0306" />
-          <rect x="12" y="20" width="1" height="1" fill={red} />
-          <rect x="15" y="20" width="1" height="1" fill={red} />
-          <rect x="17" y="20" width="1" height="1" fill={red} />
-          {/* Body */}
-          <rect x="6" y="23" width="16" height="9" fill={colors.a} />
-          <rect x="11" y="24" width="6" height="6" fill={colors.c} />
-          {/* Ragged arms */}
-          <rect x="2" y="24" width="5" height="7" fill={colors.b} />
-          <rect x="21" y="24" width="5" height="7" fill={colors.b} />
-          <rect x="1" y="29" width="2" height="2" fill={colors.a} />
-          <rect x="25" y="29" width="2" height="2" fill={colors.a} />
-          {/* Feet */}
+          <rect x="8" y="13" width="3" height="1" fill="#6a5a54" />
+          <rect x="9" y="12" width="1" height="5" fill="#6a5a54" />
+          <rect x="17" y="12" width="4" height="4" fill="#1a0306" />
+          <rect x="18" y="13" width="2" height="2" fill={colors.e} />
+          <rect x="13" y="15" width="3" height="3" fill="#160d09" />
+          <rect x="10" y="20" width="10" height="1" fill="#1a0306" />
+          <rect x="11" y="21" width="1" height="1" fill={red} />
+          <rect x="14" y="21" width="1" height="1" fill={red} />
+          <rect x="18" y="21" width="1" height="1" fill={red} />
+          <rect x="5" y="23" width="18" height="9" fill={colors.a} />
+          <rect x="10" y="24" width="8" height="6" fill={colors.c} />
+          <rect x="2" y="23" width="5" height="8" fill={colors.b} />
+          <rect x="22" y="23" width="5" height="8" fill={colors.b} />
+          <rect x="1" y="30" width="3" height="2" fill={colors.a} />
+          <rect x="25" y="30" width="3" height="2" fill={colors.a} />
           <rect x="7" y="32" width="6" height="2" fill={colors.b} />
-          <rect x="15" y="32" width="6" height="2" fill={colors.b} />
-          {/* Grime / blood stains */}
-          <rect x="12" y="28" width="1" height="3" fill={grime} opacity="0.7" />
-          <rect x="17" y="27" width="3" height="1" fill={grime} opacity="0.75" />
-          <rect x="5" y="22" width="2" height="1" fill={red} opacity="0.6" />
+          <rect x="16" y="32" width="6" height="2" fill={colors.b} />
+          <rect x="12" y="25" width="1" height="5" fill={grime} opacity="0.75" />
+          <rect x="17" y="27" width="3" height="1" fill={grime} opacity="0.8" />
+          <rect x="5" y="18" width="3" height="1" fill={red} opacity="0.6" />
+          <rect x="21" y="6" width="1" height="3" fill="#090604" />
         </>
       )}
       {kind === "porcelain" && (
         <>
-          <rect x={boss ? 8 : 7} y={boss ? 4 : 5} width={boss ? 18 : 15} height={boss ? 18 : 14} fill={colors.a} />
-          <rect x={boss ? 8 : 7} y={boss ? 4 : 5} width={boss ? 18 : 15} height="3" fill="#fffaf0" />
-          <rect x={boss ? 10 : 9} y={boss ? 11 : 10} width="4" height="4" fill={colors.e} />
-          <rect x={boss ? 20 : 17} y={boss ? 11 : 10} width="4" height="4" fill={colors.e} />
-          <rect x={boss ? 16 : 13} y={boss ? 17 : 15} width="4" height="2" fill={colors.c} />
-          <rect x={boss ? 7 : 6} y={boss ? 22 : 19} width={boss ? 20 : 16} height={boss ? 15 : 12} fill={colors.c} />
-          <rect x={boss ? 10 : 9} y={boss ? 23 : 20} width={boss ? 14 : 10} height={boss ? 13 : 10} fill="#382032" />
-          <rect x={boss ? 4 : 4} y={boss ? 25 : 21} width="4" height={boss ? 12 : 9} fill={colors.a} />
-          <rect x={boss ? 27 : 22} y={boss ? 25 : 21} width="4" height={boss ? 12 : 9} fill={colors.a} />
-          <rect x={boss ? 11 : 10} y={boss ? 37 : 31} width="5" height={boss ? 7 : 3} fill={colors.b} />
-          <rect x={boss ? 20 : 16} y={boss ? 37 : 31} width="5" height={boss ? 7 : 3} fill={colors.b} />
-          {boss && <rect x="15" y="2" width="5" height="5" fill="#b30f2a" />}
-          <rect x={boss ? 13 : 11} y={boss ? 8 : 8} width="1" height="5" fill={grime} />
-          <rect x={boss ? 14 : 12} y={boss ? 13 : 12} width="2" height="1" fill={grime} />
-          <rect x={boss ? 22 : 18} y={boss ? 7 : 7} width="1" height="8" fill={grime} opacity="0.75" />
-          <rect x={boss ? 9 : 8} y={boss ? 18 : 16} width="3" height="1" fill="#c9bab2" />
-          <rect x={boss ? 6 : 5} y={boss ? 24 : 20} width="1" height={boss ? 10 : 8} fill="#090609" opacity="0.85" />
-          <rect x={boss ? 28 : 23} y={boss ? 24 : 20} width="1" height={boss ? 10 : 8} fill="#090609" opacity="0.85" />
+          <rect x={boss ? 9 : 8} y={boss ? 2 : 4} width={boss ? 16 : 13} height={boss ? 14 : 12} fill={colors.a} />
+          <rect x={boss ? 7 : 6} y={boss ? 1 : 3} width={boss ? 20 : 17} height="4" fill="#151015" />
+          <rect x={boss ? 10 : 9} y={boss ? 7 : 8} width="4" height="4" fill="#090609" />
+          <rect x={boss ? 20 : 17} y={boss ? 7 : 8} width="4" height="4" fill={colors.e} />
+          <rect x={boss ? 15 : 13} y={boss ? 13 : 14} width="6" height="1" fill="#27050a" />
+          <rect x={boss ? 12 : 10} y={boss ? 17 : 17} width={boss ? 12 : 9} height={boss ? 7 : 6} fill={colors.c} />
+          <rect x={boss ? 8 : 7} y={boss ? 22 : 22} width={boss ? 20 : 15} height="5" fill="#b5758e" />
+          <rect x={boss ? 5 : 4} y={boss ? 25 : 25} width={boss ? 24 : 19} height="2" fill="#d59ab2" />
+          <rect x={boss ? 6 : 5} y={boss ? 27 : 27} width={boss ? 22 : 17} height="3" fill="#2b121d" />
+          <rect x={boss ? 2 : 2} y={boss ? 23 : 22} width={boss ? 10 : 8} height="4" fill={colors.a} />
+          <rect x={boss ? 0 : 0} y={boss ? 27 : 26} width={boss ? 10 : 8} height="3" fill={colors.a} />
+          <rect x={boss ? 22 : 19} y={boss ? 22 : 22} width={boss ? 10 : 8} height="4" fill={colors.a} />
+          <rect x={boss ? 25 : 22} y={boss ? 26 : 26} width={boss ? 8 : 6} height="3" fill={colors.a} />
+          <rect x={boss ? 8 : 7} y={boss ? 30 : 30} width={boss ? 18 : 15} height="3" fill="#1a0a10" />
+          <rect x={boss ? 10 : 9} y={boss ? 33 : 32} width={boss ? 13 : 10} height={boss ? 3 : 2} fill="#10070b" />
+          {boss && <rect x="15" y="0" width="5" height="4" fill="#b30f2a" />}
+          <rect x={boss ? 13 : 11} y={boss ? 5 : 6} width="1" height="6" fill={grime} />
+          <rect x={boss ? 14 : 12} y={boss ? 10 : 11} width="2" height="1" fill={grime} />
+          <rect x={boss ? 22 : 18} y={boss ? 5 : 6} width="1" height="8" fill={grime} opacity="0.8" />
+          <rect x={boss ? 16 : 13} y={boss ? 18 : 18} width="1" height="8" fill="#090609" opacity="0.7" />
+          <rect x={boss ? 18 : 15} y={boss ? 28 : 27} width="3" height="1" fill={red} opacity="0.75" />
         </>
       )}
       {kind === "monkey" && (
@@ -1613,9 +1701,11 @@ function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }
           <rect x="6" y="8" width="16" height="13" fill={colors.a} />
           <rect x="3" y="10" width="5" height="7" fill={colors.b} />
           <rect x="20" y="10" width="5" height="7" fill={colors.b} />
-          <rect x="9" y="12" width="3" height="3" fill={colors.e} />
-          <rect x="16" y="12" width="3" height="3" fill={colors.e} />
-          <rect x="11" y="16" width="6" height="3" fill={colors.c} />
+          <rect x="8" y="11" width="5" height="5" fill="#140807" />
+          <rect x="15" y="11" width="5" height="5" fill="#140807" />
+          <rect x="10" y="13" width="2" height="2" fill={colors.e} />
+          <rect x="17" y="13" width="2" height="2" fill={colors.e} />
+          <rect x="10" y="16" width="8" height="4" fill={colors.c} />
           <rect x="9" y="21" width="10" height="9" fill={colors.b} />
           <rect x="4" y="22" width="5" height="4" fill={colors.c} />
           <rect x="19" y="22" width="5" height="4" fill={colors.c} />
@@ -1639,25 +1729,27 @@ function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }
           <rect x="6" y="0" width="1" height="34" fill="#5b3928" opacity="0.75" />
           <rect x="13" y="0" width="1" height="34" fill="#5b3928" opacity="0.65" />
           <rect x="22" y="0" width="1" height="34" fill="#5b3928" opacity="0.75" />
-          <rect x="7" y="5" width="14" height="14" fill={colors.a} />
-          <rect x="4" y="6" width="5" height="6" fill="#d64545" />
-          <rect x="19" y="6" width="5" height="6" fill="#25528f" />
-          <rect x="9" y="11" width="3" height="3" fill={colors.e} />
-          <rect x="16" y="11" width="3" height="3" fill={colors.e} />
-          <rect x="13" y="14" width="3" height="3" fill="#d4001f" />
-          <rect x="9" y="18" width="11" height="2" fill="#5b0408" />
-          <rect x="6" y="21" width="16" height="10" fill={colors.b} />
-          <rect x="12" y="21" width="5" height="10" fill={colors.c} />
-          <rect x="2" y="22" width="5" height="8" fill={colors.c} />
-          <rect x="21" y="22" width="5" height="8" fill={colors.b} />
-          <rect x="8" y="31" width="5" height="3" fill="#111" />
-          <rect x="16" y="31" width="5" height="3" fill="#111" />
+          <rect x="5" y="5" width="5" height="6" fill="#7a161e" />
+          <rect x="18" y="5" width="5" height="6" fill="#7a161e" />
+          <rect x="7" y="6" width="14" height="13" fill={colors.a} />
+          <rect x="9" y="11" width="3" height="4" fill={colors.e} />
+          <rect x="16" y="11" width="3" height="4" fill={colors.e} />
+          <rect x="13" y="14" width="3" height="3" fill="#b40022" />
+          <rect x="8" y="18" width="13" height="2" fill="#5b0408" />
+          <rect x="9" y="20" width="2" height="1" fill="#f2eee3" />
+          <rect x="13" y="20" width="2" height="1" fill="#f2eee3" />
+          <rect x="17" y="20" width="2" height="1" fill="#f2eee3" />
+          <rect x="5" y="21" width="18" height="3" fill="#d8c8b5" />
+          <rect x="7" y="24" width="14" height="9" fill={colors.c} />
+          <rect x="11" y="24" width="5" height="9" fill="#6b2432" />
+          <rect x="1" y="23" width="5" height="9" fill="#182944" />
+          <rect x="22" y="23" width="5" height="9" fill="#6b2432" />
+          <rect x="0" y="31" width="4" height="2" fill="#d8d0c8" />
+          <rect x="25" y="31" width="3" height="2" fill="#d8d0c8" />
+          <rect x="8" y="33" width="5" height="1" fill="#111" />
+          <rect x="16" y="33" width="5" height="1" fill="#111" />
           <rect x="10" y="8" width="2" height="1" fill={grime} />
           <rect x="17" y="9" width="2" height="1" fill={grime} />
-          <rect x="8" y="19" width="2" height="1" fill="#f2eee3" />
-          <rect x="13" y="19" width="2" height="1" fill="#f2eee3" />
-          <rect x="18" y="19" width="2" height="1" fill="#f2eee3" />
-          <rect x="24" y="25" width="1" height="7" fill="#d8d0c8" />
         </>
       )}
       {kind === "puppet" && (
@@ -1684,29 +1776,26 @@ function ToyMonster({ kind, size = 80, facing = -1, hurt = false, boss = false }
 function ScaryMenuScene() {
   // Atmospheric hero for the main menu: Lana scared in the middle,
   // Karl & Dina slightly distorted to the sides, with toy-monsters looming in
-  // the background behind translucent puppet strings — "manipulating" the kids.
+  // the background behind translucent puppet strings вЂ” "manipulating" the kids.
   return (
     <div className="scary-menu-scene">
       <div className="scary-menu-vignette" />
       <div className="scary-menu-fog" />
       <div className="scary-menu-title">
         <div className="scary-menu-title-main">WELCOME BACK TO SCHOOL</div>
-        <div className="scary-menu-title-sub">they never stopped playing…</div>
+        <div className="scary-menu-title-sub">РѕРЅРё РІСЃС‘ РµС‰С‘ Р¶РґСѓС‚ РґРµС‚РµР№вЂ¦</div>
       </div>
 
-      {/* Background monsters — large, dim, looming, with puppet strings */}
+      {/* Background monsters вЂ” large, dim, looming, with puppet strings */}
       <div className="scary-bg-monsters">
         <div className="scary-bg-monster scary-bg-bear">
-          <ToyMonster kind="bear" size={210} />
-        </div>
-        <div className="scary-bg-monster scary-bg-doll">
-          <ToyMonster kind="porcelain" size={230} />
+          <MenuArtMonster kind="bear" size={210} />
         </div>
         <div className="scary-bg-monster scary-bg-clown">
-          <ToyMonster kind="clown" size={220} />
+          <MenuArtMonster kind="clown" size={220} />
         </div>
         <div className="scary-bg-monster scary-bg-monkey">
-          <ToyMonster kind="monkey" size={170} />
+          <MenuArtMonster kind="monkey" size={170} />
         </div>
         {/* Puppet strings reaching down toward the children */}
         <svg className="scary-puppet-strings" viewBox="0 0 1000 360" preserveAspectRatio="none" aria-hidden>
@@ -1724,16 +1813,16 @@ function ScaryMenuScene() {
       {/* Foreground children */}
       <div className="scary-menu-kids">
         <div className="scary-menu-kid scary-menu-karl">
-          <PixelTeen kind="karl" size={150} facing={1} motion="scared" />
-          <div className="scary-menu-label">КАРЛ</div>
+          <MenuArtCharacter kind="karl" size={165} facing={1} motion="scared" />
+          <div className="scary-menu-label">РљРђР Р›</div>
         </div>
         <div className="scary-menu-kid scary-menu-lana">
-          <PixelTeen kind="lana" size={180} facing={1} scared motion="scared" />
-          <div className="scary-menu-label scary-menu-label-main">ЛАНА</div>
+          <MenuArtCharacter kind="lana" size={190} facing={1} scared motion="scared" />
+          <div className="scary-menu-label scary-menu-label-main">Р›РђРќРђ</div>
         </div>
         <div className="scary-menu-kid scary-menu-dina">
-          <PixelTeen kind="dina" size={150} facing={-1} motion="scared" />
-          <div className="scary-menu-label">ДИНА</div>
+          <MenuArtCharacter kind="dina" size={165} facing={-1} motion="scared" />
+          <div className="scary-menu-label">Р”РРќРђ</div>
         </div>
       </div>
 
@@ -1765,7 +1854,7 @@ function CharacterDesignBoard() {
           <div key={m.title} className="design-panel">
             <div className="design-panel-title">{m.title}</div>
             <div className="design-sprite-stage">
-              <ToyMonster kind={m.kind} size={m.size} boss={m.boss} />
+              <MenuArtMonster kind={m.kind} size={m.size} boss={m.boss} />
             </div>
             <div className="design-panel-note">{m.note}</div>
           </div>
@@ -1776,7 +1865,7 @@ function CharacterDesignBoard() {
           <div key={t.title} className="design-panel design-panel-teen">
             <div className="design-panel-title">{t.title}</div>
             <div className="design-sprite-stage">
-              <PixelTeen kind={t.kind} size={t.size} facing={t.facing ?? 1} scared={t.kind === "lana"} />
+              <MenuArtCharacter kind={t.kind} size={t.kind === "lana" ? 145 : 125} facing={t.facing ?? 1} scared={t.kind === "lana"} />
             </div>
             <div className="design-panel-note">{t.note}</div>
           </div>
@@ -1787,12 +1876,12 @@ function CharacterDesignBoard() {
 }
 
 // ---- Mr. Hopp-style plush horror sprite ----
-// Replaces the old pixel zombie with a ragged plush rabbit-monster: long
+// Replaces the old pixel doll with a ragged plush rabbit-monster: long
 // floppy ears, oversized round black button eyes with red pinpoint pupils,
 // stitched mouth full of jagged teeth, torn fabric body.
-function PixelZombie({ size = 80, facing = -1, hurt = false, boss = false }:
+function PixelDoll({ size = 80, facing = -1, hurt = false, boss = false }:
   { size?: number; facing?: 1 | -1; hurt?: boolean; boss?: boolean }) {
-  // Plush body palette — sickly rotted green for normal zombies, pink Mr Hopp plush for boss
+  // Plush body palette вЂ” sickly rotted green for normal dolls, pink Mr Hopp plush for boss
   const FUR = boss ? "#e89cb4" : "#4a7a38";
   const FURD = boss ? "#a4607a" : "#2a4a1a";
   const FURL = boss ? "#f8c0d4" : "#6aa050";
@@ -1827,7 +1916,7 @@ function PixelZombie({ size = 80, facing = -1, hurt = false, boss = false }:
       <rect x={boss ? 6 : 4} y="2" width={boss ? 2 : 1} height={boss ? 7 : 5} fill={boss ? "#c8587a" : "#2a3a18"} />
       <rect x={boss ? 20 : 17} y="2" width={boss ? 2 : 1} height={boss ? 7 : 5} fill={boss ? "#c8587a" : "#2a3a18"} />
 
-      {/* Head — round plush */}
+      {/* Head вЂ” round plush */}
       <rect x={boss ? 4 : 2} y={boss ? 8 : 5} width={boss ? 20 : 18} height={boss ? 14 : 11} fill={FUR} />
       <rect x={boss ? 4 : 2} y={boss ? 8 : 5} width={boss ? 20 : 18} height={2} fill={FURL} />
       <rect x={boss ? 4 : 2} y={boss ? 20 : 14} width={boss ? 20 : 18} height={2} fill={FURD} />
@@ -1859,7 +1948,7 @@ function PixelZombie({ size = 80, facing = -1, hurt = false, boss = false }:
       {/* mouth stitch lines */}
       <rect x={boss ? 8 : 6} y={boss ? 20 : 14} width="1" height="1" fill={STITCH} />
       <rect x={boss ? 19 : 15} y={boss ? 20 : 14} width="1" height="1" fill={STITCH} />
-      {/* Body — torn plush torso */}
+      {/* Body вЂ” torn plush torso */}
       <rect x={boss ? 6 : 4} y={boss ? 22 : 16} width={boss ? 16 : 14} height={boss ? 9 : 7} fill={FUR} />
       {/* belly patch */}
       <rect x={boss ? 9 : 7} y={boss ? 23 : 17} width={boss ? 10 : 8} height={boss ? 7 : 5} fill={BELLY} />
@@ -1888,7 +1977,7 @@ function PixelZombie({ size = 80, facing = -1, hurt = false, boss = false }:
 }
 
 
-// ============== BOSS ARENA — bat-vs-Hopp combat ==============
+// ============== BOSS ARENA вЂ” bat-vs-Hopp combat ==============
 function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void }) {
   const ARENA_W = 720;
   const ARENA_H = 360;
@@ -1921,7 +2010,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
     const dn = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
       keys.current[k] = true;
-      if ((k === " " || k === "w" || k === "arrowup" || k === "ц") && jumpY.current === 0 && jumpV.current === 0) {
+      if ((k === " " || k === "w" || k === "arrowup" || k === "С†") && jumpY.current === 0 && jumpV.current === 0) {
         jumpV.current = -11;
       }
     };
@@ -1938,8 +2027,8 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
       const dt = Math.min(50, now - last); last = now;
       // movement
       let dx = 0;
-      if (keys.current["a"] || keys.current["arrowleft"] || keys.current["ф"]) { dx -= 1; setFacing(-1); }
-      if (keys.current["d"] || keys.current["arrowright"] || keys.current["в"]) { dx += 1; setFacing(1); }
+      if (keys.current["a"] || keys.current["arrowleft"] || keys.current["С„"]) { dx -= 1; setFacing(-1); }
+      if (keys.current["d"] || keys.current["arrowright"] || keys.current["РІ"]) { dx += 1; setFacing(1); }
       if (dx) setLanaX(p => clamp(p + dx * 4.2, 30, ARENA_W - 60));
       // gravity
       if (jumpV.current !== 0 || jumpY.current > 0) {
@@ -1997,7 +2086,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
   return (
     <div className="flex flex-col items-center gap-2 max-w-full">
       <div className="flex items-center justify-between w-full px-2">
-        <div className="font-display text-red-400">THE PORCELAIN MATRON — BOSS</div>
+        <div className="font-display text-red-400">THE PORCELAIN MATRON вЂ” BOSS</div>
         <div className="flex gap-0.5">{Array.from({ length: 10 }).map((_, i) => (
           <Heart key={i} className={`h-4 w-4 ${i < bossHp ? "fill-red-500 text-red-500" : "text-zinc-700"}`} />
         ))}</div>
@@ -2010,7 +2099,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
         {/* Boss */}
         <div className="absolute" style={{ left: bossX - 100, bottom: FLOOR_PX + bossY - 6 }}>
           <div style={{ filter: bossHurt ? "brightness(2.5) hue-rotate(-40deg)" : "drop-shadow(0 0 10px rgba(255,0,0,0.6))" }}>
-            <ToyMonster kind="porcelain" size={220} boss facing={lanaXRef.current > bossX ? 1 : -1} />
+            <MenuArtMonster kind="porcelain" size={220} boss facing={lanaXRef.current > bossX ? 1 : -1} />
           </div>
         </div>
         {/* Debris */}
@@ -2021,14 +2110,14 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
         {batSpawn && (
           <div className="absolute" style={{ left: batSpawn.x - 22, bottom: FLOOR_PX - 4, width: 44, height: 44 }}>
             <div className="absolute inset-0 rounded-full animate-pulse" style={{ background: "radial-gradient(circle,#fff48a 0%,rgba(255,200,40,0.6) 35%,transparent 70%)", filter: "blur(3px)" }} />
-            <div className="absolute inset-0 flex items-center justify-center text-3xl" style={{ filter: "drop-shadow(0 0 8px #ffec8a)" }}>🏏</div>
+            <div className="absolute inset-0 flex items-center justify-center text-3xl" style={{ filter: "drop-shadow(0 0 8px #ffec8a)" }}>рџЏЏ</div>
           </div>
         )}
         {/* Lana */}
         <div className="absolute" style={{ left: lanaX - 28, bottom: FLOOR_PX - 6 + lanaY }}>
-          <PixelHuman palette={PAL_LANA} facing={facing} size={70} variant="girl" />
+          <MenuArtCharacter kind="lana" facing={facing} size={150} scared={lanaHp < 35} motion={lanaHp < 35 ? "scared" : "idle"} />
           {hasBat && (
-            <div className="absolute" style={{ top: 14, left: facing === 1 ? 36 : -14, fontSize: 24, transform: `scaleX(${facing}) rotate(${facing === 1 ? -28 : 28}deg)`, filter: "drop-shadow(0 0 8px #ffec8a)" }}>🏏</div>
+            <div className="absolute" style={{ top: 14, left: facing === 1 ? 36 : -14, fontSize: 24, transform: `scaleX(${facing}) rotate(${facing === 1 ? -28 : 28}deg)`, filter: "drop-shadow(0 0 8px #ffec8a)" }}>рџЏЏ</div>
           )}
         </div>
         {/* Lana HP */}
@@ -2040,7 +2129,7 @@ function BossFight({ onWin, onLose }: { onWin: () => void; onLose: () => void })
           <span className="font-mono text-[10px]">{lanaHp}</span>
         </div>
         <div className="absolute bottom-1 left-2 text-[9px] font-pixel text-amber-300/80 bg-black/70 px-2 py-0.5 rounded">
-          A/D move · SPACE jump · grab bat then ram the doll · dodge debris!
+          A/D move В· SPACE jump В· grab bat then ram the doll В· dodge debris!
         </div>
       </div>
     </div>
@@ -2052,13 +2141,13 @@ const SPEED = 3.5;
 const VIEW_H = 520;
 const REACH = 70;
 
-// Task time limits (seconds). aim has its own timer.
+// Р’СЂРµРјСЏ Р·Р°РґР°РЅРёСЏ limits (seconds). aim has its own timer.
 const TIME_LIMITS: Record<TaskKind, number | null> = {
-  wires: 14, download: 10, reactor: 22,
-  trash: 12, switches: 10, quiz: 10, aim: null,
+  wires: 50, download: 36, reactor: 44,
+  trash: 36, switches: 36, quiz: 34, aim: null,
 };
 
-// Countdown above each task — calls onTimeout when 0.
+// Countdown above each task вЂ” calls onTimeout when 0.
 function TaskTimer({ seconds, onTimeout }: { seconds: number; onTimeout: () => void }) {
   const [left, setLeft] = useState(seconds);
   const firedRef = useRef(false);
@@ -2081,7 +2170,7 @@ function TaskTimer({ seconds, onTimeout }: { seconds: number; onTimeout: () => v
   return (
     <div className="mb-3">
       <div className="flex justify-between text-[11px] font-pixel mb-1">
-        <span className={danger ? "text-red-400 animate-pulse" : "text-amber-300"}>⏱ Task time</span>
+        <span className={danger ? "text-red-400 animate-pulse" : "text-amber-300"}>вЏ± Р’СЂРµРјСЏ Р·Р°РґР°РЅРёСЏ</span>
         <span className={`font-mono ${danger ? "text-red-400" : "text-amber-200"}`}>{left.toFixed(1)}s</span>
       </div>
       <div className="h-2 bg-black/70 rounded overflow-hidden border border-amber-700/40">
@@ -2092,42 +2181,42 @@ function TaskTimer({ seconds, onTimeout }: { seconds: number; onTimeout: () => v
   );
 }
 
-// ====== Зомби-рука, тянущаяся через окно ======
-function ZombieHand({ delay = 0 }: { delay?: number }) {
+// ====== РљСѓРєРѕР»СЊРЅР°СЏ СЂСѓРєР°, С‚СЏРЅСѓС‰Р°СЏСЃСЏ С‡РµСЂРµР· РѕРєРЅРѕ ======
+function DollHand({ delay = 0 }: { delay?: number }) {
   return (
     <svg viewBox="0 0 40 70" width={40} height={70}
       style={{ animation: `lana-walk 1.8s ease-in-out infinite`, animationDelay: `${delay}s`, transformOrigin: "50% 0%" }}>
-      {/* предплечье */}
-      <rect x="14" y="20" width="12" height="38" fill="#5a7a4a" stroke="#1a2a14" strokeWidth="1.5" />
-      <rect x="14" y="30" width="12" height="3" fill="#3a5a2a" opacity="0.7" />
-      <rect x="14" y="45" width="12" height="3" fill="#3a5a2a" opacity="0.7" />
-      {/* кровавые царапины */}
-      <line x1="16" y1="25" x2="22" y2="35" stroke="#7a0a0a" strokeWidth="1.2" />
-      <line x1="20" y1="40" x2="24" y2="50" stroke="#7a0a0a" strokeWidth="1.2" />
-      {/* ладонь */}
-      <rect x="12" y="6" width="16" height="16" fill="#6a8a5a" stroke="#1a2a14" strokeWidth="1.5" />
-      {/* пальцы */}
-      <rect x="11" y="0" width="3" height="10" fill="#6a8a5a" stroke="#1a2a14" strokeWidth="1" />
-      <rect x="15" y="-2" width="3" height="12" fill="#6a8a5a" stroke="#1a2a14" strokeWidth="1" />
-      <rect x="19" y="-2" width="3" height="12" fill="#6a8a5a" stroke="#1a2a14" strokeWidth="1" />
-      <rect x="23" y="0" width="3" height="10" fill="#6a8a5a" stroke="#1a2a14" strokeWidth="1" />
-      {/* ногти */}
-      <rect x="11" y="0" width="3" height="2" fill="#3a0a0a" />
-      <rect x="15" y="-2" width="3" height="2" fill="#3a0a0a" />
-      <rect x="19" y="-2" width="3" height="2" fill="#3a0a0a" />
-      <rect x="23" y="0" width="3" height="2" fill="#3a0a0a" />
+      {/* РїСЂРµРґРїР»РµС‡СЊРµ */}
+      <rect x="14" y="20" width="12" height="38" fill="#d8c7b6" stroke="#4a342e" strokeWidth="1.5" />
+      <rect x="14" y="30" width="12" height="3" fill="#8b6f63" opacity="0.55" />
+      <rect x="14" y="45" width="12" height="3" fill="#8b6f63" opacity="0.45" />
+      {/* С„Р°СЂС„РѕСЂРѕРІС‹Рµ С‚СЂРµС‰РёРЅС‹ */}
+      <line x1="16" y1="25" x2="22" y2="35" stroke="#4a342e" strokeWidth="1.1" />
+      <line x1="20" y1="40" x2="24" y2="50" stroke="#4a342e" strokeWidth="1.1" />
+      {/* Р»Р°РґРѕРЅСЊ */}
+      <rect x="12" y="6" width="16" height="16" fill="#ead9c8" stroke="#4a342e" strokeWidth="1.5" />
+      {/* РїР°Р»СЊС†С‹ */}
+      <rect x="11" y="0" width="3" height="10" fill="#ead9c8" stroke="#4a342e" strokeWidth="1" />
+      <rect x="15" y="-2" width="3" height="12" fill="#ead9c8" stroke="#4a342e" strokeWidth="1" />
+      <rect x="19" y="-2" width="3" height="12" fill="#ead9c8" stroke="#4a342e" strokeWidth="1" />
+      <rect x="23" y="0" width="3" height="10" fill="#ead9c8" stroke="#4a342e" strokeWidth="1" />
+      {/* РЅРѕРіС‚Рё */}
+      <rect x="11" y="0" width="3" height="2" fill="#211818" />
+      <rect x="15" y="-2" width="3" height="2" fill="#211818" />
+      <rect x="19" y="-2" width="3" height="2" fill="#211818" />
+      <rect x="23" y="0" width="3" height="2" fill="#211818" />
     </svg>
   );
 }
 
-// ====== Точка поиска в комнате ======
-function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
-  { spot: SearchSpot; taken: boolean; lit: boolean; hasKey?: boolean; hasBat?: boolean; onClick: () => void }) {
+// ====== РўРѕС‡РєР° РїРѕРёСЃРєР° РІ РєРѕРјРЅР°С‚Рµ ======
+function SpotEl({ spot, taken, lit, active, hasKey, hasBat }:
+  { spot: SearchSpot; taken: boolean; lit: boolean; active: boolean; hasKey?: boolean; hasBat?: boolean }) {
   const x = spot.x;
   let body: React.ReactNode = null;
   let labelTop = 0;
   if (spot.where === "desk") {
-    // парта
+    // РїР°СЂС‚Р°
     body = (
       <div className="absolute" style={{ left: x - 50, bottom: 24, width: 100, height: 56 }}>
         <div className="absolute left-0 right-0 top-0 h-3 bg-[#8a6a3a] border-2 border-[#3a2a14]" />
@@ -2138,13 +2227,13 @@ function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
     );
     labelTop = 8;
   } else if (spot.where === "underDesk") {
-    // под партой — щель
+    // РїРѕРґ РїР°СЂС‚РѕР№ вЂ” С‰РµР»СЊ
     body = (
       <div className="absolute" style={{ left: x - 50, bottom: 24, width: 100, height: 56 }}>
         <div className="absolute left-0 right-0 top-0 h-3 bg-[#7a5a2a] border-2 border-[#2a1a08]" />
         <div className="absolute left-2 top-3 bottom-0 w-3 bg-[#4a2a14] border-2 border-[#1a0a00]" />
         <div className="absolute right-2 top-3 bottom-0 w-3 bg-[#4a2a14] border-2 border-[#1a0a00]" />
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-2 text-[9px] font-pixel text-amber-200/70">↓ under desk</div>
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-2 text-[9px] font-pixel text-amber-200/70">в†“ under desk</div>
       </div>
     );
     labelTop = 56;
@@ -2181,17 +2270,19 @@ function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
     labelTop = -10;
   }
   return (
-    <button
-      onClick={onClick}
-      disabled={taken}
-      className={`group ${taken ? "opacity-40 cursor-default" : "hover:brightness-125 cursor-pointer"}`}
-      style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%", background: "transparent", border: 0, pointerEvents: "none" }}
+    <div
+      className={`group ${taken ? "opacity-40" : ""}`}
+      style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%", pointerEvents: "none" }}
     >
-      <div style={{ pointerEvents: taken ? "none" : "auto", position: "absolute", inset: 0 }}>
+      <div style={{ position: "absolute", inset: 0 }}>
         {body}
-        {/* кликабельная подсветка зоны */}
+        {/* РєР»РёРєР°Р±РµР»СЊРЅР°СЏ РїРѕРґСЃРІРµС‚РєР° Р·РѕРЅС‹ */}
         <div className="absolute" style={{ left: x - 50, bottom: 18, width: 100, height: 110 }}>
-          <div className="absolute inset-0 border border-amber-300/0 group-hover:border-amber-300/60 group-hover:bg-amber-200/5 rounded" />
+          <div className={`absolute inset-0 rounded transition ${
+            active && !taken
+              ? "border-2 border-emerald-300/90 bg-emerald-200/10 shadow-[0_0_22px_rgba(110,231,183,0.45)]"
+              : "border border-amber-300/0"
+          }`} />
         </div>
         {!taken && lit && (spot.item || hasKey || hasBat) && (
           <div
@@ -2208,41 +2299,47 @@ function SpotEl({ spot, taken, lit, hasKey, hasBat, onClick }:
             }}
             title={hasKey ? "Key" : hasBat ? "Bat" : spot.item?.name}
           >
-            {hasKey ? "🗝" : hasBat ? "🏏" : spot.item!.emoji}
+            {hasKey ? "рџ—ќ" : hasBat ? "рџЏЏ" : spot.item!.emoji}
           </div>
         )}
         {!taken && (
           <div className={`absolute font-pixel text-[10px] rounded px-1 animate-pulse border ${lit ? "text-amber-200 bg-black/80 border-amber-400/50" : "text-zinc-400 bg-black/80 border-zinc-700"}`}
             style={{ left: x - 24, bottom: 160 + labelTop }}>
-            {lit ? "🔍 search" : "???"}
+            {lit ? "рџ”Ќ search" : "???"}
+          </div>
+        )}
+        {!taken && active && (
+          <div className="absolute font-pixel text-[12px] rounded px-2 py-1 animate-pulse border text-emerald-100 bg-emerald-950/90 border-emerald-300/80 shadow-[0_0_18px_rgba(110,231,183,0.45)]"
+            style={{ left: x - 34, bottom: 188 + labelTop }}>
+            E РІР·СЏС‚СЊ
           </div>
         )}
         {taken && (spot.item || hasKey || hasBat) && (
           <div className="absolute font-pixel text-emerald-300 text-[13px]"
             style={{ left: x - 14, bottom: 135 + labelTop }}>
-            ✓ {hasKey ? "🗝" : hasBat ? "🏏" : spot.item!.emoji}
+            вњ“ {hasKey ? "рџ—ќ" : hasBat ? "рџЏЏ" : spot.item!.emoji}
           </div>
         )}
         {taken && !spot.item && !hasKey && !hasBat && (
           <div className="absolute font-pixel text-zinc-500 text-[10px]"
             style={{ left: x - 14, bottom: 135 + labelTop }}>
-            ✗ empty
+            вњ— empty
           </div>
         )}
       </div>
-    </button>
+    </div>
   );
 }
 
-// Детерминированный квест для класса: определяет, какая точка прячет ключ.
-// Бита спавнится РЕДКО — только в одном классе на этаж (классу с наименьшим x).
+// Р”РµС‚РµСЂРјРёРЅРёСЂРѕРІР°РЅРЅС‹Р№ РєРІРµСЃС‚ РґР»СЏ РєР»Р°СЃСЃР°: РѕРїСЂРµРґРµР»СЏРµС‚, РєР°РєР°СЏ С‚РѕС‡РєР° РїСЂСЏС‡РµС‚ РєР»СЋС‡.
+// Р‘РёС‚Р° СЃРїР°РІРЅРёС‚СЃСЏ Р Р•Р”РљРћ вЂ” С‚РѕР»СЊРєРѕ РІ РѕРґРЅРѕРј РєР»Р°СЃСЃРµ РЅР° СЌС‚Р°Р¶ (РєР»Р°СЃСЃСѓ СЃ РЅР°РёРјРµРЅСЊС€РёРј x).
 function getClassroomQuest(classroom: Classroom, levelId: number) {
   let h = 0;
   for (let i = 0; i < classroom.id.length; i++) h = (h * 31 + classroom.id.charCodeAt(i)) >>> 0;
   h = (h + levelId * 997) >>> 0;
   const n = classroom.spots.length;
   const keyIdx = h % n;
-  // Бита — только в первом классе уровня (один на этаж)
+  // Р‘РёС‚Р° вЂ” С‚РѕР»СЊРєРѕ РІ РїРµСЂРІРѕРј РєР»Р°СЃСЃРµ СѓСЂРѕРІРЅСЏ (РѕРґРёРЅ РЅР° СЌС‚Р°Р¶)
   const lvl = levels.find(l => l.id === levelId);
   const isBatClass = !!lvl && lvl.classrooms[0]?.id === classroom.id;
   let batIdx = isBatClass ? ((h * 7 + 3) % n) : -1;
@@ -2250,10 +2347,213 @@ function getClassroomQuest(classroom: Classroom, levelId: number) {
   return { keyIdx, batIdx, hasBat: isBatClass };
 }
 
-const KEY_ITEM: LootItem = { name: "Door key", emoji: "🗝", strengthGain: 0 };
-const BAT_ITEM: LootItem = { name: "Baseball bat", emoji: "🏏", strengthGain: 0 };
+const KEY_ITEM: LootItem = { name: "Door key", emoji: "рџ—ќ", strengthGain: 0 };
+const BAT_ITEM: LootItem = { name: "Baseball bat", emoji: "рџЏЏ", strengthGain: 0 };
 
-// ====== Сцена внутри класса ======
+type ClassroomTheme = {
+  kind: "math" | "physics" | "lab" | "computer" | "music" | "art" | "library" | "cafeteria" | "gym" | "history" | "storage" | "default";
+  board: string[];
+  wall: string;
+  floor: string;
+  accent: string;
+  light: string;
+};
+
+function getClassroomTheme(name: string): ClassroomTheme {
+  const n = name.toLowerCase();
+  if (/math|РјР°С‚/.test(n)) return {
+    kind: "math",
+    board: ["x + 7 = ?", "2 + 2 = 4", "FIND KEY"],
+    wall: "linear-gradient(180deg,#181528,#0d0b18 72%,#07040d)",
+    floor: "repeating-linear-gradient(90deg,#24212d 0 48px,#1b1823 48px 96px)",
+    accent: "#8fb6ff",
+    light: "rgba(120,170,255,0.14)",
+  };
+  if (/physics|С„РёР·|astronomy|Р°СЃС‚СЂ/.test(n)) return {
+    kind: "physics",
+    board: ["E = mcВІ", "ORBIT SHIFT", "KEY?"],
+    wall: "linear-gradient(180deg,#101a2a,#090d18 72%,#05060d)",
+    floor: "repeating-linear-gradient(90deg,#1f2630 0 54px,#171d25 54px 108px)",
+    accent: "#76d7ff",
+    light: "rgba(118,215,255,0.13)",
+  };
+  if (/lab|laboratory|biology|Р±РёРѕ|С…РёРј/.test(n)) return {
+    kind: "lab",
+    board: ["DO NOT MIX", "PH 7?", "LOCKED"],
+    wall: "linear-gradient(180deg,#10251e,#07140f 72%,#040907)",
+    floor: "repeating-linear-gradient(90deg,#1d2a22 0 50px,#141f18 50px 100px)",
+    accent: "#55d889",
+    light: "rgba(80,220,140,0.13)",
+  };
+  if (/computer|server|РєРѕРјРї/.test(n)) return {
+    kind: "computer",
+    board: ["LOGIN: ???", "POWER LOW", "KEY FILE"],
+    wall: "linear-gradient(180deg,#0b1722,#060b13 72%,#030509)",
+    floor: "repeating-linear-gradient(90deg,#121d26 0 45px,#0d151d 45px 90px)",
+    accent: "#41e0c8",
+    light: "rgba(65,224,200,0.13)",
+  };
+  if (/music|РјСѓР·/.test(n)) return {
+    kind: "music",
+    board: ["PLAY QUIET", "la la...", "KEY NOTE"],
+    wall: "linear-gradient(180deg,#211326,#110814 72%,#09040a)",
+    floor: "repeating-linear-gradient(90deg,#2a1b2c 0 50px,#201421 50px 100px)",
+    accent: "#d7a7ff",
+    light: "rgba(215,167,255,0.13)",
+  };
+  if (/art|studio|РёСЃРєСѓСЃ|СЂРёСЃ/.test(n)) return {
+    kind: "art",
+    board: ["RED PAINT?", "DON'T LOOK", "KEY"],
+    wall: "linear-gradient(180deg,#261816,#120a09 72%,#080403)",
+    floor: "repeating-linear-gradient(90deg,#2d211b 0 52px,#211813 52px 104px)",
+    accent: "#ff8a66",
+    light: "rgba(255,138,102,0.12)",
+  };
+  if (/library|archive|Р»РёС‚|Р±РёР±Р»/.test(n)) return {
+    kind: "library",
+    board: ["SILENCE", "BOOK 13", "KEY PAGE"],
+    wall: "linear-gradient(180deg,#201713,#100b08 72%,#080403)",
+    floor: "repeating-linear-gradient(90deg,#2b2117 0 46px,#21180f 46px 92px)",
+    accent: "#d6ad68",
+    light: "rgba(214,173,104,0.12)",
+  };
+  if (/cafeteria|canteen|РєСѓС…|СЃС‚РѕР»РѕРІ/.test(n)) return {
+    kind: "cafeteria",
+    board: ["LUNCH 00:00", "NO FOOD", "KEY TRAY"],
+    wall: "linear-gradient(180deg,#241914,#120c08 72%,#080403)",
+    floor: "repeating-linear-gradient(90deg,#2c2119 0 58px,#211811 58px 116px)",
+    accent: "#f0b45f",
+    light: "rgba(240,180,95,0.12)",
+  };
+  if (/gym|СЃРїРѕСЂС‚/.test(n)) return {
+    kind: "gym",
+    board: ["RUN QUIET", "LOCKER 4", "KEY"],
+    wall: "linear-gradient(180deg,#1c1c24,#0f0f16 72%,#07070b)",
+    floor: "repeating-linear-gradient(90deg,#302416 0 70px,#241b10 70px 140px)",
+    accent: "#f4d35e",
+    light: "rgba(244,211,94,0.12)",
+  };
+  if (/history|geo|map|РёСЃС‚|РіРµРѕ/.test(n)) return {
+    kind: "history",
+    board: ["OLD MAP", "YEAR 19??", "KEY ROOM"],
+    wall: "linear-gradient(180deg,#231d16,#110d08 72%,#070403)",
+    floor: "repeating-linear-gradient(90deg,#2a2117 0 50px,#1e170f 50px 100px)",
+    accent: "#c9a36a",
+    light: "rgba(201,163,106,0.12)",
+  };
+  if (/storage|attic|locker|utility|boiler|basement|СЃРєР»Р°Рґ|С‡РµСЂРґР°Рє/.test(n)) return {
+    kind: "storage",
+    board: ["BOX 7", "DO NOT OPEN", "KEY"],
+    wall: "linear-gradient(180deg,#1b1715,#0e0a08 72%,#070403)",
+    floor: "repeating-linear-gradient(90deg,#251d17 0 52px,#1b1510 52px 104px)",
+    accent: "#a99b88",
+    light: "rgba(169,155,136,0.10)",
+  };
+  return {
+    kind: "default",
+    board: ["NO WAY OUT", "FIND THE KEY", "LISTEN"],
+    wall: "linear-gradient(180deg,#1a1018,#0d0610 70%,#080308)",
+    floor: "repeating-linear-gradient(90deg,#2a1f1a 0 50px,#1f1612 50px 100px)",
+    accent: "#f36458",
+    light: "rgba(243,100,88,0.11)",
+  };
+}
+
+function SubjectDecor({ theme }: { theme: ClassroomTheme }) {
+  const accent = theme.accent;
+  if (theme.kind === "math") return (
+    <>
+      <div className="absolute font-mono text-[13px] text-blue-200/65" style={{ left: 230, top: 42 }}>ПЂ В· в€љ9 В· 12%</div>
+      <div className="absolute border border-blue-200/30" style={{ left: 238, top: 82, width: 62, height: 38, transform: "rotate(-8deg)" }} />
+      <div className="absolute font-mono text-[11px] text-blue-100/55" style={{ left: 322, top: 120 }}>x = ?</div>
+    </>
+  );
+  if (theme.kind === "physics") return (
+    <>
+      <div className="absolute rounded-full border border-cyan-200/40" style={{ left: 236, top: 52, width: 72, height: 26, transform: "rotate(-22deg)" }} />
+      <div className="absolute rounded-full border border-cyan-200/35" style={{ left: 236, top: 52, width: 72, height: 26, transform: "rotate(22deg)" }} />
+      <div className="absolute rounded-full" style={{ left: 268, top: 60, width: 8, height: 8, background: accent, boxShadow: `0 0 16px ${accent}` }} />
+      <div className="absolute text-cyan-100/60 text-[24px]" style={{ left: 330, top: 82 }}>в„</div>
+    </>
+  );
+  if (theme.kind === "lab") return (
+    <>
+      <div className="absolute" style={{ left: 228, top: 96, width: 110, height: 52 }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} className="absolute bottom-0 border border-emerald-100/35" style={{ left: i * 35, width: 20, height: 36 + i * 8, background: "rgba(20,80,55,0.45)" }}>
+            <div className="absolute left-0 right-0 bottom-0" style={{ height: 10 + i * 6, background: accent, opacity: 0.45 }} />
+          </div>
+        ))}
+      </div>
+      <div className="absolute text-emerald-200/70 text-[18px]" style={{ left: 350, top: 50 }}>вЈ</div>
+    </>
+  );
+  if (theme.kind === "computer") return (
+    <>
+      {[0, 1, 2].map(i => (
+        <div key={i} className="absolute border border-cyan-300/30 bg-black/50" style={{ left: 220 + i * 48, top: 92, width: 36, height: 28 }}>
+          <div className="absolute left-1 right-1 top-1 h-1" style={{ background: accent, opacity: 0.7 }} />
+          <div className="absolute left-1 top-6 w-3 h-1 bg-cyan-200/50" />
+        </div>
+      ))}
+      <div className="absolute font-mono text-[10px] text-cyan-200/60" style={{ left: 224, top: 56 }}>0101 ACCESS</div>
+    </>
+  );
+  if (theme.kind === "music") return (
+    <>
+      <div className="absolute text-purple-200/65 text-[34px]" style={{ left: 230, top: 76 }}>в™Є</div>
+      <div className="absolute text-purple-200/50 text-[26px]" style={{ left: 300, top: 48 }}>в™«</div>
+      <div className="absolute border-l-4 border-purple-200/40" style={{ left: 360, top: 64, width: 30, height: 78, transform: "rotate(-12deg)" }} />
+    </>
+  );
+  if (theme.kind === "art") return (
+    <>
+      {["#8b0f19", "#e29b40", "#325f8f"].map((c, i) => (
+        <div key={c} className="absolute rounded-full" style={{ left: 225 + i * 36, top: 78 + i * 9, width: 24, height: 12, background: c, opacity: 0.75 }} />
+      ))}
+      <div className="absolute border border-orange-200/35" style={{ left: 328, top: 52, width: 54, height: 64, transform: "rotate(5deg)" }} />
+    </>
+  );
+  if (theme.kind === "library") return (
+    <>
+      <div className="absolute" style={{ left: 220, top: 50, width: 120, height: 92 }}>
+        <div className="absolute inset-0 bg-[#2b190f] border border-amber-900/70" />
+        {[0, 1, 2].map(i => <div key={i} className="absolute left-1 right-1 h-1 bg-black/60" style={{ top: 25 + i * 24 }} />)}
+        {Array.from({ length: 12 }).map((_, i) => <div key={i} className="absolute w-5 bg-amber-200/50" style={{ left: 6 + (i % 6) * 18, top: 7 + Math.floor(i / 6) * 28, height: 18 }} />)}
+      </div>
+    </>
+  );
+  if (theme.kind === "cafeteria") return (
+    <>
+      <div className="absolute bg-zinc-800/80 border border-zinc-500/40" style={{ left: 230, top: 116, width: 120, height: 18 }} />
+      <div className="absolute text-amber-200/70 text-[22px]" style={{ left: 246, top: 82 }}>рџЌЅ</div>
+      <div className="absolute text-amber-200/60 text-[18px]" style={{ left: 312, top: 88 }}>в•</div>
+    </>
+  );
+  if (theme.kind === "gym") return (
+    <>
+      <div className="absolute rounded-full border-4 border-amber-300/40" style={{ left: 232, top: 78, width: 42, height: 42 }} />
+      <div className="absolute rounded-full bg-orange-800/70 border border-orange-300/40" style={{ left: 308, top: 104, width: 28, height: 28 }} />
+      <div className="absolute h-1 bg-amber-200/40" style={{ left: 220, top: 58, width: 150 }} />
+    </>
+  );
+  if (theme.kind === "history") return (
+    <>
+      <div className="absolute bg-amber-100/20 border border-amber-200/35" style={{ left: 226, top: 48, width: 94, height: 70, transform: "rotate(-4deg)" }} />
+      <div className="absolute border-t border-amber-200/40" style={{ left: 238, top: 78, width: 60, transform: "rotate(15deg)" }} />
+      <div className="absolute font-mono text-[10px] text-amber-200/60" style={{ left: 334, top: 64 }}>1912</div>
+    </>
+  );
+  if (theme.kind === "storage") return (
+    <>
+      {[0, 1, 2].map(i => <div key={i} className="absolute bg-[#3a2b20] border border-[#15100b]" style={{ left: 222 + i * 42, top: 95 - i * 10, width: 38, height: 34 }} />)}
+      <div className="absolute text-zinc-300/50 text-[18px]" style={{ left: 352, top: 70 }}>вљ™</div>
+    </>
+  );
+  return null;
+}
+
+// ====== РЎС†РµРЅР° РІРЅСѓС‚СЂРё РєР»Р°СЃСЃР° ======
 function ClassroomScene({
   classroom, levelId, hasFlashlight, batteryPct, onCollect, onLeave,
   lanaPalette, onConsumeBattery, onToast,
@@ -2272,33 +2572,87 @@ function ClassroomScene({
   const lit = hasFlashlight && batteryPct > 0;
   const remaining = classroom.spots.filter(s => !taken.has(s.id)).length;
   const quest = useMemo(() => getClassroomQuest(classroom, levelId), [classroom, levelId]);
+  const theme = useMemo(() => getClassroomTheme(classroom.name), [classroom.name]);
   const keySpotId = classroom.spots[quest.keyIdx]?.id;
   const batSpotId = quest.hasBat && quest.batIdx >= 0 ? classroom.spots[quest.batIdx]?.id : undefined;
 
   const [keyFound, setKeyFound] = useState(false);
   const [batFound, setBatFound] = useState(false);
   const [doorOpen, setDoorOpen] = useState(false);
+  const [roomMoving, setRoomMoving] = useState(false);
 
-  // Передвижение Ланы по классу (A/D или стрелки)
+  // РџРµСЂРµРґРІРёР¶РµРЅРёРµ Р›Р°РЅС‹ РїРѕ РєР»Р°СЃСЃСѓ (A/D РёР»Рё СЃС‚СЂРµР»РєРё)
   const [lanaX, setLanaX] = useState(20);
   const [facing, setFacing] = useState<1 | -1>(1);
+  const lanaRoomXRef = useRef(20);
+  lanaRoomXRef.current = lanaX;
   const keysRef = useRef<{ l: boolean; r: boolean }>({ l: false, r: false });
+  const collectSpot = useCallback((spot: SearchSpot) => {
+    if (taken.has(spot.id)) return;
+    const isKeySpot = spot.id === keySpotId;
+    const isBatSpot = spot.id === batSpotId;
+    setTaken(prev => new Set(prev).add(spot.id));
+    if (isKeySpot) {
+      setKeyFound(true);
+      onCollect(KEY_ITEM, spot);
+      onToast("РљР»СЋС‡ РЅР°Р№РґРµРЅ");
+    } else if (isBatSpot) {
+      setBatFound(true);
+      onCollect(BAT_ITEM, spot);
+      onToast("Р‘РёС‚Р° РЅР°Р№РґРµРЅР°. РЈРґР°СЂ: G");
+    } else if (spot.item) {
+      onCollect(spot.item, spot);
+    } else {
+      onToast("РџСѓСЃС‚Рѕ");
+    }
+  }, [batSpotId, keySpotId, onCollect, onToast, taken]);
+
+  const activeSpot = useMemo(() => {
+    const lanaCenter = lanaX + 52;
+    let best: SearchSpot | null = null;
+    let bestDist = Infinity;
+    for (const spot of classroom.spots) {
+      if (taken.has(spot.id)) continue;
+      const dist = Math.abs(spot.x - lanaCenter);
+      if (dist < 76 && dist < bestDist) {
+        best = spot;
+        bestDist = dist;
+      }
+    }
+    return best;
+  }, [classroom.spots, lanaX, taken]);
+
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       const k = e.key;
-      if (k === "a" || k === "A" || k === "ArrowLeft" || k === "ф" || k === "Ф") { keysRef.current.l = true; setFacing(-1); }
-      if (k === "d" || k === "D" || k === "ArrowRight" || k === "в" || k === "В") { keysRef.current.r = true; setFacing(1); }
+      if (k === "e" || k === "E" || k === "у" || k === "У") {
+        const lanaCenter = lanaRoomXRef.current + 52;
+        const spot = classroom.spots
+          .filter(s => !taken.has(s.id))
+          .map(s => ({ spot: s, dist: Math.abs(s.x - lanaCenter) }))
+          .filter(s => s.dist < 76)
+          .sort((a, b) => a.dist - b.dist)[0]?.spot;
+        if (spot) {
+          e.preventDefault();
+          collectSpot(spot);
+        } else {
+          onToast("Подойди ближе к столу или полке");
+        }
+      }
+      if (k === "a" || k === "A" || k === "ArrowLeft" || k === "С„" || k === "Р¤") { keysRef.current.l = true; setFacing(-1); }
+      if (k === "d" || k === "D" || k === "ArrowRight" || k === "РІ" || k === "Р’") { keysRef.current.r = true; setFacing(1); }
     };
     const up = (e: KeyboardEvent) => {
       const k = e.key;
-      if (k === "a" || k === "A" || k === "ArrowLeft" || k === "ф" || k === "Ф") keysRef.current.l = false;
-      if (k === "d" || k === "D" || k === "ArrowRight" || k === "в" || k === "В") keysRef.current.r = false;
+      if (k === "a" || k === "A" || k === "ArrowLeft" || k === "С„" || k === "Р¤") keysRef.current.l = false;
+      if (k === "d" || k === "D" || k === "ArrowRight" || k === "РІ" || k === "Р’") keysRef.current.r = false;
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     let raf = 0;
     const tick = () => {
       const k = keysRef.current;
+      setRoomMoving(k.l || k.r);
       if (k.l || k.r) {
         setLanaX(x => Math.max(4, Math.min(720, x + (k.r ? 3 : 0) - (k.l ? 3 : 0))));
       }
@@ -2310,39 +2664,40 @@ function ClassroomScene({
       window.removeEventListener("keyup", up);
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [classroom.spots, collectSpot, onToast, taken]);
 
   const openDoor = () => {
-    if (!keyFound) { onToast("🔒 Find the key first"); return; }
+    if (!keyFound) { onToast("рџ”’ Find the key first"); return; }
     setDoorOpen(true);
-    onToast("🚪 Door open! +15 coins");
-    onCollect({ name: "Open door", emoji: "🚪", hpGain: 0 }, classroom.spots[0]);
+    onToast("рџљЄ Door open! +15 coins");
+    onCollect({ name: "Open door", emoji: "рџљЄ", hpGain: 0 }, classroom.spots[0]);
   };
 
   const tryLeave = () => {
-    if (!doorOpen) { onToast("🔒 Door locked — complete the quest"); return; }
+    if (!doorOpen) { onToast("рџ”’ Р”РІРµСЂСЊ Р·Р°РєСЂС‹С‚Р° вЂ” РЅР°Р№РґРё РєР»СЋС‡"); return; }
     onLeave();
   };
 
   return (
     <div className="relative w-full overflow-hidden border-2 border-zinc-800 rounded bg-[#0a0610]"
       style={{ height: 380 }}>
-      {/* задняя стена */}
+      {/* Р·Р°РґРЅСЏСЏ СЃС‚РµРЅР° */}
       <div className="absolute inset-x-0 top-0" style={{
         height: 230,
-        background: "linear-gradient(180deg,#1a1018,#0d0610 70%,#080308)",
+        background: theme.wall,
       }} />
       <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 800 380" preserveAspectRatio="none">
         <path d="M 40 60 L 80 100 L 60 140 L 110 180" stroke="#1a0a0a" strokeWidth="1.5" fill="none" />
         <path d="M 700 30 L 750 80 L 720 130 L 770 180" stroke="#1a0a0a" strokeWidth="1.5" fill="none" />
       </svg>
       <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 800 380" preserveAspectRatio="none">
-        <path d="M 250 20 C 240 70, 270 110, 245 160" stroke="#5a0a0a" strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.85" />
-        <circle cx="245" cy="160" r="6" fill="#5a0a0a" />
-        <path d="M 580 0 C 575 40, 600 70, 585 110" stroke="#5a0a0a" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.8" />
+        <path d="M 250 20 C 240 70, 270 110, 245 160" stroke="#5a0a0a" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.65" />
+        <circle cx="245" cy="160" r="5" fill="#5a0a0a" opacity="0.8" />
+        <path d="M 580 0 C 575 40, 600 70, 585 110" stroke="#5a0a0a" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.55" />
       </svg>
+      <SubjectDecor theme={theme} />
 
-      {/* ОКНО с луной и зомби-руками */}
+      {/* РћРљРќРћ СЃ Р»СѓРЅРѕР№ Рё РєСѓРєРѕР»СЊРЅС‹РјРё СЂСѓРєР°РјРё */}
       <div className="absolute" style={{ left: 430, top: 18, width: 190, height: 130 }}>
         <div className="absolute inset-0 border-4 border-zinc-700 overflow-hidden"
           style={{ background: "linear-gradient(180deg,#0d1a3a 0%,#1a2550 40%,#0a1530 100%)" }}>
@@ -2373,58 +2728,58 @@ function ClassroomScene({
           <line x1="200" y1="20" x2="120" y2="90" stroke="#cfd6dc" strokeWidth="0.6" opacity="0.6" />
           <line x1="30" y1="140" x2="100" y2="80" stroke="#cfd6dc" strokeWidth="0.6" opacity="0.6" />
         </svg>
-        <div className="absolute" style={{ left: 6, bottom: -34, transform: "rotate(-12deg)" }}><ZombieHand delay={0} /></div>
-        <div className="absolute" style={{ left: 92, bottom: -38, transform: "rotate(8deg)" }}><ZombieHand delay={0.4} /></div>
-        <div className="absolute" style={{ right: -6, bottom: -28, transform: "rotate(20deg) scaleX(-1)" }}><ZombieHand delay={0.8} /></div>
+        <div className="absolute" style={{ left: 6, bottom: -34, transform: "rotate(-12deg)" }}><DollHand delay={0} /></div>
+        <div className="absolute" style={{ left: 92, bottom: -38, transform: "rotate(8deg)" }}><DollHand delay={0.4} /></div>
+        <div className="absolute" style={{ right: -6, bottom: -28, transform: "rotate(20deg) scaleX(-1)" }}><DollHand delay={0.8} /></div>
         <div className="absolute -bottom-1 left-2 right-2 h-2 bg-[#5a0a0a] opacity-80" />
-        <div className="absolute -top-4 left-2 text-[9px] font-pixel text-red-300 animate-pulse">⚠ they are outside</div>
+        <div className="absolute -top-4 left-2 text-[9px] font-pixel text-red-300 animate-pulse">вљ  they are outside</div>
       </div>
 
-      {/* Доска */}
+      {/* Р”РѕСЃРєР° */}
       <div className="absolute" style={{ left: 24, top: 28, width: 180, height: 90 }}>
         <div className="absolute inset-0 bg-[#0a2a1a] border-4 border-[#3a2a1a]" />
-        <div className="absolute inset-2 text-[10px] font-pixel text-red-400 leading-tight">
-          NO WAY OUT...<br/>FIND THE KEY 🗝
+        <div className="absolute inset-2 text-[10px] font-pixel leading-tight" style={{ color: theme.accent }}>
+          {theme.board.map((line) => <div key={line}>{line}</div>)}
         </div>
       </div>
 
-      {/* Запертая дверь справа на стене */}
+      {/* Р—Р°РїРµСЂС‚Р°СЏ РґРІРµСЂСЊ СЃРїСЂР°РІР° РЅР° СЃС‚РµРЅРµ */}
       <div className="absolute" style={{ right: 16, top: 24, width: 130, height: 200 }}>
-        {/* рамка */}
+        {/* СЂР°РјРєР° */}
         <div className="absolute inset-0 bg-[#3a2618] border-4 border-[#1a0e08]" />
-        {/* филёнки */}
+        {/* С„РёР»С‘РЅРєРё */}
         <div className="absolute left-3 right-3 top-3 h-16 bg-[#2a1810] border-2 border-[#0a0604]" />
         <div className="absolute left-3 right-3 top-24 h-16 bg-[#2a1810] border-2 border-[#0a0604]" />
-        {/* следы крови */}
+        {/* СЃР»РµРґС‹ РєСЂРѕРІРё */}
         <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 130 200" preserveAspectRatio="none">
           <path d="M 20 40 C 18 60, 28 80, 22 100" stroke="#5a0a0a" strokeWidth="3" fill="none" opacity="0.85" />
           <circle cx="22" cy="100" r="3" fill="#5a0a0a" />
         </svg>
-        {/* замок */}
+        {/* Р·Р°РјРѕРє */}
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 bg-[#1a1a1a] border-2 border-[#5a5a5a] rounded-full">
-          {doorOpen ? "🔓" : "🔒"}
+          {doorOpen ? "рџ”“" : "рџ”’"}
         </div>
-        {/* статус двери */}
+        {/* СЃС‚Р°С‚СѓСЃ РґРІРµСЂРё */}
         <div className="absolute -bottom-1 left-0 right-0 text-center text-[10px] font-pixel">
           {doorOpen ? (
-            <span className="text-emerald-300">✓ OPEN</span>
+            <span className="text-emerald-300">вњ“ OPEN</span>
           ) : (
-            <span className="text-amber-200">{keyFound ? "Turn key →" : "🔒 need key"}</span>
+            <span className="text-amber-200">{keyFound ? "Turn key в†’" : "рџ”’ need key"}</span>
           )}
         </div>
       </div>
 
-      {/* Шкаф с трубами */}
+      {/* РЁРєР°С„ СЃ С‚СЂСѓР±Р°РјРё */}
       <div className="absolute" style={{ left: 230, top: 110, width: 70, height: 60 }}>
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="absolute top-0 bottom-0 w-2 bg-[#5a5a5a] border border-black" style={{ left: i * 11 }} />
         ))}
       </div>
 
-      {/* Пол */}
+      {/* РџРѕР» */}
       <div className="absolute inset-x-0 bottom-0" style={{
         height: 150,
-        background: "repeating-linear-gradient(90deg,#2a1f1a 0 50px,#1f1612 50px 100px)",
+        background: theme.floor,
         boxShadow: "inset 0 4px 0 #0a0606",
       }} />
       {Array.from({ length: 8 }).map((_, i) => (
@@ -2436,78 +2791,69 @@ function ClassroomScene({
         }} />
       ))}
 
-      {/* Лана — ходит по классу (A/D или ← →) */}
+      {/* Р›Р°РЅР° вЂ” С…РѕРґРёС‚ РїРѕ РєР»Р°СЃСЃСѓ (A/D РёР»Рё в†ђ в†’) */}
       <div className="absolute transition-none" style={{ left: lanaX, bottom: 28 }}>
         <LanaSpeech />
-        <div className="lana-idle">
-          <PixelTeen kind="lana" facing={facing} size={76} scared={batteryPct < 20} />
-        </div>
+        <MenuArtCharacter kind="lana" facing={facing} size={135} scared={batteryPct < 20} motion={batteryPct < 20 ? "scared" : roomMoving ? "walk" : "idle"} />
       </div>
 
-      {/* Точки поиска */}
+      {/* РўРѕС‡РєРё РїРѕРёСЃРєР° */}
       {classroom.spots.map(spot => {
         const isKeySpot = spot.id === keySpotId;
         const isBatSpot = spot.id === batSpotId;
         return (
-          <SpotEl key={spot.id} spot={spot} taken={taken.has(spot.id)} lit={lit} hasKey={isKeySpot} hasBat={isBatSpot}
-            onClick={() => {
-              if (taken.has(spot.id)) return;
-              setTaken(prev => new Set(prev).add(spot.id));
-              if (isKeySpot) {
-                setKeyFound(true);
-                onCollect(KEY_ITEM, spot);
-                onToast("🗝 Door key found!");
-              } else if (isBatSpot) {
-                setBatFound(true);
-                onCollect(BAT_ITEM, spot);
-                onToast("🏏 Bat found! Hit zombie — G key");
-              } else if (spot.item) {
-                onCollect(spot.item, spot);
-              }
-            }} />
+          <SpotEl
+            key={spot.id}
+            spot={spot}
+            taken={taken.has(spot.id)}
+            lit={lit}
+            active={activeSpot?.id === spot.id}
+            hasKey={isKeySpot}
+            hasBat={isBatSpot}
+          />
         );
       })}
 
-      {/* Лёгкий лунный полумрак — видно весь класс, но с атмосферой */}
+      {/* Р›С‘РіРєРёР№ Р»СѓРЅРЅС‹Р№ РїРѕР»СѓРјСЂР°Рє вЂ” РІРёРґРЅРѕ РІРµСЃСЊ РєР»Р°СЃСЃ, РЅРѕ СЃ Р°С‚РјРѕСЃС„РµСЂРѕР№ */}
       <div className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse 600px 320px at 65% 25%, rgba(180,200,255,0.10) 0%, rgba(0,0,0,0) 60%), linear-gradient(180deg, rgba(10,10,30,0.18), rgba(0,0,0,0.32))",
+            background: "radial-gradient(ellipse 600px 320px at 65% 25%, rgba(180,200,255,0.10) 0%, rgba(0,0,0,0) 60%), linear-gradient(180deg, rgba(10,10,30,0.18), rgba(0,0,0,0.32))",
         }} />
       {lit && (
         <div className="absolute inset-0 pointer-events-none"
           style={{
-            background: "radial-gradient(ellipse 460px 300px at 30% 75%, rgba(255,240,180,0.28) 0%, rgba(255,240,180,0.08) 40%, rgba(0,0,0,0) 75%)",
+            background: `radial-gradient(ellipse 460px 300px at 30% 75%, ${theme.light} 0%, rgba(255,240,180,0.08) 40%, rgba(0,0,0,0) 75%)`,
             mixBlendMode: "screen",
           }} />
       )}
 
-      {/* Панель квеста сверху */}
+      {/* РџР°РЅРµР»СЊ РєРІРµСЃС‚Р° СЃРІРµСЂС…Сѓ */}
       <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-pixel bg-black/85 px-3 py-1 rounded border border-amber-400/40 flex items-center gap-3 z-10">
         <span className={keyFound ? "text-emerald-300" : "text-amber-200"}>
-          {keyFound ? "✓ Key 🗝" : "✗ Find key 🗝"}
+          {keyFound ? "вњ“ Key рџ—ќ" : "вњ— Find key рџ—ќ"}
         </span>
         {quest.hasBat && (
           <span className={batFound ? "text-emerald-300" : "text-amber-200"}>
-            {batFound ? "✓ Bat 🏏" : "✗ Find bat 🏏"}
+            {batFound ? "вњ“ Bat рџЏЏ" : "вњ— Find bat рџЏЏ"}
           </span>
         )}
-        <span className="text-zinc-400">· Spots: {remaining}/{classroom.spots.length}</span>
+        <span className="text-zinc-400">В· Spots: {remaining}/{classroom.spots.length}</span>
       </div>
 
-      {/* Панель двери — управление квестом */}
+      {/* РџР°РЅРµР»СЊ РґРІРµСЂРё вЂ” СѓРїСЂР°РІР»РµРЅРёРµ РєРІРµСЃС‚РѕРј */}
       <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2 z-10">
         <div className="flex items-center gap-2 bg-black/85 border border-amber-700/60 rounded p-2">
           {!doorOpen && (
             <Button size="sm" onClick={openDoor} disabled={!keyFound}>
-              {keyFound ? "🗝 Open door" : "🔒 Need key"}
+              {keyFound ? "рџ—ќ Open door" : "рџ”’ Need key"}
             </Button>
           )}
           {doorOpen && (
-            <span className="text-emerald-300 font-pixel text-xs px-2">🚪 Door open</span>
+            <span className="text-emerald-300 font-pixel text-xs px-2">рџљЄ Door open</span>
           )}
         </div>
         <Button size="sm" variant={doorOpen ? "default" : "secondary"} onClick={tryLeave} disabled={!doorOpen}>
-          {doorOpen ? "→ Exit to hallway" : "🔒 Locked"}
+          {doorOpen ? "в†’ Exit to hallway" : "рџ”’ Locked"}
         </Button>
       </div>
     </div>
@@ -2517,8 +2863,8 @@ function ClassroomScene({
 
 export default function EscapeGame() {
   // Persisted (menu / shop)
-  const [save, setSave] = useState<SaveData>(() => ({ coins: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] }));
-  const [menuTab, setMenuTab] = useState<"play" | "outfit" | "shop" | "leaderboard">("play");
+  const [save, setSave] = useState<SaveData>(() => ({ coins: 0, crystals: 0, outfit: "classic", owned: { ...EMPTY_INV }, ownedOutfits: [...DEFAULT_OUTFITS] }));
+  const [menuTab, setMenuTab] = useState<"play" | "instructions" | "outfit" | "shop" | "leaderboard">("play");
   const [playerName, setPlayerName] = useState<string>("Lana");
   useEffect(() => {
     const s = loadSave();
@@ -2604,7 +2950,7 @@ export default function EscapeGame() {
   const [checkpoint, setCheckpoint] = useState<Checkpoint | null>(null);
   const [ambientLine, setAmbientLine] = useState("");
 
-  // ===== Noise lure (thrown toy) — zombies walk to this x =====
+  // ===== Noise lure (thrown toy) вЂ” dolls С…РѕРґСЊР±Р° to this x =====
   const [lure, setLure] = useState<{ x: number; until: number; emoji: string } | null>(null);
   const lureRef = useRef<typeof lure>(null); lureRef.current = lure;
 
@@ -2620,7 +2966,7 @@ export default function EscapeGame() {
   useEffect(() => {
     const dn = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      if ((k === " " || k === "w" || k === "arrowup" || k === "ц") && jumpYRef.current === 0 && jumpVRef.current === 0 && modal.kind === "none" && started) {
+      if ((k === " " || k === "w" || k === "arrowup" || k === "С†") && jumpYRef.current === 0 && jumpVRef.current === 0 && modal.kind === "none" && started) {
         jumpVRef.current = -11;
       }
     };
@@ -2639,7 +2985,7 @@ export default function EscapeGame() {
         if (ny === 0) jumpVRef.current = 0;
         setJumpY(ny);
       }
-      // obstacle damage — glass
+      // obstacle damage вЂ” glass
       const obs = levels[level]?.obstacles ?? [];
       const now = performance.now();
       if (jumpYRef.current < 18 && now - lastGlassRef.current > 900) {
@@ -2653,7 +2999,7 @@ export default function EscapeGame() {
               if (nh === 0) { sfxDeath(); setTimeout(() => setModal({ kind: "lose" }), 200); }
               return nh;
             });
-            setToast("🩸 Stepped on glass! -8 HP (jump with SPACE)");
+            setToast("рџ©ё Stepped on glass! -8 HP (jump with SPACE)");
             setTimeout(() => setToast(""), 1500);
             break;
           }
@@ -2665,19 +3011,19 @@ export default function EscapeGame() {
     return () => cancelAnimationFrame(raf);
   }, [started, modal.kind, level]);
 
-  // Hunger 0..100. Tick down over time; at 0 starts damaging HP.
+  // Р“РѕР»РѕРґ 0..100. Tick down over time; at 0 starts damaging HP.
   const MAX_HUNGER = 100;
   const [hunger, setHunger] = useState(MAX_HUNGER);
   const hungerRef = useRef(hunger); hungerRef.current = hunger;
 
-  // Сидя на корточках — медленно, но без шума.
+  // РЎРёРґСЏ РЅР° РєРѕСЂС‚РѕС‡РєР°С… вЂ” РјРµРґР»РµРЅРЅРѕ, РЅРѕ Р±РµР· С€СѓРјР°.
   const [crouching, setCrouching] = useState(false);
   const crouchRef = useRef(false); crouchRef.current = crouching;
 
-  // Спящие зомби, которых уже разбудили (после этого ведут себя как обычные).
+  // РЎРїСЏС‰РёРµ РєСѓРєР»С‹, РєРѕС‚РѕСЂС‹С… СѓР¶Рµ СЂР°Р·Р±СѓРґРёР»Рё (РїРѕСЃР»Рµ СЌС‚РѕРіРѕ РІРµРґСѓС‚ СЃРµР±СЏ РєР°Рє РѕР±С‹С‡РЅС‹Рµ).
   const wokenRef = useRef<Set<string>>(new Set());
 
-  // ===== Фонарик и батарея =====
+  // ===== Р¤РѕРЅР°СЂРёРє Рё Р±Р°С‚Р°СЂРµСЏ =====
   const MAX_BATTERY = 100;
   const [foundFlashlight, setFoundFlashlight] = useState(false);
   const [battery, setBattery] = useState(MAX_BATTERY);
@@ -2688,7 +3034,7 @@ export default function EscapeGame() {
   const [batLeft, setBatLeft] = useState(save.owned.bat);
   const [gunLeft, setGunLeft] = useState(save.owned.gun);
   const [coins, setCoins] = useState(save.coins);
-  // Running mode (Shift). Noisy — wakes "sleeping" zombies sooner.
+  // Р‘РµР¶РёС‚ mode (Shift). Noisy вЂ” wakes "sleeping" dolls sooner.
   const [running, setRunning] = useState(false);
   const runningRef = useRef(false); runningRef.current = running;
 
@@ -2703,7 +3049,7 @@ export default function EscapeGame() {
   }, [coins]);
 
   const cur = levels[level];
-  const zombies = cur.zombies;
+  const dolls = cur.dolls;
   const classrooms = cur.classrooms;
   const EXIT_X = cur.exitX;
   const WORLD_W = cur.worldW;
@@ -2713,12 +3059,12 @@ export default function EscapeGame() {
   const xRef = useRef(x); xRef.current = x;
   const viewportRef = useRef<HTMLDivElement>(null);
 
-  // Animated zombie positions (patrol around their home x).
+  // Animated doll positions (patrol around their home x).
   const zomPosRef = useRef<Record<string, number>>({});
   const [, setZomTick] = useState(0);
   const tStartRef = useRef(performance.now());
   const zomHomeRef = useRef<Record<string, number>>({});
-  const zx = useCallback((z: Zombie, idx: number) => {
+  const zx = useCallback((z: Doll, idx: number) => {
     {
       const monsterKind = pickToyMonsterKind(z.name);
       if (z.sleeping && !wokenRef.current.has(z.id) && monsterKind !== "bear") return z.x;
@@ -2734,7 +3080,7 @@ export default function EscapeGame() {
         return next;
       };
 
-      // Running near any monster = instantly heard, full chase
+      // Р‘РµР¶РёС‚ near any monster = instantly heard, full chase
       const alertedByRun = runningRef.current && Math.abs(playerX - home) < 280 && !hidingRef.current;
       if (monsterKind === "bear") return moveHome(playerX, (alertedByRun ? 1.6 : 0.58) + level * 0.08);
       if (monsterKind === "porcelain") {
@@ -2755,7 +3101,7 @@ export default function EscapeGame() {
       }
       return home + Math.sin(t * 0.9 + idx * 1.7) * 60;
     }
-    // Sleeping (and not yet woken) — стоят на месте.
+    // Sleeping (and not yet woken) вЂ” СЃС‚РѕСЏС‚ РЅР° РјРµСЃС‚Рµ.
     if (z.sleeping && !wokenRef.current.has(z.id)) return z.x;
     const home = zomHomeRef.current[z.id] ?? z.x;
     const t = (performance.now() - tStartRef.current) / 1000;
@@ -2772,7 +3118,7 @@ export default function EscapeGame() {
     return () => { window.removeEventListener("keydown", dn); window.removeEventListener("keyup", up); };
   }, []);
 
-  const allKilled = killed.size === zombies.length;
+  const allKilled = killed.size === dolls.length;
 
   const saveCheckpoint = useCallback((label: string, px = xRef.current) => {
     setCheckpoint(prev => {
@@ -2786,7 +3132,7 @@ export default function EscapeGame() {
         storyNotes: new Set(storyNotes),
         rescued: new Set(rescued),
       };
-      setToast(`Checkpoint: ${label}`);
+      setToast(`РўРѕС‡РєР°: ${label}`);
       setTimeout(() => setToast(""), 1600);
       return next;
     });
@@ -2812,6 +3158,25 @@ export default function EscapeGame() {
     setTimeout(() => setToast(""), 2000);
   }, [checkpoint, maxHp]);
 
+  const respawnWithCrystal = useCallback(() => {
+    if (!checkpoint) {
+      setToast("РќРµС‚ С‚РѕС‡РєРё РІРѕР·СЂРѕР¶РґРµРЅРёСЏ.");
+      setTimeout(() => setToast(""), 1400);
+      return;
+    }
+    if ((save.crystals ?? 0) < RESPAWN_CRYSTAL_COST) {
+      setToast("РќСѓР¶РµРЅ РєСЂРёСЃС‚Р°Р»Р». РљСѓРїРё РµРіРѕ РІ РјР°РіР°Р·РёРЅРµ Р·Р° РјРѕРЅРµС‚С‹.");
+      setTimeout(() => setToast(""), 1800);
+      return;
+    }
+    setSave(s => {
+      const ns = { ...s, crystals: Math.max(0, (s.crystals ?? 0) - RESPAWN_CRYSTAL_COST) };
+      writeSave(ns);
+      return ns;
+    });
+    respawnAtCheckpoint();
+  }, [checkpoint, respawnAtCheckpoint, save.crystals]);
+
   useEffect(() => {
     if (!started || modal.kind !== "none") return;
     const marker = x > EXIT_X - 360
@@ -2836,13 +3201,7 @@ export default function EscapeGame() {
     return () => clearInterval(id);
   }, [started, modal.kind]);
 
-  useEffect(() => {
-    if (modal.kind !== "lose" || !checkpoint) return;
-    const id = setTimeout(respawnAtCheckpoint, 1600);
-    return () => clearTimeout(id);
-  }, [modal.kind, checkpoint, respawnAtCheckpoint]);
-
-  // interact + weapon
+  // РґРµР№СЃС‚РІРёРµ + weapon
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (modal.kind !== "none") return;
@@ -2850,14 +3209,14 @@ export default function EscapeGame() {
       const px = xRef.current;
       // Weapon: F = pistol (instant kill), G = bat (stun = win without minigame)
       if (k === "f" || k === "g") {
-        const z = zombies.find((zz, i) => !killed.has(zz.id) && Math.abs(zx(zz, i) - px) < REACH + 30);
+        const z = dolls.find((zz, i) => !killed.has(zz.id) && Math.abs(zx(zz, i) - px) < REACH + 30);
         if (!z) return;
         if (k === "f" && gunLeft > 0) {
           setGunLeft(n => { const nn = n - 1; setSave(s => { const ns = { ...s, owned: { ...s.owned, gun: nn } }; writeSave(ns); return ns; }); return nn; });
           setKilled(prev => new Set(prev).add(z.id));
           sfxGunshot();
           setCoins(c => c + 25);
-          setToast(`🔫 ${z.name} — shot! +25 coins`);
+          setToast(`рџ”« ${z.name} вЂ” РѕСЃС‚Р°РЅРѕРІР»РµРЅР° РІС‹СЃС‚СЂРµР»РѕРј! +25 coins`);
           setTimeout(() => setToast(""), 1600);
           return;
         }
@@ -2876,21 +3235,21 @@ export default function EscapeGame() {
           setKilled(prev => new Set(prev).add(z.id));
           sfxBat();
           setCoins(c => c + 15);
-          setToast(`🏏 ${z.name} — stunned with bat! +15 coins`);
+          setToast(`рџЏЏ ${z.name} вЂ” stunned with bat! +15 coins`);
           setTimeout(() => setToast(""), 1600);
           return;
         }
-        setToast(k === "f" ? "🔫 No ammo" : "🏏 No bats");
+        setToast(k === "f" ? "рџ”« РќРµС‚ РїР°С‚СЂРѕРЅРѕРІ" : "рџЏЏ РќРµС‚ Р±РёС‚С‹");
         setTimeout(() => setToast(""), 1200);
         return;
       }
       if (k === "b") { setModal({ kind: "backpack" }); return; }
-      // T — throw nearest noise toy from backpack to lure zombies
-      if (k === "t" || k === "е") {
+      // T вЂ” throw nearest noise toy from backpack to lure dolls
+      if (k === "t" || k === "Рµ") {
         const list = invRef.current;
         const toyIdx = list.findIndex(it => it.noise && it.noise > 0);
         if (toyIdx === -1) {
-          setToast("🐰 No toys to throw. Find a plush, music box, or bell.");
+          setToast("рџђ° РќРµС‚ РёРіСЂСѓС€РµРє РґР»СЏ РѕС‚РІР»РµС‡РµРЅРёСЏ. РќР°Р№РґРё РїР»СЋС€РµРІСѓСЋ РёРіСЂСѓС€РєСѓ, С€РєР°С‚СѓР»РєСѓ РёР»Рё Р·РІРѕРЅРѕРє.");
           setTimeout(() => setToast(""), 1500);
           return;
         }
@@ -2899,15 +3258,15 @@ export default function EscapeGame() {
         const throwX = clamp(px + (facing === 1 ? 220 : -220), 80, WORLD_W - 80);
         sfxPickup();
         setLure({ x: throwX, until: performance.now() + (toy.noise ?? 4000), emoji: toy.emoji });
-        setToast(`${toy.emoji} Thrown! Zombies follow the sound…`);
+        setToast(`${toy.emoji} Р‘СЂРѕС€РµРЅРѕ! РљСѓРєР»С‹ РёРґСѓС‚ РЅР° Р·РІСѓРє...`);
         setTimeout(() => setToast(""), 1500);
         return;
       }
-      // H — hide / unhide in nearest locker
-      if (k === "h" || k === "р") {
+      // H вЂ” hide / unhide in nearest locker
+      if (k === "h" || k === "СЂ") {
         if (hidingRef.current) {
           setHiding(null);
-          setToast("🚪 Stepped out of the locker");
+          setToast("рџљЄ Stepped out of the locker");
           setTimeout(() => setToast(""), 1200);
           return;
         }
@@ -2915,7 +3274,7 @@ export default function EscapeGame() {
         if (spot) {
           setHiding(spot.id);
           sfxPickup();
-          setToast("🚪 Hidden in the locker. Hold quiet… (H to leave)");
+          setToast("рџљЄ Hidden in the locker. Hold quietвЂ¦ (H to leave)");
           setTimeout(() => setToast(""), 1800);
         } else {
           setToast("No locker nearby");
@@ -2924,37 +3283,37 @@ export default function EscapeGame() {
         return;
       }
       if (k !== "e" && e.key !== "Enter") return;
-      // nearest zombie
-      const z = zombies.find((zz, i) => !killed.has(zz.id) && Math.abs(zx(zz, i) - px) < REACH);
-      if (z) { setModal({ kind: "task", zombie: z }); return; }
+      // nearest doll
+      const z = dolls.find((zz, i) => !killed.has(zz.id) && Math.abs(zx(zz, i) - px) < REACH);
+      if (z) { setModal({ kind: "task", doll: z }); return; }
       // nearest classroom
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
       if (c) { setModal({ kind: "search", classroom: c }); return; }
       // exit door
       if (Math.abs(EXIT_X - px) < REACH) {
         if (!allKilled) {
-          setToast("The door won't open — zombies ahead.");
+          setToast("Р”РІРµСЂСЊ РЅРµ РѕС‚РєСЂРѕРµС‚СЃСЏ: РІРїРµСЂРµРґРё РµС‰С‘ РєСѓРєР»С‹.");
           setTimeout(() => setToast(""), 1800);
         } else setModal({ kind: isFinalLevel ? "doorTask" : "exit" });
       }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [modal.kind, killed, searched, allKilled, level, gunLeft, batLeft, zombies, zx, EXIT_X]);
+  }, [modal.kind, killed, searched, allKilled, level, gunLeft, batLeft, dolls, zx, EXIT_X]);
 
-  // game loop — walking + auto-block at zombies
+  // game loop вЂ” movement + auto-block at dolls
   useEffect(() => {
     if (!started || modal.kind !== "none") { setMoving(false); return; }
     let raf = 0;
     const tick = () => {
-      // Lure pull — drift each zombie's home toward the lure x while active
+      // Lure pull вЂ” drift each doll's home toward the lure x while active
       const lureNow = lureRef.current;
       if (lureNow && performance.now() < lureNow.until) {
-        for (const z of zombies) {
+        for (const z of dolls) {
           if (killedRef.current.has(z.id)) continue;
           const monsterKind = pickToyMonsterKind(z.name);
           if (monsterKind === "bear" || monsterKind === "porcelain") continue;
-          // wake sleeping zombies — noise reaches them
+          // wake sleeping dolls вЂ” noise reaches them
           if (z.sleeping) wokenRef.current.add(z.id);
           const home = zomHomeRef.current[z.id] ?? z.x;
           const dist = Math.abs(home - lureNow.x);
@@ -2967,13 +3326,13 @@ export default function EscapeGame() {
       } else if (lureNow && performance.now() >= lureNow.until) {
         setLure(null);
       }
-      // Update zombie patrol positions
+      // Update doll patrol positions
       const pos: Record<string, number> = {};
-      zombies.forEach((z, i) => { pos[z.id] = zx(z, i); });
+      dolls.forEach((z, i) => { pos[z.id] = zx(z, i); });
       zomPosRef.current = pos;
       setZomTick(t => (t + 1) % 1000000);
 
-      // Crouch (C) — тихо, медленно. Run (Shift) — шумно, быстро.
+      // Crouch (C) вЂ” С‚РёС…Рѕ, РјРµРґР»РµРЅРЅРѕ. Run (Shift) вЂ” С€СѓРјРЅРѕ, Р±С‹СЃС‚СЂРѕ.
       const isCrouch = !!(keys.current["c"] || keys.current["control"]);
       const isRun = !isCrouch && !!(keys.current["shift"]);
       setRunning(isRun);
@@ -2988,7 +3347,7 @@ export default function EscapeGame() {
         setMoving(true);
         setX(p => {
           let np = clamp(p + dx * speed, 80, WORLD_W - 80);
-          const block = zombies.find(z => {
+          const block = dolls.find(z => {
             if (killedRef.current.has(z.id)) return false;
             const zc = pos[z.id];
             return (dx > 0 && zc > p && zc < np + 30) || (dx < 0 && zc < p && zc > np - 30);
@@ -3001,13 +3360,13 @@ export default function EscapeGame() {
 
       const nowT = performance.now();
 
-      // ===== Sleeping zombies: hearing detection =====
-      // Сидя на корточках — полностью тихо. Стоя — слышат. Бегом — слышат издалека.
-      // Услышали = просыпаются и сразу кусают за огромный урон.
+      // ===== Sleeping dolls: hearing detection =====
+      // РЎРёРґСЏ РЅР° РєРѕСЂС‚РѕС‡РєР°С… вЂ” РїРѕР»РЅРѕСЃС‚СЊСЋ С‚РёС…Рѕ. РЎС‚РѕСЏ вЂ” СЃР»С‹С€Р°С‚. Р‘РµРіРѕРј вЂ” СЃР»С‹С€Р°С‚ РёР·РґР°Р»РµРєР°.
+      // РЈСЃР»С‹С€Р°Р»Рё = РїСЂРѕСЃС‹РїР°СЋС‚СЃСЏ Рё СЃСЂР°Р·Сѓ РєСѓСЃР°СЋС‚ Р·Р° РѕРіСЂРѕРјРЅС‹Р№ СѓСЂРѕРЅ.
       if (!isCrouch && !hidingRef.current) {
         const hearRange = isRun ? 130 : (dx !== 0 ? 75 : 40) - (isNinja ? 10 : 0);
-        for (let i = 0; i < zombies.length; i++) {
-          const z = zombies[i];
+        for (let i = 0; i < dolls.length; i++) {
+          const z = dolls[i];
           if (!z.sleeping || pickToyMonsterKind(z.name) === "bear") continue;
           if (killedRef.current.has(z.id) || wokenRef.current.has(z.id)) continue;
           if (Math.abs(z.x - xRef.current) < hearRange) {
@@ -3021,7 +3380,7 @@ export default function EscapeGame() {
             });
             setShake(true);
             setTimeout(() => setShake(false), 600);
-            setToast(`😱 ${z.name} woke up and attacked! -${dmg} HP`);
+            setToast(`рџ± ${z.name} woke up and attacked! -${dmg} HP`);
             setTimeout(() => setToast(""), 2200);
             lastBiteRef.current = nowT;
             break;
@@ -3029,14 +3388,14 @@ export default function EscapeGame() {
         }
       }
 
-      // Contact damage — patrolling zombie within bite range.
+      // Contact damage вЂ” patrolling doll within bite range.
       const biteCD = isRun ? 500 : 800;
       const biteRange = (isCrouch ? 22 : (isRun ? 48 : 32)) - (isNinja ? 6 : 0);
       if (nowT - lastBiteRef.current > biteCD && !hidingRef.current) {
-        for (let i = 0; i < zombies.length; i++) {
-          const z = zombies[i];
+        for (let i = 0; i < dolls.length; i++) {
+          const z = dolls[i];
           if (killedRef.current.has(z.id)) continue;
-          // Спящие, ещё не разбуженные, не кусают пассивно.
+          // РЎРїСЏС‰РёРµ, РµС‰С‘ РЅРµ СЂР°Р·Р±СѓР¶РµРЅРЅС‹Рµ, РЅРµ РєСѓСЃР°СЋС‚ РїР°СЃСЃРёРІРЅРѕ.
           if (z.sleeping && !wokenRef.current.has(z.id) && pickToyMonsterKind(z.name) !== "bear") continue;
           if (Math.abs(pos[z.id] - xRef.current) < biteRange) {
             lastBiteRef.current = nowT;
@@ -3050,13 +3409,13 @@ export default function EscapeGame() {
             });
             setShake(true);
             setTimeout(() => setShake(false), 350);
-            // Jumpscare — at most every 4s
+            // Jumpscare вЂ” at most every 4s
             if (nowT - lastJumpscareRef.current > 4000) {
               lastJumpscareRef.current = nowT;
               setJumpscare(pickToyMonsterKind(z.name));
               setTimeout(() => setJumpscare(null), 650);
             }
-            setToast(`🩸 ${z.name} bites! -${dmg} HP${isRun ? " (noisy!)" : ""}`);
+            setToast(`рџ©ё ${z.name} Р°С‚Р°РєСѓРµС‚! -${dmg} HP${isRun ? " (noisy!)" : ""}`);
             setTimeout(() => setToast(""), 1200);
             break;
           }
@@ -3066,18 +3425,18 @@ export default function EscapeGame() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [started, modal.kind, allKilled, level, zombies, EXIT_X, WORLD_W, zx]);
+  }, [started, modal.kind, allKilled, level, dolls, EXIT_X, WORLD_W, zx]);
 
   // hint
   useEffect(() => {
     const id = setInterval(() => {
       const px = xRef.current;
-      const z = zombies.find((z, i) => !killed.has(z.id) && Math.abs((zomPosRef.current[z.id] ?? zx(z, i)) - px) < REACH);
-      if (z) { setHint(`[E] Defeat ${z.name}`); return; }
+      const z = dolls.find((z, i) => !killed.has(z.id) && Math.abs((zomPosRef.current[z.id] ?? zx(z, i)) - px) < REACH);
+      if (z) { setHint(`[E] РћСЃС‚Р°РЅРѕРІРёС‚СЊ ${z.name}`); return; }
       const c = classrooms.find(c => !searched.has(c.id) && Math.abs(c.x - px) < REACH);
-      if (c) { setHint(`[E] Inspect · ${c.name}`); return; }
+      if (c) { setHint(`[E] РћСЃРјРѕС‚СЂРµС‚СЊ В· ${c.name}`); return; }
       if (Math.abs(EXIT_X - px) < REACH) {
-        setHint(allKilled ? (isFinalLevel ? "[E] Face the Matron" : "[E] Go up a floor") : "Path blocked");
+        setHint(allKilled ? (isFinalLevel ? "[E] Рљ РњР°С‚СЂРѕРЅРµ" : "[E] РџРѕРґРЅСЏС‚СЊСЃСЏ РІС‹С€Рµ") : "РџСѓС‚СЊ Р·Р°РєСЂС‹С‚");
         return;
       }
       setHint("");
@@ -3093,13 +3452,13 @@ export default function EscapeGame() {
 
   const finishTask = useCallback((ok: boolean) => {
     if (modal.kind !== "task") { setModal({ kind: "none" }); return; }
-    const z = modal.zombie;
+    const z = modal.doll;
     if (ok) {
       setKilled(prev => new Set(prev).add(z.id));
       sfxKill();
       const reward = 10 + level * 5;
       setCoins(c => c + reward);
-      setToast(`💀 ${z.name} defeated! +${reward} 🪙`);
+      setToast(`рџ’Ђ ${z.name} РѕСЃС‚Р°РЅРѕРІР»РµРЅР°! +${reward} рџЄ™`);
     } else {
       const dmg = Math.max(8, 25 - strength * 3);
       sfxBite();
@@ -3110,22 +3469,22 @@ export default function EscapeGame() {
       });
       setShake(true);
       setTimeout(() => setShake(false), 500);
-      setToast(`💢 Zombie bit you! -${dmg} HP`);
+      setToast(`рџ’ў РљСѓРєР»Р° СѓРґР°СЂРёР»Р° Р›Р°РЅСѓ! -${dmg} HP`);
     }
     setTimeout(() => setToast(""), 1800);
     setModal({ kind: "none" });
   }, [modal, strength]);
 
-  // Подобрать предмет внутри сцены класса.
+  // РџРѕРґРѕР±СЂР°С‚СЊ РїСЂРµРґРјРµС‚ РІРЅСѓС‚СЂРё СЃС†РµРЅС‹ РєР»Р°СЃСЃР°.
   const collectSpotItem = useCallback((loot: LootItem, _spot: SearchSpot) => {
-    // Found bat — give a single-use stun weapon, hold it in hand.
+    // Found bat вЂ” give a single-use stun weapon, hold it in hand.
     if (loot.name === "Baseball bat") {
       setBatLeft(n => {
         const nn = n + 1;
         setSave(s => { const ns = { ...s, owned: { ...s.owned, bat: nn } }; writeSave(ns); return ns; });
         return nn;
       });
-      setToast("🏏 Lana picked up a bat! 1 hit — press G near a zombie.");
+      setToast("рџЏЏ Lana picked up a bat! 1 hit вЂ” press G near a doll.");
       setTimeout(() => setToast(""), 2200);
       setCoins(c => c + 10);
       return;
@@ -3134,7 +3493,7 @@ export default function EscapeGame() {
     if (loot.givesFlashlight) {
       setFoundFlashlight(true);
       setBattery(b => Math.max(b, loot.battery ?? MAX_BATTERY));
-      setToast(`🔦 Found ${loot.name}! Now Lana can see in the dark.`);
+      setToast(`рџ”¦ Found ${loot.name}! Now Lana can see in the dark.`);
       setTimeout(() => setToast(""), 1800);
       setCoins(c => c + 8);
       return;
@@ -3153,18 +3512,18 @@ export default function EscapeGame() {
       setInv(prev => [...prev, item]);
       const bonus = [
         item.hp ? `+${item.hp} HP` : null,
-        item.food ? `+${item.food} 🍴` : null,
-        item.battery ? `+${item.battery}% 🔋` : null,
+        item.food ? `+${item.food} рџЌґ` : null,
+        item.battery ? `+${item.battery}% рџ”‹` : null,
       ].filter(Boolean).join(", ");
-      setToast(`🎒 ${loot.emoji} ${loot.name}${bonus ? ` (${bonus})` : ""}`);
+      setToast(`рџЋ’ ${loot.emoji} ${loot.name}${bonus ? ` (${bonus})` : ""}`);
     } else {
-      setToast(`Found: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} 💪)` : ""}`);
+      setToast(`Found: ${loot.emoji} ${loot.name}${loot.strengthGain ? ` (+${loot.strengthGain} рџ’Є)` : ""}`);
     }
     setCoins(c => c + 3);
     setTimeout(() => setToast(""), 1600);
   }, []);
 
-  // Закрыть комнату — пометить как обысканную.
+  // Р—Р°РєСЂС‹С‚СЊ РєРѕРјРЅР°С‚Сѓ вЂ” РїРѕРјРµС‚РёС‚СЊ РєР°Рє РѕР±С‹СЃРєР°РЅРЅСѓСЋ.
   const leaveClassroom = useCallback(() => {
     if (modal.kind !== "search") { setModal({ kind: "none" }); return; }
     const c = modal.classroom;
@@ -3200,7 +3559,7 @@ export default function EscapeGame() {
     setModal({ kind: "none" });
   }, [modal, rescued, storyNotes, level, killed, searched]);
 
-  // Use a specific item from the backpack.
+  // РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ a specific item from the backpack.
   const useItem = useCallback((idx: number) => {
     const it = invRef.current[idx];
     if (!it) return;
@@ -3210,18 +3569,18 @@ export default function EscapeGame() {
     if (it.strength) setStrength(s => s + it.strength);
     if (it.battery) {
       if (!hasFlashlight) {
-        setToast(`🪫 ${it.emoji} ${it.name}: no flashlight — battery not needed now.`);
+        setToast(`рџЄ« ${it.emoji} ${it.name}: РЅРµС‚ С„РѕРЅР°СЂРёРєР° вЂ” battery not needed now.`);
       } else {
         setBattery(b => Math.min(MAX_BATTERY, b + it.battery!));
-        setToast(`🔋 ${it.emoji} +${it.battery}% flashlight charge`);
+        setToast(`рџ”‹ ${it.emoji} +${it.battery}% flashlight charge`);
       }
     } else {
-      setToast(`💊 ${it.emoji} ${it.name} used`);
+      setToast(`рџ’Љ ${it.emoji} ${it.name} used`);
     }
     setTimeout(() => setToast(""), 1400);
   }, [maxHp, hasFlashlight]);
 
-  // Auto-emergency-heal только при критическом HP.
+  // Auto-emergency-heal С‚РѕР»СЊРєРѕ РїСЂРё РєСЂРёС‚РёС‡РµСЃРєРѕРј HP.
   useEffect(() => {
     if (!started) return;
     if (modal.kind === "lose" || modal.kind === "win") return;
@@ -3235,22 +3594,22 @@ export default function EscapeGame() {
       setInv(p => p.filter((_, i) => i !== bestIdx));
       setHp(h => Math.min(maxHp, h + item.hp));
       if (item.food) setHunger(h => Math.min(MAX_HUNGER, h + item.food));
-      setToast(`💊 Auto: ${item.emoji} ${item.name} (+${item.hp} HP)`);
+      setToast(`рџ’Љ Auto: ${item.emoji} ${item.name} (+${item.hp} HP)`);
       setTimeout(() => setToast(""), 1800);
     }
   }, [hp, started, modal.kind, maxHp]);
 
-  // Hunger tick — убывает со временем, при 0 — кусает голод.
+  // Р“РѕР»РѕРґ tick вЂ” СѓР±С‹РІР°РµС‚ СЃРѕ РІСЂРµРјРµРЅРµРј, РїСЂРё 0 вЂ” РєСѓСЃР°РµС‚ РіРѕР»РѕРґ.
   useEffect(() => {
     if (!started || modal.kind === "lose" || modal.kind === "win") return;
     const id = setInterval(() => {
-      if (modal.kind !== "none") return; // не убывает во время заданий
+      if (modal.kind !== "none") return; // РЅРµ СѓР±С‹РІР°РµС‚ РІРѕ РІСЂРµРјСЏ Р·Р°РґР°РЅРёР№
       setHunger(h => {
         const nh = Math.max(0, h - 1);
         if (nh === 0) {
-          // голодаем — теряем 2 HP
+          // РіРѕР»РѕРґР°РµРј вЂ” С‚РµСЂСЏРµРј 2 HP
           setHp(hh => Math.max(0, hh - 2));
-          setToast("🍴 Lana is hungry! -2 HP");
+          setToast("рџЌґ Lana is hungry! -2 HP");
           setTimeout(() => setToast(""), 1200);
         }
         return nh;
@@ -3259,7 +3618,7 @@ export default function EscapeGame() {
     return () => clearInterval(id);
   }, [started, modal.kind]);
 
-  // Разряд батареи — только когда фонарь горит и темно (этаж >= 2) или мы внутри класса.
+  // Р Р°Р·СЂСЏРґ Р±Р°С‚Р°СЂРµРё вЂ” С‚РѕР»СЊРєРѕ РєРѕРіРґР° С„РѕРЅР°СЂСЊ РіРѕСЂРёС‚ Рё С‚РµРјРЅРѕ (СЌС‚Р°Р¶ >= 2) РёР»Рё РјС‹ РІРЅСѓС‚СЂРё РєР»Р°СЃСЃР°.
   useEffect(() => {
     if (!started) return;
     if (modal.kind === "lose" || modal.kind === "win") return;
@@ -3271,7 +3630,7 @@ export default function EscapeGame() {
       setBattery(b => {
         const nb = Math.max(0, b - 1);
         if (nb === 0 && b > 0) {
-          setToast("🪫 Battery died! Need a new one.");
+          setToast("рџЄ« Battery died! Need a new one.");
           setTimeout(() => setToast(""), 1600);
         }
         return nb;
@@ -3326,9 +3685,9 @@ export default function EscapeGame() {
       });
       setScoreSubmitted(true);
       setLeaderboardKey(k => k + 1);
-      setToast("Record submitted!");
+      setToast("Р РµРєРѕСЂРґ РѕС‚РїСЂР°РІР»РµРЅ!");
     } catch (e: any) {
-      setToast("Submit error: " + (e?.message ?? "unknown"));
+      setToast("РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё: " + (e?.message ?? "unknown"));
     } finally {
       setSubmittingScore(false);
       setTimeout(() => setToast(""), 2000);
@@ -3337,11 +3696,11 @@ export default function EscapeGame() {
 
   const buyOutfit = (o: Outfit) => {
     if (save.ownedOutfits.includes(o.id)) return;
-    if (coins < o.price) { setToast("Not enough coins"); setTimeout(() => setToast(""), 1500); return; }
+    if (coins < o.price) { setToast("РќРµ С…РІР°С‚Р°РµС‚ РјРѕРЅРµС‚"); setTimeout(() => setToast(""), 1500); return; }
     const ownedOutfits = Array.from(new Set([...save.ownedOutfits, o.id]));
     const ns = { ...save, coins: coins - o.price, outfit: o.id, ownedOutfits };
     setCoins(ns.coins); setSave(ns); writeSave(ns);
-    setToast(`Bought: ${o.name}`); setTimeout(() => setToast(""), 1500);
+    setToast(`РљСѓРїР»РµРЅРѕ: ${o.name}`); setTimeout(() => setToast(""), 1500);
   };
   const equipOutfit = (o: Outfit) => {
     if (!save.ownedOutfits.includes(o.id)) return;
@@ -3349,7 +3708,7 @@ export default function EscapeGame() {
     setSave(ns); writeSave(ns);
   };
   const buyUpgrade = (u: Upgrade) => {
-    if (coins < u.price) { setToast("Not enough coins"); setTimeout(() => setToast(""), 1500); return; }
+    if (coins < u.price) { setToast("РќРµ С…РІР°С‚Р°РµС‚ РјРѕРЅРµС‚"); setTimeout(() => setToast(""), 1500); return; }
     const owned = { ...save.owned };
     if (u.id === "bat" || u.id === "gun") {
       if ((owned[u.id] ?? 0) >= (u.max ?? 99)) return;
@@ -3361,22 +3720,33 @@ export default function EscapeGame() {
     const ns = { ...save, coins: coins - u.price, owned };
     setCoins(ns.coins); setSave(ns); writeSave(ns);
   };
+  const buyCrystal = () => {
+    if (coins < CRYSTAL_PRICE) {
+      setToast("РќРµ С…РІР°С‚Р°РµС‚ РјРѕРЅРµС‚ РЅР° РєСЂРёСЃС‚Р°Р»Р»");
+      setTimeout(() => setToast(""), 1500);
+      return;
+    }
+    const ns = { ...save, coins: coins - CRYSTAL_PRICE, crystals: (save.crystals ?? 0) + 1 };
+    setCoins(ns.coins); setSave(ns); writeSave(ns);
+    setToast("РљСЂРёСЃС‚Р°Р»Р» РєСѓРїР»РµРЅ");
+    setTimeout(() => setToast(""), 1500);
+  };
 
   const ending = storyNotes.size >= Object.keys(STORY_NOTES).length && rescued.size >= RESCUE_EVENTS.length
     ? {
-        title: "SECRET ENDING",
-        body: "Lana saves Karl, Dina, and the trapped children. With every note collected, she exposes the hidden tragedy and the toys finally remember how to let go.",
+        title: "РЎР•РљР Р•РўРќРђРЇ РљРћРќР¦РћР’РљРђ",
+        body: "Р›Р°РЅР° СЃРїР°СЃР°РµС‚ РљР°СЂР»Р°, Р”РёРЅСѓ Рё РґРµС‚РµР№. РЎРѕР±СЂР°РЅРЅС‹Рµ Р·Р°РїРёСЃРєРё СЂР°СЃРєСЂС‹РІР°СЋС‚ С‚Р°Р№РЅСѓ С€РєРѕР»С‹, Рё РёРіСЂСѓС€РєРё РЅР°РєРѕРЅРµС† РѕС‚РїСѓСЃРєР°СЋС‚ С‚РµС…, РєРѕРіРѕ СѓРґРµСЂР¶РёРІР°Р»Рё.",
         bonus: 350,
       }
     : rescued.size >= 2
       ? {
-          title: "GOOD ENDING",
-          body: "Lana escapes with her friends and the children she could reach. The school doors open, but some whispers remain behind the walls.",
+          title: "РҐРћР РћРЁРђРЇ РљРћРќР¦РћР’РљРђ",
+          body: "Р›Р°РЅР° РІС‹Р±РёСЂР°РµС‚СЃСЏ СЃ РґСЂСѓР·СЊСЏРјРё Рё РЅР°Р№РґРµРЅРЅС‹РјРё РґРµС‚СЊРјРё. Р”РІРµСЂРё С€РєРѕР»С‹ РѕС‚РєСЂС‹РІР°СЋС‚СЃСЏ, РЅРѕ Р·Р° СЃС‚РµРЅР°РјРё РµС‰С‘ РѕСЃС‚Р°СЋС‚СЃСЏ С€С‘РїРѕС‚С‹.",
           bonus: 250,
         }
       : {
-          title: "LONELY ENDING",
-          body: "Lana gets out alive, but the school keeps too many secrets. Behind her, the toys begin calling for the children again.",
+          title: "РћР”РРќРћРљРђРЇ РљРћРќР¦РћР’РљРђ",
+          body: "Р›Р°РЅР° РІС‹Р±РёСЂР°РµС‚СЃСЏ Р¶РёРІРѕР№, РЅРѕ С€РєРѕР»Р° СЃРѕС…СЂР°РЅСЏРµС‚ СЃР»РёС€РєРѕРј РјРЅРѕРіРѕ СЃРµРєСЂРµС‚РѕРІ. РџРѕР·Р°РґРё РёРіСЂСѓС€РєРё СЃРЅРѕРІР° Р·РѕРІСѓС‚ РґРµС‚РµР№.",
           bonus: 150,
         };
 
@@ -3384,23 +3754,27 @@ export default function EscapeGame() {
     const introFrames = introStoryIndex === null ? null : INTRO_CINEMATIC_VARIANTS[introStoryIndex % INTRO_CINEMATIC_VARIANTS.length];
 
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-red-950 p-4 overflow-auto">
+      <div className="school-menu h-screen w-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-red-950 p-4 overflow-auto">
         <div className="max-w-2xl w-full space-y-3">
+          <ScaryMenuScene />
           <div className="text-center py-4 border border-red-900/50 rounded bg-black/50">
             <h1 className="font-display text-2xl md:text-3xl tracking-widest text-red-500" style={{ textShadow: "0 0 16px rgba(216,34,30,0.45), 0 2px 0 #1a0000" }}>
               WELCOME BACK TO SCHOOL
             </h1>
-            <p className="font-pixel text-xs text-zinc-400 mt-1 tracking-[0.3em]">they never stopped playing…</p>
+            <p className="font-pixel text-xs text-zinc-400 mt-1 tracking-[0.3em]">РѕРЅРё РІСЃС‘ РµС‰С‘ Р¶РґСѓС‚ РґРµС‚РµР№вЂ¦</p>
           </div>
           <div className="flex items-center justify-center gap-2">
             <div className="px-3 py-1 bg-amber-900/40 border border-amber-700 rounded font-pixel text-amber-200 flex items-center gap-2">
-              <Coins className="h-4 w-4" /> {coins} coins
+              <Coins className="h-4 w-4" /> {coins} РјРѕРЅРµС‚
+            </div>
+            <div className="px-3 py-1 bg-cyan-950/50 border border-cyan-700 rounded font-pixel text-cyan-200 flex items-center gap-2">
+              в—† {save.crystals ?? 0} РєСЂРёСЃС‚.
             </div>
             <button onClick={() => setMusicOff(v => !v)}
               className="px-3 py-1 bg-black/40 border border-zinc-700 rounded font-pixel text-zinc-200 flex items-center gap-2 hover:bg-black/60"
-              title="Music on/off">
+              title="РњСѓР·С‹РєР° РІРєР»./off">
               {musicOff ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              {musicOff ? "Music off" : "Music on"}
+              {musicOff ? "РњСѓР·С‹РєР° РІС‹РєР»." : "РњСѓР·С‹РєР° РІРєР»."}
             </button>
             {authEmail && (
               <div className="max-w-[220px] truncate px-3 py-1 bg-emerald-950/50 border border-emerald-700 rounded font-pixel text-emerald-200">
@@ -3412,10 +3786,11 @@ export default function EscapeGame() {
 
           <div className="flex gap-2 justify-center">
             {[
-              { id: "play", label: "Play", icon: ArrowUp },
-              { id: "outfit", label: "Outfits", icon: Shirt },
-              { id: "shop", label: "Shop", icon: ShoppingBag },
-              { id: "leaderboard", label: "Records", icon: Trophy },
+              { id: "play", label: "РРіСЂР°С‚СЊ", icon: ArrowUp },
+              { id: "instructions", label: "РРЅСЃС‚СЂСѓРєС†РёСЏ", icon: HelpCircle },
+              { id: "outfit", label: "РћР±СЂР°Р·С‹", icon: Shirt },
+              { id: "shop", label: "РњР°РіР°Р·РёРЅ", icon: ShoppingBag },
+              { id: "leaderboard", label: "Р РµРєРѕСЂРґС‹", icon: Trophy },
             ].map(t => (
               <button key={t.id} onClick={() => setMenuTab(t.id as typeof menuTab)}
                 className={`px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border ${menuTab === t.id ? "bg-primary text-primary-foreground border-primary" : "bg-black/40 border-zinc-700 text-zinc-300"}`}>
@@ -3429,14 +3804,14 @@ export default function EscapeGame() {
                 disabled={signingOut}
                 className="px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border bg-black/40 border-zinc-700 text-zinc-300 hover:bg-black/60 hover:text-zinc-100 disabled:opacity-60"
               >
-                <LogOut className="h-4 w-4" /> {signingOut ? "Signing out" : "Sign out"}
+                <LogOut className="h-4 w-4" /> {signingOut ? "Р’С‹С…РѕРґРёРј" : "Р’С‹Р№С‚Рё"}
               </button>
             ) : (
               <Link
                 to="/login"
                 className="px-4 py-2 rounded font-pixel text-sm flex items-center gap-2 border bg-black/40 border-zinc-700 text-zinc-300 hover:bg-black/60 hover:text-zinc-100"
               >
-                <LogIn className="h-4 w-4" /> Login
+                <LogIn className="h-4 w-4" /> Р’РѕР№С‚Рё
               </Link>
             )}
           </div>
@@ -3444,25 +3819,34 @@ export default function EscapeGame() {
           {menuTab === "play" && (
             <div className="bg-black/40 rounded p-4 space-y-3">
               <p className="text-sm text-muted-foreground text-center">
-                Lana returns after class for her forgotten backpack. The clocks stop, her friends disappear, and old school toys begin guarding a buried truth.
+                Р›Р°РЅР° РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ Р·Р° Р·Р°Р±С‹С‚С‹Рј СЂСЋРєР·Р°РєРѕРј. Р§Р°СЃС‹ РѕСЃС‚Р°РЅР°РІР»РёРІР°СЋС‚СЃСЏ, РґСЂСѓР·СЊСЏ РёСЃС‡РµР·Р°СЋС‚, Р° СЃС‚Р°СЂС‹Рµ РєСѓРєР»С‹ РЅР°С‡РёРЅР°СЋС‚ РѕС…СЂР°РЅСЏС‚СЊ С€РєРѕР»СЊРЅСѓСЋ С‚Р°Р№РЅСѓ.
               </p>
-              <div className="text-left text-[12px] grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
-                <p>🎮 <b>A/D</b> · <b>←/→</b> — walk</p>
-                <p>🏃 <b>Shift</b> — run (noisy!)</p>
-                <p>🤫 <b>C</b> / <b>Ctrl</b> — crouch (quiet, past sleepers)</p>
-                <p>🎒 <b>B</b> — backpack / use items</p>
-                <p>⚡ <b>E</b> / <b>Enter</b> — interact</p>
-                <p>🏏 <b>G</b> — bat · 🔫 <b>F</b> — pistol</p>
-                <p>🐰 <b>T</b> — throw a toy (lures zombies to the sound)</p>
-                <p>🚪 <b>H</b> — hide in a locker (silent &amp; invisible)</p>
-                <p>🆙 <b>Space</b> — jump over glass shards</p>
-                <p>🍴 Don't forget to eat — hunger drains HP</p>
-                <p>😴 Sleeping zombies will bite if they hear you</p>
-                <p>🌑 Floors 2–3 are dark — you need a flashlight</p>
-              </div>
               <div className="flex justify-center">
-                <Button size="lg" onClick={openIntroStory} className="font-display">START GAME</Button>
+                <Button size="lg" onClick={openIntroStory} className="font-display">РќРђР§РђРўР¬ РР“Р РЈ</Button>
               </div>
+            </div>
+          )}
+
+          {menuTab === "instructions" && (
+            <div className="bg-black/40 rounded p-4 space-y-3">
+              <h2 className="font-display text-lg text-red-300 text-center">РРЅСЃС‚СЂСѓРєС†РёСЏ</h2>
+              <div className="text-left text-[12px] grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                <p>рџЋ® <b>A/D</b> В· <b>в†ђ/в†’</b> вЂ” С…РѕРґСЊР±Р°</p>
+                <p>рџЏѓ <b>Shift</b> вЂ” Р±РµРі, РЅРѕ РјРѕРЅСЃС‚СЂС‹ СЃР»С‹С€Р°С‚ С€СѓРј</p>
+                <p>рџ¤« <b>C</b> / <b>Ctrl</b> вЂ” РїСЂРёСЃРµСЃС‚СЊ Рё РёРґС‚Рё С‚РёС€Рµ</p>
+                <p>рџЋ’ <b>B</b> вЂ” РѕС‚РєСЂС‹С‚СЊ СЂСЋРєР·Р°Рє</p>
+                <p>вљЎ <b>E</b> / <b>Enter</b> вЂ” РґРµР№СЃС‚РІРёРµ СЂСЏРґРѕРј СЃ РїСЂРµРґРјРµС‚РѕРј</p>
+                <p>рџЏЏ <b>G</b> вЂ” РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ Р±РёС‚Сѓ СЂСЏРґРѕРј СЃ РєСѓРєР»РѕР№</p>
+                <p>рџ§ё <b>T</b> вЂ” Р±СЂРѕСЃРёС‚СЊ РёРіСЂСѓС€РєСѓ, С‡С‚РѕР±С‹ РѕС‚РІР»РµС‡СЊ РјРѕРЅСЃС‚СЂР°</p>
+                <p>рџљЄ <b>H</b> вЂ” СЃРїСЂСЏС‚Р°С‚СЊСЃСЏ РІ С€РєР°С„С‡РёРєРµ</p>
+                <p>рџ†™ <b>Space</b> вЂ” РїРµСЂРµРїСЂС‹РіРЅСѓС‚СЊ СЃС‚РµРєР»Рѕ</p>
+                <p>рџЌґ Р•РґР° РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СЃРёР»С‹, РіРѕР»РѕРґ РѕС‚РЅРёРјР°РµС‚ HP</p>
+                <p>рџґ РЎРїСЏС‰РёРµ РєСѓРєР»С‹ РїСЂРѕСЃС‹РїР°СЋС‚СЃСЏ РѕС‚ РіСЂРѕРјРєРёС… С€Р°РіРѕРІ</p>
+                <p>рџЊ‘ Р’ С‚С‘РјРЅС‹С… РєРѕСЂРёРґРѕСЂР°С… РЅСѓР¶РµРЅ С„РѕРЅР°СЂРёРє Рё Р±Р°С‚Р°СЂРµР№РєРё</p>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center">
+                РќР° РєР°Р¶РґРѕРј СЌС‚Р°Р¶Рµ РґСЂСѓРіРѕР№ РІСЂР°Рі: РјРµРґРІРµРґСЊ, Р±Р°Р»РµСЂРёРЅР°, РѕР±РµР·СЊСЏРЅР°, РєР»РѕСѓРЅ Рё СЃРµРјСЊСЏ РњР°С‚СЂРѕРЅС‹.
+              </p>
             </div>
           )}
 
@@ -3473,12 +3857,12 @@ export default function EscapeGame() {
                 const equipped = save.outfit === o.id;
                 return (
                   <div key={o.id} className={`p-3 rounded border ${equipped ? "border-primary bg-primary/10" : "border-zinc-700 bg-black/40"} flex flex-col items-center gap-2`}>
-                    <PixelTeen kind="lana" size={120} facing={1} palette={o.palette} motion="idle" />
+                    <MenuArtCharacter kind="lana" size={135} facing={1} motion="idle" />
                     <div className="text-xs font-pixel text-center">{o.name}</div>
                     {equipped
-                      ? <div className="text-[10px] text-primary font-pixel">EQUIPPED</div>
+                      ? <div className="text-[10px] text-primary font-pixel">РќРђР”Р•РўРћ</div>
                       : owned
-                        ? <Button size="sm" variant="secondary" onClick={() => equipOutfit(o)}>Equip</Button>
+                        ? <Button size="sm" variant="secondary" onClick={() => equipOutfit(o)}>РќР°РґРµС‚СЊ</Button>
                         : <Button size="sm" onClick={() => buyOutfit(o)} disabled={coins < o.price}>
                             <Coins className="h-3 w-3 mr-1" /> {o.price}
                           </Button>}
@@ -3490,6 +3874,16 @@ export default function EscapeGame() {
 
           {menuTab === "shop" && (
             <div className="bg-black/40 rounded p-4 space-y-2">
+              <div className="flex items-center gap-3 p-2 border border-cyan-700 rounded bg-cyan-950/25">
+                <div className="h-6 w-6 text-cyan-200 flex items-center justify-center text-lg">в—†</div>
+                <div className="flex-1">
+                  <div className="font-pixel text-sm">РљСЂРёСЃС‚Р°Р»Р» РІРѕР·СЂРѕР¶РґРµРЅРёСЏ <span className="text-cyan-300">Г—{save.crystals ?? 0}</span></div>
+                  <div className="text-[11px] text-muted-foreground">РќСѓР¶РµРЅ, С‡С‚РѕР±С‹ РІРѕР·СЂРѕРґРёС‚СЊСЃСЏ Сѓ РїРѕСЃР»РµРґРЅРµР№ С‚РѕС‡РєРё РїРѕСЃР»Рµ РїРѕСЂР°Р¶РµРЅРёСЏ.</div>
+                </div>
+                <Button size="sm" disabled={coins < CRYSTAL_PRICE} onClick={buyCrystal}>
+                  <Coins className="h-3 w-3 mr-1" /> {CRYSTAL_PRICE}
+                </Button>
+              </div>
               {UPGRADES.map(u => {
                 const I = u.icon;
                 const cur = u.id === "bat" || u.id === "gun" ? (save.owned[u.id] as number) : (save.owned[u.id] ? 1 : 0);
@@ -3498,23 +3892,23 @@ export default function EscapeGame() {
                   <div key={u.id} className="flex items-center gap-3 p-2 border border-zinc-700 rounded bg-black/40">
                     <I className="h-6 w-6 text-amber-300" />
                     <div className="flex-1">
-                      <div className="font-pixel text-sm">{u.name} {(u.id === "bat" || u.id === "gun") && <span className="text-amber-300">×{cur}</span>}</div>
+                      <div className="font-pixel text-sm">{u.name} {(u.id === "bat" || u.id === "gun") && <span className="text-amber-300">Г—{cur}</span>}</div>
                       <div className="text-[11px] text-muted-foreground">{u.desc}</div>
                     </div>
                     <Button size="sm" disabled={maxed || coins < u.price} onClick={() => buyUpgrade(u)}>
-                      {maxed ? "Owned" : <><Coins className="h-3 w-3 mr-1" /> {u.price}</>}
+                      {maxed ? "РљСѓРїР»РµРЅРѕ" : <><Coins className="h-3 w-3 mr-1" /> {u.price}</>}
                     </Button>
                   </div>
                 );
               })}
-              <p className="text-[11px] text-muted-foreground text-center pt-1">Purchases persist between games.</p>
+              <p className="text-[11px] text-muted-foreground text-center pt-1">РџРѕРєСѓРїРєРё СЃРѕС…СЂР°РЅСЏСЋС‚СЃСЏ РјРµР¶РґСѓ РёРіСЂР°РјРё.</p>
             </div>
           )}
 
           {menuTab === "leaderboard" && (
             <div className="bg-black/40 rounded p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <label className="text-xs text-zinc-400 font-pixel shrink-0">Name:</label>
+                <label className="text-xs text-zinc-400 font-pixel shrink-0">РРјСЏ:</label>
                 <Input
                   value={playerName}
                   maxLength={24}
@@ -3525,11 +3919,11 @@ export default function EscapeGame() {
                   className="h-8 text-sm"
                   placeholder="Lana"
                 />
-                <Button size="sm" variant="secondary" onClick={() => setLeaderboardKey(k => k + 1)}>↻</Button>
+                <Button size="sm" variant="secondary" onClick={() => setLeaderboardKey(k => k + 1)}>в†»</Button>
               </div>
               <Leaderboard refreshKey={leaderboardKey} />
               <p className="text-[10px] text-muted-foreground text-center">
-                Top-20 players by coins. Record is submitted after victory or defeat.
+                РўРѕРї-20 РёРіСЂРѕРєРѕРІ РїРѕ РјРѕРЅРµС‚Р°Рј. Р РµРєРѕСЂРґ РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ РїРѕСЃР»Рµ РїРѕР±РµРґС‹ РёР»Рё РїРѕСЂР°Р¶РµРЅРёСЏ.
               </p>
             </div>
           )}
@@ -3560,7 +3954,7 @@ export default function EscapeGame() {
             filter: "drop-shadow(0 0 40px rgba(220,20,20,0.9)) contrast(1.4) saturate(1.4)",
             animation: "scale-in 0.18s ease-out",
           }}>
-            <ToyMonster kind={jumpscare} size={260} boss facing={1} />
+            <MenuArtMonster kind={jumpscare} size={300} boss facing={1} />
           </div>
           <div className="absolute inset-0" style={{
             background: "repeating-linear-gradient(0deg, rgba(0,0,0,0.35) 0 2px, transparent 2px 4px)",
@@ -3571,7 +3965,7 @@ export default function EscapeGame() {
       {/* HUD */}
       <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/90 to-transparent p-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Crewmate color="#ff66aa" palette={lanaPalette} size={36} />
+          <MenuArtCharacter kind="lana" size={70} />
           <div>
             <div className="font-display text-sm text-primary">LANA</div>
             <div className="text-[10px] text-muted-foreground">{cur.name}</div>
@@ -3586,7 +3980,7 @@ export default function EscapeGame() {
           </div>
           <div>
             <div className="flex justify-between text-[11px] mb-1">
-              <span className="flex items-center gap-1"><Utensils className="h-3 w-3 text-amber-300" /> Hunger</span>
+              <span className="flex items-center gap-1"><Utensils className="h-3 w-3 text-amber-300" /> Р“РѕР»РѕРґ</span>
               <span className={`font-mono ${hunger < 25 ? "text-red-400 animate-pulse" : "text-amber-200"}`}>{hunger}</span>
             </div>
             <div className="h-2 bg-black/60 rounded border border-amber-700/40 overflow-hidden">
@@ -3596,55 +3990,56 @@ export default function EscapeGame() {
         </div>
         <div className="text-right text-xs space-y-1">
           <div className="flex gap-3 justify-end flex-wrap">
-            <span className="text-amber-300">🏫 Floor {cur.id}/{levels.length}</span>
+            <span className="text-amber-300">рџЏ« Floor {cur.id}/{levels.length}</span>
             <span className="flex items-center gap-1"><Coins className="h-3 w-3 text-amber-300" />{coins}</span>
-            <span title="Bat (G)">🏏 {batLeft}</span>
-            <span title="Pistol (F)">🔫 {gunLeft}</span>
+            <span className="text-cyan-200" title="РљСЂРёСЃС‚Р°Р»Р»С‹ РІРѕР·СЂРѕР¶РґРµРЅРёСЏ">в—† {save.crystals ?? 0}</span>
+            <span title="Bat (G)">рџЏЏ {batLeft}</span>
+            <span title="Pistol (F)">рџ”« {gunLeft}</span>
             {hasFlashlight && (
-              <span title={`Flashlight · battery ${battery}%`} className={`flex items-center gap-1 ${battery === 0 ? "text-red-400 animate-pulse" : (battery < 25 ? "text-amber-400" : "text-amber-200")}`}>
+              <span title={`Flashlight В· battery ${battery}%`} className={`flex items-center gap-1 ${battery === 0 ? "text-red-400 animate-pulse" : (battery < 25 ? "text-amber-400" : "text-amber-200")}`}>
                 <Flashlight className="h-3 w-3 inline" />
                 {battery > 25 ? <BatteryFull className="h-3 w-3 inline" /> : <BatteryLow className="h-3 w-3 inline" />}
                 {battery}%
               </span>
             )}
-            <span>💀 {killed.size}/{zombies.length}</span>
-            <span>🔍 {searched.size}/{classrooms.length}</span>
-            <span title="Story notes found">Notes {storyNotes.size}/{Object.keys(STORY_NOTES).length}</span>
-            <span title="Friends and children rescued">Saved {rescued.size}/{RESCUE_EVENTS.length}</span>
-            <span className={crouching ? "text-emerald-400" : (running ? "text-red-400" : "text-zinc-500")} title={crouching ? "Crouching — quiet" : (running ? "Running — noisy" : "Walking")}>
+            <span>рџ’Ђ {killed.size}/{dolls.length}</span>
+            <span>рџ”Ќ {searched.size}/{classrooms.length}</span>
+            <span title="РќР°Р№РґРµРЅРЅС‹Рµ Р·Р°РїРёСЃРєРё">Notes {storyNotes.size}/{Object.keys(STORY_NOTES).length}</span>
+            <span title="РЎРїР°СЃС‘РЅРЅС‹Рµ РґСЂСѓР·СЊСЏ Рё РґРµС‚Рё">Saved {rescued.size}/{RESCUE_EVENTS.length}</span>
+            <span className={crouching ? "text-emerald-400" : (running ? "text-red-400" : "text-zinc-500")} title={crouching ? "РџСЂРёСЃРµР»Р° вЂ” quiet" : (running ? "Р‘РµР¶РёС‚ вЂ” noisy" : "РҐРѕРґСЊР±Р°")}>
               {crouching ? <ArrowDown className="h-3 w-3 inline" /> : (running ? <Volume2 className="h-3 w-3 inline" /> : <VolumeX className="h-3 w-3 inline" />)}
             </span>
           </div>
           <div className="flex gap-1 justify-end items-center min-h-[18px]">
             <button onClick={() => setModal({ kind: "backpack" })}
               className="flex items-center gap-1 text-[10px] text-amber-200 hover:text-amber-100 bg-black/60 border border-amber-700/60 rounded px-2 py-0.5 font-pixel">
-              <Backpack className="h-3 w-3" /> Backpack [B] · {inv.length}
+              <Backpack className="h-3 w-3" /> Р СЋРєР·Р°Рє [B] В· {inv.length}
             </button>
             {inv.slice(0, 5).map((it, i) => (
-              <span key={it.id + i} title={`${it.name}${it.hp ? ` +${it.hp} HP` : ""}${it.food ? ` +${it.food} 🍴` : ""}`}
+              <span key={it.id + i} title={`${it.name}${it.hp ? ` +${it.hp} HP` : ""}${it.food ? ` +${it.food} рџЌґ` : ""}`}
                 className="bg-black/60 border border-amber-700/60 rounded px-1 text-sm leading-none">
                 {it.emoji}
               </span>
             ))}
             {inv.length > 5 && <span className="text-[10px] text-amber-300">+{inv.length - 5}</span>}
             <button onClick={beginGame}
-              title="Restart"
+              title="Р—Р°РЅРѕРІРѕ"
               className="ml-2 flex items-center gap-1 text-[10px] text-amber-200 hover:text-amber-100 bg-black/60 border border-amber-700/60 rounded px-2 py-0.5 font-pixel">
-              ↻ Restart
+              в†» Р—Р°РЅРѕРІРѕ
             </button>
             {checkpoint && (
               <span className="text-[10px] text-emerald-300 bg-black/60 border border-emerald-700/60 rounded px-2 py-0.5 font-pixel">
-                Checkpoint: {checkpoint.label}
+                РўРѕС‡РєР°: {checkpoint.label}
               </span>
             )}
             <button onClick={() => { setStarted(false); setMenuTab("play"); setModal({ kind: "none" }); }}
-              title="Exit to menu"
-              className="flex items-center gap-1 text-[10px] text-red-200 hover:text-red-100 bg-black/60 border border-red-700/60 rounded px-2 py-0.5 font-pixel">
-              ✕ Menu
+              title="Р’ РјРµРЅСЋ"
+              className="flex items-center gap-2 text-[13px] text-red-100 hover:text-white bg-red-950/80 border-2 border-red-500/80 rounded px-4 py-2 font-pixel shadow-[0_0_16px_rgba(127,29,29,0.35)]">
+              вњ• РњРµРЅСЋ
             </button>
           </div>
           {allKilled && <div className="text-emerald-400 font-bold animate-pulse">
-            → {isFinalLevel ? "Face the Matron!" : "Stairs up!"}
+            в†’ {isFinalLevel ? "Рљ РњР°С‚СЂРѕРЅРµ!" : "РќР°РІРµСЂС…!"}
           </div>}
         </div>
       </div>
@@ -3797,7 +4192,7 @@ export default function EscapeGame() {
                     {c.name}
                   </div>
                   {isDone && (
-                    <div className="absolute inset-0 flex items-center justify-center text-emerald-400 text-3xl font-bold">✓</div>
+                    <div className="absolute inset-0 flex items-center justify-center text-emerald-400 text-3xl font-bold">вњ“</div>
                   )}
                 </div>
               </div>
@@ -3809,7 +4204,7 @@ export default function EscapeGame() {
             <div className={`relative w-24 h-40 border-4 rounded-t-md ${allKilled ? "border-emerald-400 glow-toxic" : "border-red-700"}`}
               style={{ background: allKilled ? "linear-gradient(180deg,#1a3a1a,#0a1a0a)" : "linear-gradient(180deg,#2a0a0a,#1a0505)" }}>
               <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/90 text-[10px] text-emerald-300 px-2 py-0.5 rounded whitespace-nowrap font-pixel">
-                {allKilled ? (isFinalLevel ? "EXIT OPEN" : "STAIRS ▲") : (isFinalLevel ? "EXIT ⛔" : "STAIRS ⛔")}
+                {allKilled ? (isFinalLevel ? "EXIT OPEN" : "STAIRS в–І") : (isFinalLevel ? "EXIT в›”" : "STAIRS в›”")}
               </div>
               {isFinalLevel
                 ? <DoorClosed className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-white/60" />
@@ -3826,11 +4221,11 @@ export default function EscapeGame() {
                 <polygon points="28,20 36,6 42,20" fill="#c8e8f0" stroke="#fff" strokeWidth="0.5" opacity="0.9" />
                 <polygon points="6,20 8,12 11,20" fill="#fff" opacity="0.5" />
               </svg>
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-pixel text-cyan-200 animate-pulse">⚠ glass</div>
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-pixel text-cyan-200 animate-pulse">вљ  glass</div>
             </div>
           ))}
 
-          {/* Hide spots — lockers along the wall */}
+          {/* Hide spots вЂ” lockers along the wall */}
           {(cur.hideSpots ?? []).map(s => {
             const near = Math.abs(s.x - x) < REACH;
             const inUse = hiding === s.id;
@@ -3849,7 +4244,7 @@ export default function EscapeGame() {
                   {/* door split */}
                   <div className="absolute left-1/2 top-0 bottom-0 w-px bg-black/70" />
                   {inUse && (
-                    <div className="absolute inset-0 flex items-center justify-center text-[18px]">👁️</div>
+                    <div className="absolute inset-0 flex items-center justify-center text-[18px]">рџ‘ЃпёЏ</div>
                   )}
                   {near && !inUse && (
                     <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black/80 text-emerald-200 text-[9px] px-1 rounded font-pixel whitespace-nowrap">
@@ -3870,19 +4265,19 @@ export default function EscapeGame() {
               </div>
               {/* sound rings */}
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-amber-300/70 animate-ping" style={{ width: 60, height: 60 }} />
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-[8px] font-pixel text-amber-200">♪ ♫ ♪</div>
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-[8px] font-pixel text-amber-200">в™Є в™« в™Є</div>
             </div>
           )}
 
 
 
-          {/* Zombies */}
-          {zombies.map((z) => {
+          {/* Dolls */}
+          {dolls.map((z) => {
             const monsterKind = pickToyMonsterKind(z.name);
             if (killed.has(z.id)) {
               return (
                 <div key={z.id} className="absolute opacity-60" style={{ left: z.x - 34, top: FLOOR_Y - 24, transform: "rotate(90deg)" }}>
-                  <ToyMonster kind={monsterKind} size={96} />
+                  <MenuArtMonster kind={monsterKind} size={96} motion="idle" />
                 </div>
               );
             }
@@ -3892,44 +4287,49 @@ export default function EscapeGame() {
                 <div key={z.id} className="absolute" style={{ left: z.x - 34, top: FLOOR_Y - 86 }}>
                   {/* tilted up, looking at ceiling */}
                   <div style={{ transform: "rotate(-18deg)", transformOrigin: "50% 90%" }}>
-                    <ToyMonster kind={monsterKind} size={96} facing={1} />
+                    <MenuArtMonster kind={monsterKind} size={96} facing={1} motion="idle" />
                   </div>
                   {/* Zzz */}
                   <div className="absolute -top-6 left-10 text-blue-200 font-pixel text-sm animate-pulse drop-shadow">
                     Zzz
                   </div>
                   <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-blue-900/80 text-blue-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
-                    😴 {z.name}
+                    рџґ {z.name}
                   </div>
                 </div>
               );
             }
             const zCur = zomPosRef.current[z.id] ?? z.x;
             return (
-              <div key={z.id} className="absolute zombie-walk" style={{
+              <div key={z.id} className="absolute doll-walk" style={{
                 left: zCur - 34, top: FLOOR_Y - 86, transition: "left 0.08s linear",
                 filter: "drop-shadow(0 0 10px rgba(180,10,10,0.65)) drop-shadow(0 6px 6px rgba(0,0,0,0.9)) contrast(1.15) saturate(1.2)",
               }}>
-                <ToyMonster kind={monsterKind} size={96} facing={zCur > x ? -1 : 1} />
+                <MenuArtMonster
+                  kind={monsterKind}
+                  size={monsterKind === "clown" ? 128 : monsterKind === "bear" ? 118 : 104}
+                  facing={zCur > x ? -1 : 1}
+                  motion={monsterKind === "clown" || monsterKind === "monkey" ? "run" : "walk"}
+                />
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-[9px] px-1 rounded font-pixel flex items-center gap-1 whitespace-nowrap">
                   <TaskIcon kind={z.kind} className="h-3 w-3" />
-                  {z.name} · {monsterBehaviorLabel(monsterKind)}
+                  {z.name} В· {monsterBehaviorLabel(monsterKind)}
                 </div>
               </div>
             );
           })}
 
           {/* Lana */}
-          <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 - jumpY, transition: jumpY === 0 ? "top 0.1s" : "none", opacity: hiding ? 0.15 : 1 }}>
+          <div className="absolute" style={{ left: x - 28, top: FLOOR_Y - 70 - jumpY, transition: jumpY === 0 ? "top 0.1s" : "none", opacity: 1 }}>
             {hiding && (
               <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/85 text-emerald-200 text-[9px] px-2 py-0.5 rounded font-pixel whitespace-nowrap">
-                🚪 Hidden — H to leave
+                рџљЄ Hidden вЂ” H to leave
               </div>
             )}
             <LanaSpeech side={facing === 1 ? "left" : "right"} />
             <div className={hp < maxHp * 0.28 ? "lana-scared" : (moving ? "lana-walk" : "lana-idle")}
               style={crouching ? { transform: "scaleY(0.7) translateY(18px)", transformOrigin: "50% 100%" } : undefined}>
-              <Crewmate color="#ff66aa" palette={lanaPalette} facing={facing} size={80} motion={hp < maxHp * 0.28 ? "scared" : running ? "run" : moving ? "walk" : "idle"} />
+              <MenuArtCharacter kind="lana" facing={facing} size={150} scared={hp < maxHp * 0.28} motion={hp < maxHp * 0.28 ? "scared" : running ? "run" : moving ? "walk" : "idle"} />
               {batLeft > 0 && (
                 <div
                   className="absolute pointer-events-none"
@@ -3942,14 +4342,14 @@ export default function EscapeGame() {
                     transformOrigin: "50% 100%",
                     filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.8))",
                   }}
-                  title="Bat — 1 hit (G)"
+                  title="Bat вЂ” 1 hit (G)"
                 >
-                  🏏
+                  рџЏЏ
                 </div>
               )}
             </div>
             {crouching && (
-              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-emerald-900/80 text-emerald-100 text-[9px] px-1 rounded font-pixel">🤫 quiet</div>
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-emerald-900/80 text-emerald-100 text-[9px] px-1 rounded font-pixel">рџ¤« quiet</div>
             )}
           </div>
 
@@ -3958,7 +4358,7 @@ export default function EscapeGame() {
         </div>
       </div>
 
-      {/* Darkness overlay — 2-3 этаж. С включённым фонарём — большой конус, иначе — крошечный кружок. */}
+      {/* Darkness overlay вЂ” 2-3 СЌС‚Р°Р¶. РЎ РІРєР»СЋС‡С‘РЅРЅС‹Рј С„РѕРЅР°СЂС‘Рј вЂ” Р±РѕР»СЊС€РѕР№ РєРѕРЅСѓСЃ, РёРЅР°С‡Рµ вЂ” РєСЂРѕС€РµС‡РЅС‹Р№ РєСЂСѓР¶РѕРє. */}
       {level >= 1 && (
         <div className="absolute inset-0 pointer-events-none z-20"
           style={{
@@ -3972,12 +4372,12 @@ export default function EscapeGame() {
       {level >= 1 && !flashlightOn && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 bg-red-900/80 border border-red-500 text-red-100 px-3 py-1 rounded font-pixel text-xs">
           {!hasFlashlight
-            ? "🌑 Dark! Find a flashlight in class or buy in shop · walk quietly"
-            : "🪫 Battery died! Use a new one from backpack [B]"}
+            ? "рџЊ‘ Dark! РќР°Р№РґРё С„РѕРЅР°СЂРёРє РІ РєР»Р°СЃСЃРµ РёР»Рё РєСѓРїРё РІ РјР°РіР°Р·РёРЅРµ В· РёРґРё С‚РёС…Рѕ"
+            : "рџЄ« Battery died! РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ a new one from backpack [B]"}
         </div>
       )}
 
-      {/* Hint + toast */}
+      {/* РџРѕРґСЃРєР°Р·РєР° + toast */}
       {hint && modal.kind === "none" && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-black/85 border border-primary/50 px-4 py-2 rounded font-display text-sm text-primary animate-pulse">
           {hint}
@@ -4031,30 +4431,30 @@ export default function EscapeGame() {
             {modal.kind === "task" && (
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <ToyMonster kind={pickToyMonsterKind(modal.zombie.name)} size={64} />
+                  <MenuArtMonster kind={pickToyMonsterKind(modal.doll.name)} size={86} />
                   <div>
-                    <h2 className="font-display text-lg text-red-400">{modal.zombie.name}</h2>
+                    <h2 className="font-display text-lg text-red-400">{modal.doll.name}</h2>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <TaskIcon kind={modal.zombie.kind} className="h-3 w-3" />
-                      {monsterBehaviorLabel(pickToyMonsterKind(modal.zombie.name))} · solve the puzzle to survive
+                      <TaskIcon kind={modal.doll.kind} className="h-3 w-3" />
+                      {monsterBehaviorLabel(pickToyMonsterKind(modal.doll.name))} В· СЂРµС€Рё Р»С‘РіРєРѕРµ Р·Р°РґР°РЅРёРµ, С‡С‚РѕР±С‹ РІС‹Р¶РёС‚СЊ
                     </p>
                   </div>
                 </div>
-                <HintBox kind={modal.zombie.kind} advanced={save.owned.hint} />
-                {TIME_LIMITS[modal.zombie.kind] !== null && (
+                <HintBox kind={modal.doll.kind} advanced={save.owned.hint} />
+                {TIME_LIMITS[modal.doll.kind] !== null && (
                   <TaskTimer
-                    key={modal.zombie.id}
-                    seconds={TIME_LIMITS[modal.zombie.kind] as number}
+                    key={modal.doll.id}
+                    seconds={TIME_LIMITS[modal.doll.kind] as number}
                     onTimeout={() => finishTask(false)}
                   />
                 )}
-                {modal.zombie.kind === "wires" && <WiresGame onDone={finishTask} />}
-                {modal.zombie.kind === "download" && <DownloadGame onDone={finishTask} />}
-                {modal.zombie.kind === "reactor" && <ReactorGame onDone={finishTask} />}
-                {modal.zombie.kind === "trash" && <TrashGame onDone={finishTask} />}
-                {modal.zombie.kind === "switches" && <SwitchesGame onDone={finishTask} />}
-                {modal.zombie.kind === "quiz" && <QuizGame onDone={finishTask} levelName={cur.name} zombieName={modal.zombie.name} />}
-                {modal.zombie.kind === "aim" && <AimGame onDone={finishTask} />}
+                {modal.doll.kind === "wires" && <WiresGame onDone={finishTask} />}
+                {modal.doll.kind === "download" && <DownloadGame onDone={finishTask} />}
+                {modal.doll.kind === "reactor" && <ReactorGame onDone={finishTask} />}
+                {modal.doll.kind === "trash" && <TrashGame onDone={finishTask} />}
+                {modal.doll.kind === "switches" && <SwitchesGame onDone={finishTask} />}
+                {modal.doll.kind === "quiz" && <QuizGame onDone={finishTask} levelName={cur.name} dollName={modal.doll.name} />}
+                {modal.doll.kind === "aim" && <AimGame onDone={finishTask} />}
               </div>
             )}
 
@@ -4064,17 +4464,17 @@ export default function EscapeGame() {
                   <div>
                     <h3 className="font-display text-lg text-primary">{modal.classroom.name}</h3>
                     <p className="text-[11px] text-muted-foreground">
-                      Inside the classroom. Look for flashlights, batteries, food and medkits. Outside the window — zombies.
+                      Р’ РєР»Р°СЃСЃРµ РјРѕР¶РЅРѕ РЅР°Р№С‚Рё С„РѕРЅР°СЂРёРєРё, Р±Р°С‚Р°СЂРµР№РєРё, РµРґСѓ Рё Р°РїС‚РµС‡РєРё. Р—Р° РѕРєРЅРѕРј С‚РµРїРµСЂСЊ С‚РѕР»СЊРєРѕ СЃС‚Р°СЂС‹Рµ РєСѓРєР»С‹.
                     </p>
                   </div>
                   <div className="text-[11px] font-pixel text-amber-200 flex items-center gap-2">
                     {hasFlashlight ? (
                       <span className={`flex items-center gap-1 ${battery > 0 ? "text-amber-200" : "text-red-400 animate-pulse"}`}>
                         {battery > 25 ? <BatteryFull className="h-4 w-4" /> : <BatteryLow className="h-4 w-4" />}
-                        🔦 {battery}%
+                        рџ”¦ {battery}%
                       </span>
                     ) : (
-                      <span className="text-red-300">🔦 no flashlight</span>
+                      <span className="text-red-300">рџ”¦ РЅРµС‚ С„РѕРЅР°СЂРёРєР°</span>
                     )}
                   </div>
                 </div>
@@ -4084,18 +4484,18 @@ export default function EscapeGame() {
                   hasFlashlight={hasFlashlight}
                   batteryPct={battery}
                   onCollect={(loot, spot) => {
-                    if (loot.emoji === "🚪") {
-                      // триггер "дверь открыта" — даём награду
+                    if (loot.emoji === "рџљЄ") {
+                      // С‚СЂРёРіРіРµСЂ "РґРІРµСЂСЊ РѕС‚РєСЂС‹С‚Р°" вЂ” РґР°С‘Рј РЅР°РіСЂР°РґСѓ
                       setCoins(c => c + 15);
                       return;
                     }
-                    if (loot.emoji === "🗝") {
-                      // ключ — не кладём в рюкзак, просто бонус
+                    if (loot.emoji === "рџ—ќ") {
+                      // РєР»СЋС‡ вЂ” РЅРµ РєР»Р°РґС‘Рј РІ СЂСЋРєР·Р°Рє, РїСЂРѕСЃС‚Рѕ Р±РѕРЅСѓСЃ
                       setCoins(c => c + 5);
                       return;
                     }
-                    if (loot.emoji === "🏏") {
-                      // бита из класса — одноразовая, не сохраняется между забегами
+                    if (loot.emoji === "рџЏЏ") {
+                      // Р±РёС‚Р° РёР· РєР»Р°СЃСЃР° вЂ” РѕРґРЅРѕСЂР°Р·РѕРІР°СЏ, РЅРµ СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ РјРµР¶РґСѓ Р·Р°Р±РµРіР°РјРё
                       setBatLeft(n => n + 1);
                       return;
                     }
@@ -4117,15 +4517,15 @@ export default function EscapeGame() {
               isFinalLevel ? (
                 <div className="flex flex-col items-center gap-4 text-center max-w-md">
                   <Impostor size={80} />
-                  <h3 className="font-display text-lg text-red-400">The Porcelain Matron waits at the exit</h3>
+                  <h3 className="font-display text-lg text-red-400">Р¤Р°СЂС„РѕСЂРѕРІР°СЏ РњР°С‚СЂРѕРЅР° Р¶РґС‘С‚ Сѓ РІС‹С…РѕРґР°</h3>
                   <p>"I kept them safe, Lana. Why would you take them into the dark outside?"</p>
-                  <Button onClick={() => setModal({ kind: "boss" })}>Accept challenge</Button>
+                  <Button onClick={() => setModal({ kind: "boss" })}>Р’РѕР№С‚Рё</Button>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4 text-center max-w-md">
                   <ArrowUp className="h-12 w-12 text-emerald-400" />
-                  <h3 className="font-display text-lg text-emerald-400">Stairs to the next floor</h3>
-                  <p>Floor {cur.id} cleared. Go higher — it gets more dangerous.</p>
+                  <h3 className="font-display text-lg text-emerald-400">Р›РµСЃС‚РЅРёС†Р° РЅР° СЃР»РµРґСѓСЋС‰РёР№ СЌС‚Р°Р¶</h3>
+                  <p>Floor {cur.id} РїСЂРѕР№РґРµРЅ. РџРѕРґРЅРёРјР°Р№СЃСЏ РІС‹С€Рµ.</p>
                   <Button onClick={() => {
                     setLevel(level + 1);
                     setX(120);
@@ -4137,9 +4537,9 @@ export default function EscapeGame() {
                     wokenRef.current = new Set();
                     setHp(h => Math.min(maxHp, h + 20));
                     setModal({ kind: "none" });
-                    setToast(`▲ Floor ${cur.id + 1}`);
+                    setToast(`в–І Floor ${cur.id + 1}`);
                     setTimeout(() => setToast(""), 1800);
-                  }}>Climb ▲</Button>
+                  }}>РџРѕРґРЅСЏС‚СЊСЃСЏ в–І</Button>
                 </div>
               )
             )}
@@ -4149,20 +4549,20 @@ export default function EscapeGame() {
                 <div className="flex items-center gap-3 mb-3">
                   <DoorClosed className="h-10 w-10 text-amber-400" />
                   <div>
-                    <h2 className="font-display text-lg text-amber-300">Door lock</h2>
-                    <p className="text-xs text-muted-foreground">Connect the wires to open the path to the porcelain doll.</p>
+                    <h2 className="font-display text-lg text-amber-300">Р—Р°РјРѕРє РґРІРµСЂРё</h2>
+                    <p className="text-xs text-muted-foreground">РЎРѕРµРґРёРЅРё РїСЂРѕРІРѕРґР°, С‡С‚РѕР±С‹ РѕС‚РєСЂС‹С‚СЊ РїСѓС‚СЊ Рє С„Р°СЂС„РѕСЂРѕРІРѕР№ РєСѓРєР»Рµ.</p>
                   </div>
                 </div>
                 <HintBox kind="wires" advanced={save.owned.hint} />
-                <TaskTimer seconds={30} onTimeout={() => {
+                <TaskTimer seconds={45} onTimeout={() => {
                   setHp(h => Math.max(0, h - 15));
                   setShake(true); setTimeout(() => setShake(false), 400);
-                  setToast("🩸 A zombie crept up at the door! -15 HP");
+                  setToast("рџ©ё A doll crept up at the door! -15 HP");
                   setTimeout(() => setToast(""), 1600);
                   setModal({ kind: "none" });
                 }} />
                 <WiresGame onDone={(ok) => {
-                  if (ok) { setToast("🚪 Door open!"); setTimeout(() => setToast(""), 1500); setModal({ kind: "boss" }); }
+                  if (ok) { setToast("рџљЄ Door open!"); setTimeout(() => setToast(""), 1500); setModal({ kind: "boss" }); }
                   else { setHp(h => Math.max(0, h - 10)); setModal({ kind: "none" }); }
                 }} />
               </div>
@@ -4177,8 +4577,8 @@ export default function EscapeGame() {
                 <div className="flex items-center gap-3 mb-1">
                   <Backpack className="h-7 w-7 text-amber-300" />
                   <div>
-                    <h2 className="font-display text-lg text-amber-300">Lana's Backpack</h2>
-                    <p className="text-xs text-muted-foreground">Use items to heal, eat, or get stronger.</p>
+                    <h2 className="font-display text-lg text-amber-300">Р СЋРєР·Р°Рє Р›Р°РЅС‹</h2>
+                    <p className="text-xs text-muted-foreground">РСЃРїРѕР»СЊР·СѓР№ РїСЂРµРґРјРµС‚С‹, С‡С‚РѕР±С‹ Р»РµС‡РёС‚СЊСЃСЏ, РµСЃС‚СЊ РёР»Рё СЃС‚Р°РЅРѕРІРёС‚СЊСЃСЏ СЃРёР»СЊРЅРµРµ.</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
@@ -4186,22 +4586,22 @@ export default function EscapeGame() {
                     <div className="text-red-300">HP</div><div className="font-mono">{hp}/{maxHp}</div>
                   </div>
                   <div className="bg-black/40 border border-amber-700/40 rounded p-2 text-center">
-                    <div className="text-amber-300">Hunger</div><div className="font-mono">{hunger}/{MAX_HUNGER}</div>
+                    <div className="text-amber-300">Р“РѕР»РѕРґ</div><div className="font-mono">{hunger}/{MAX_HUNGER}</div>
                   </div>
                   <div className="bg-black/40 border border-emerald-700/40 rounded p-2 text-center">
-                    <div className="text-emerald-300">Strength</div><div className="font-mono">×{strength}</div>
+                    <div className="text-emerald-300">Strength</div><div className="font-mono">Г—{strength}</div>
                   </div>
                 </div>
                 {hasFlashlight && (
                   <div className="bg-black/40 border border-amber-600/40 rounded p-2 text-xs flex items-center justify-between">
                     <span className="flex items-center gap-2"><Flashlight className="h-4 w-4 text-amber-200" /> Flashlight</span>
                     <span className={`font-mono ${battery === 0 ? "text-red-400" : battery < 25 ? "text-amber-400" : "text-amber-200"}`}>
-                      🔋 {battery}%
+                      рџ”‹ {battery}%
                     </span>
                   </div>
                 )}
                 {inv.length === 0 ? (
-                  <p className="text-center text-muted-foreground text-sm py-6">Backpack is empty. Search classrooms for items.</p>
+                  <p className="text-center text-muted-foreground text-sm py-6">Р СЋРєР·Р°Рє РїСѓСЃС‚. РС‰Рё РїСЂРµРґРјРµС‚С‹ РІ РєР»Р°СЃСЃР°С….</p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto">
                     {inv.map((it, idx) => (
@@ -4211,18 +4611,18 @@ export default function EscapeGame() {
                           <div className="text-sm font-pixel truncate">{it.name}</div>
                           <div className="text-[10px] text-muted-foreground">
                             {it.hp ? `+${it.hp} HP ` : ""}
-                            {it.food ? `+${it.food} 🍴 ` : ""}
-                            {it.strength ? `+${it.strength} 💪 ` : ""}
-                            {it.battery ? `+${it.battery}% 🔋` : ""}
+                            {it.food ? `+${it.food} рџЌґ ` : ""}
+                            {it.strength ? `+${it.strength} рџ’Є ` : ""}
+                            {it.battery ? `+${it.battery}% рџ”‹` : ""}
                           </div>
                         </div>
-                        <Button size="sm" onClick={() => useItem(idx)}>Use</Button>
+                        <Button size="sm" onClick={() => useItem(idx)}>РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ</Button>
                       </div>
                     ))}
                   </div>
                 )}
                 <div className="flex justify-end">
-                  <Button variant="secondary" onClick={() => setModal({ kind: "none" })}>Close</Button>
+                  <Button variant="secondary" onClick={() => setModal({ kind: "none" })}>Р—Р°РєСЂС‹С‚СЊ</Button>
                 </div>
               </div>
             )}
@@ -4231,13 +4631,13 @@ export default function EscapeGame() {
               <div className="text-center space-y-4">
                 <h2 className="font-display text-2xl text-emerald-400">{ending.title}</h2>
                 <p>{ending.body}</p>
-                <div className="flex justify-center"><Crewmate color="#ff66aa" palette={lanaPalette} size={80} /></div>
+                <div className="flex justify-center"><MenuArtCharacter kind="lana" size={140} scared /></div>
                 <div className="grid grid-cols-3 gap-2 text-[11px] font-pixel">
                   <div className="bg-black/40 border border-zinc-700 rounded p-2">Notes<br /><span className="text-amber-300">{storyNotes.size}/{Object.keys(STORY_NOTES).length}</span></div>
                   <div className="bg-black/40 border border-zinc-700 rounded p-2">Saved<br /><span className="text-emerald-300">{rescued.size}/{RESCUE_EVENTS.length}</span></div>
                   <div className="bg-black/40 border border-zinc-700 rounded p-2">Bonus<br /><span className="text-primary">+{ending.bonus}</span></div>
                 </div>
-                <p className="text-amber-300 font-pixel">Ending bonus: +{ending.bonus} coins</p>
+                <p className="text-amber-300 font-pixel">Р‘РѕРЅСѓСЃ РєРѕРЅС†РѕРІРєРё: +{ending.bonus} coins</p>
                 <div className="flex items-center gap-2 justify-center">
                   <Input
                     value={playerName}
@@ -4256,35 +4656,65 @@ export default function EscapeGame() {
                 <Button onClick={() => {
                   setCoins(c => c + ending.bonus);
                   setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" });
-                }}>Menu</Button>
+                }}>РњРµРЅСЋ</Button>
               </div>
             )}
 
             {modal.kind === "lose" && (
               <div className="text-center space-y-4">
                 <Skull className="h-16 w-16 text-red-500 mx-auto" />
-                <h2 className="font-display text-2xl text-red-400">DEFEAT</h2>
-                <p>{checkpoint ? `Lana hears the school breathing. Respawning near ${checkpoint.label}...` : "The toys were stronger. Buy upgrades and try again."}</p>
-                <p className="text-xs text-zinc-400">Floors cleared: {level} · Coins: {coins}</p>
+                <h2 className="font-display text-2xl text-red-400">Р›Р°РЅР° РЅРµ СЃРјРѕРіР»Р° РІС‹Р±СЂР°С‚СЊСЃСЏ</h2>
+                <p className="text-sm text-zinc-200">
+                  РљСѓРєР»С‹ СЃРЅРѕРІР° Р·Р°РєСЂС‹Р»Рё РєРѕСЂРёРґРѕСЂ. Р’С‹Р±РµСЂРё, С‡С‚Рѕ РґРµР»Р°С‚СЊ РґР°Р»СЊС€Рµ.
+                </p>
+                <div className="grid grid-cols-3 gap-2 text-[11px] font-pixel">
+                  <div className="bg-black/40 border border-zinc-700 rounded p-2">
+                    Р­С‚Р°Р¶<br /><span className="text-amber-300">{cur.id}/{levels.length}</span>
+                  </div>
+                  <div className="bg-black/40 border border-zinc-700 rounded p-2">
+                    РњРѕРЅРµС‚С‹<br /><span className="text-amber-300">{coins}</span>
+                  </div>
+                  <div className="bg-black/40 border border-cyan-700 rounded p-2">
+                    РљСЂРёСЃС‚Р°Р»Р»С‹<br /><span className="text-cyan-300">в—† {save.crystals ?? 0}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  РљСЂРёСЃС‚Р°Р»Р»С‹ РїРѕРєСѓРїР°СЋС‚СЃСЏ РІ РјР°РіР°Р·РёРЅРµ Р·Р° РјРѕРЅРµС‚С‹. РџРµСЂРµСЂРѕР¶РґРµРЅРёРµ СЃС‚РѕРёС‚ в—† {RESPAWN_CRYSTAL_COST}.
+                </p>
                 <div className="flex items-center gap-2 justify-center">
                   <Input
                     value={playerName}
                     maxLength={24}
                     onChange={(e) => setPlayerName(e.target.value)}
                     className="h-8 text-sm max-w-[180px]"
-                    placeholder="Your name"
+                    placeholder="РРјСЏ"
                     disabled={scoreSubmitted}
                   />
                   <Button size="sm" variant="secondary" disabled={scoreSubmitted || submittingScore}
                     onClick={() => submitMyScore(false)}>
                     <Trophy className="h-3 w-3 mr-1" />
-                    {scoreSubmitted ? "Submitted" : "To records"}
+                    {scoreSubmitted ? "РћС‚РїСЂР°РІР»РµРЅРѕ" : "Р’ СЂРµРєРѕСЂРґС‹"}
                   </Button>
                 </div>
-                <div className="flex justify-center gap-2">
-                  {checkpoint && <Button onClick={respawnAtCheckpoint}>Respawn now</Button>}
-                  <Button variant="secondary" onClick={() => { setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" }); }}>Menu</Button>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => { setStarted(false); setMenuTab(scoreSubmitted ? "leaderboard" : "play"); setModal({ kind: "none" }); }}
+                  >
+                    Р’С‹Р№С‚Рё РёР· РёРіСЂС‹
+                  </Button>
+                  <Button variant="secondary" onClick={beginGame}>
+                    РќР°С‡Р°С‚СЊ Р·Р°РЅРѕРІРѕ
+                  </Button>
+                  <Button
+                    onClick={respawnWithCrystal}
+                    disabled={!checkpoint || (save.crystals ?? 0) < RESPAWN_CRYSTAL_COST}
+                    title={!checkpoint ? "РўРѕС‡РєР° РІРѕР·СЂРѕР¶РґРµРЅРёСЏ РµС‰С‘ РЅРµ РЅР°Р№РґРµРЅР°" : "РџРѕС‚СЂР°С‚РёС‚СЊ РєСЂРёСЃС‚Р°Р»Р» Рё РІРµСЂРЅСѓС‚СЊСЃСЏ Рє С‚РѕС‡РєРµ"}
+                  >
+                    в—† РџРµСЂРµСЂРѕРґРёС‚СЊСЃСЏ
+                  </Button>
                 </div>
+                {!checkpoint && <p className="text-[11px] text-red-300">РўРѕС‡РєР° РІРѕР·СЂРѕР¶РґРµРЅРёСЏ РµС‰С‘ РЅРµ РЅР°Р№РґРµРЅР°.</p>}
               </div>
             )}
           </div>

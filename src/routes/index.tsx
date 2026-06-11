@@ -1,13 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import EscapeGame from "@/game/EscapeGame";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Сбеги из школы — игра-квест с загадками на логику" },
-      { name: "description", content: "Хоррор-квест: школа захвачена зомби. Решай логические загадки, открывай двери и победи босса, чтобы сбежать." },
-      { property: "og:title", content: "Сбеги из школы" },
-      { property: "og:description", content: "Зомби-квест с загадками на логику." },
+      { title: "DOLLS OF THE SCHOOL — хоррор-квест" },
+      { name: "description", content: "Хоррор-квест: школа захвачена ожившими куклами. Помоги Лане найти друзей, решить простые задания и выбраться." },
+      { property: "og:title", content: "DOLLS OF THE SCHOOL" },
+      { property: "og:description", content: "Школьный хоррор-квест с куклами и простыми заданиями." },
     ],
   }),
   component: EscapeGame,
